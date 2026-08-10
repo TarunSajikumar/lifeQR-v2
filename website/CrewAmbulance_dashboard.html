@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#070b14">
+  <link rel="manifest" href="/manifest.json">
+  <title>Tactical Responder Portal | LifeQR Dispatch</title>
+  
+  <!-- Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="stylesheet" href="dist/output.css">
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Leaflet Maps API -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="qr-scanner.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/auth-guard.js"></script>
+  <script src="js/pwa-install.js"></script>
+  <script src="js/crew-dashboard.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased relative overflow-x-hidden selection:bg-rose-500 selection:text-white theme-hud">
+  
+  <!-- Ambient Specular Glow -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute -top-32 left-1/3 w-96 h-96 bg-rose-600/15 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 right-10 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- Tactical Header -->
+  <header class="sticky top-0 z-40 px-4 sm:px-8 py-3.5 bg-slate-900/90 backdrop-blur-xl border-b border-rose-500/30 shadow-xl">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      
+      <!-- Brand -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-rose-600 to-rose-800 flex items-center justify-center text-white shadow-lg shadow-rose-950/80">
+          <span class="material-symbols-outlined text-xl animate-pulse">emergency</span>
+        </div>
+        <div>
+          <span class="font-display font-black text-xl text-white flex items-center gap-1.5 leading-none">
+            LifeQR <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 text-[10px] uppercase font-extrabold border border-rose-500/30">DISPATCH HUD</span>
+          </span>
+        </div>
+      </div>
+      
+      <!-- Rescuer Status -->
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-rose-950/60 border border-rose-500/30 rounded-full text-xs font-semibold text-rose-300">
+          <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+          <span>Paramedic: <strong id="userName" class="text-white">Active</strong></span>
+        </div>
+        
+        <button onclick="logout()" class="text-xs text-rose-400 hover:text-rose-300 font-bold px-3 py-1.5 rounded-xl hover:bg-rose-500/10 transition flex items-center gap-1">
+          <span class="material-symbols-outlined text-base">logout</span>
+          <span class="hidden sm:inline">Logout</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="relative z-10 flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl mx-auto w-full">
+    
+    <!-- Page Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-950/80 border border-rose-500/40 text-rose-300 text-xs font-extrabold mb-2">
+          <span class="material-symbols-outlined text-sm">airport_shuttle</span> FIRST RESPONDER TACTICAL HUB
+        </div>
+        <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">Paramedic Crew Dashboard</h2>
+        <p class="text-xs sm:text-sm text-slate-400 font-medium">Rapid QR Triage lookup, live GPS SOS distress streams, and ER telemetry broadcast.</p>
+      </div>
+    </div>
+
+    <!-- Verification Status Alert Banner -->
+    <div id="verificationBannerContainer"></div>
+
+    <!-- Active Real-time SOS Overlay Banner (Hidden by default) -->
+    <div id="sosAlertPopup" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bezel-hud-shell max-w-md w-full border-rose-500/60 shadow-2xl">
+        <div class="bezel-hud-core p-6 space-y-4 text-slate-100">
+          
+          <div class="flex items-center gap-3 text-rose-500">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/20 flex items-center justify-center border border-rose-500/40">
+              <span class="material-symbols-outlined text-3xl animate-pulse">notifications_active</span>
+            </div>
+            <div>
+              <h3 class="font-display text-lg font-extrabold text-white">🚨 INCOMING SOS DISTRESS BEACON</h3>
+              <p class="text-xs text-rose-400 font-medium">Real-time emergency telemetry received</p>
+            </div>
+          </div>
+          
+          <div class="space-y-2.5 text-xs border-y border-slate-800 py-3.5 my-2">
+            <p class="flex justify-between"><strong class="text-slate-400">Patient:</strong> <span id="sosPatName" class="font-bold text-white">-</span></p>
+            <p class="flex justify-between"><strong class="text-slate-400">Blood Group:</strong> <span id="sosPatBlood" class="font-display font-extrabold text-rose-400 text-sm font-tabular">-</span></p>
+            <p class="flex justify-between"><strong class="text-slate-400">Severe Allergies:</strong> <span id="sosPatAllergies" class="font-semibold text-amber-300">-</span></p>
+            <p><strong class="text-slate-400 block mb-1">Incident Notes:</strong> <span id="sosPatMessage" class="text-slate-300">-</span></p>
+            <p><strong class="text-slate-400 block mb-1">GPS Coordinates:</strong> <span id="sosPatLoc" class="font-mono text-rose-400 font-bold block bg-slate-950 p-2 rounded-xl border border-slate-800">-</span></p>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button onclick="closeSosPopup()" class="flex-1 py-3 border border-slate-700 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-300 transition">
+              Dismiss
+            </button>
+            <button id="ackSosBtn" class="flex-1 py-3 btn-island btn-island-emergency justify-center text-xs">
+              <span>Acknowledge &amp; Dispatch</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-12 gap-6">
+      
+      <!-- Right Search / Scan Panel (4 Columns) -->
+      <div class="lg:col-span-4 space-y-6">
+        
+        <div class="bezel-hud-shell">
+          <div class="bezel-hud-core p-6 space-y-4">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 class="font-display text-sm font-bold text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-rose-500">qr_code_scanner</span>
+                <span>Patient Triage Access</span>
+              </h3>
+              <span class="text-[10px] font-bold text-rose-400 uppercase">RAPID TRIAGE</span>
+            </div>
+            
+            <div class="space-y-3.5">
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Enter Patient QR Code ID</label>
+                <div class="flex gap-2">
+                  <input 
+                    type="text" 
+                    id="patientQrId" 
+                    placeholder="e.g. TAR-A1B2C3D4"
+                    class="flex-1 px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-rose-500 font-mono text-xs font-bold text-rose-400"
+                  >
+                  <button onclick="searchPatient()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-md">
+                    Triage
+                  </button>
+                </div>
+              </div>
+
+              <button onclick="startQRScanner()" class="btn-island btn-island-emergency w-full justify-center text-xs py-3">
+                <span>Launch Camera Scanner</span>
+                <span class="btn-icon-bubble">
+                  <span class="material-symbols-outlined text-sm">photo_camera</span>
+                </span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Left Patient Profile View Panel (8 Columns) -->
+      <div class="lg:col-span-8">
+        <div id="patientDetailsPanel" class="hidden space-y-6">
+          
+          <!-- Skeletons state -->
+          <div id="patientSkeleton" class="bezel-hud-shell h-96 skeleton-dark"></div>
+
+          <!-- Content display -->
+          <div id="patientContent" class="hidden space-y-6">
+            
+            <div class="bezel-hud-shell">
+              <div class="bezel-hud-core p-6 sm:p-8 space-y-6">
+                
+                <div class="flex flex-wrap justify-between items-center gap-4 pb-4 border-b border-slate-800">
+                  <div>
+                    <h3 class="font-display text-2xl font-extrabold text-white" id="patName">Name</h3>
+                    <p class="text-xs text-slate-400 font-mono">Patient QR Identifier: <span id="patId" class="font-bold text-rose-400">ID</span></p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold rounded-full font-tabular">Age: <span id="patAge">-</span></span>
+                    <span class="px-3 py-1 bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold rounded-full">Gender: <span id="patGender">-</span></span>
+                  </div>
+                </div>
+
+                <!-- Emergency Profile Critical Grid -->
+                <div class="grid md:grid-cols-2 gap-4 my-4">
+                  <div class="p-4 bg-rose-950/70 border border-rose-500/40 rounded-2xl">
+                    <p class="text-[10px] uppercase font-bold tracking-wider text-rose-400 mb-1">Blood Group Vitals</p>
+                    <p class="font-display text-2xl font-extrabold text-white font-tabular" id="patBloodGroup">-</p>
+                  </div>
+
+                  <div class="p-4 bg-slate-950 border border-slate-800 rounded-2xl">
+                    <p class="text-[10px] uppercase font-bold tracking-wider text-amber-400 mb-1">High-Risk Allergies</p>
+                    <p class="text-sm font-semibold text-slate-200" id="patAllergies">-</p>
+                  </div>
+
+                  <div class="p-4 bg-slate-950 border border-slate-800 rounded-2xl">
+                    <p class="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Current Prescriptions</p>
+                    <p class="text-sm font-semibold text-slate-200" id="patMedications">-</p>
+                  </div>
+
+                  <div class="p-4 bg-slate-950 border border-slate-800 rounded-2xl">
+                    <p class="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Chronic Conditions</p>
+                    <p class="text-sm font-semibold text-slate-200" id="patHealthIssues">-</p>
+                  </div>
+                </div>
+
+                <!-- Emergency Contacts -->
+                <div>
+                  <h4 class="font-display text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-rose-500 text-base">phone_in_talk</span> Primary Emergency Contacts (ICE)
+                  </h4>
+                  <div id="patEmergencyContact" class="mb-4"></div>
+                </div>
+
+                <!-- Incident Checkpoint Logger -->
+                <div class="pt-4 border-t border-slate-800 space-y-3">
+                  <h4 class="font-display text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-indigo-400 text-base">checklist</span> Incident Checkpoints Log
+                  </h4>
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                    <button onclick="logIncidentStage('Arrived at Location')" class="py-2.5 bg-amber-600/90 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                      Arrived Scene
+                    </button>
+                    <button onclick="logIncidentStage('Patient Contact Established')" class="py-2.5 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                      Contact Made
+                    </button>
+                    <button onclick="logIncidentStage('Patient Boarded and Transporting')" class="py-2.5 bg-purple-600/90 hover:bg-purple-600 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                      Transporting
+                    </button>
+                    <button onclick="logIncidentStage('Incident Successfully Handled & Completed')" class="py-2.5 bg-emerald-600/90 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                      Handled Complete
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Stream Live Vitals to Hospital ER Reception -->
+                <div class="mt-4 p-4 bg-gradient-to-r from-rose-950/80 via-slate-900 to-indigo-950/80 border border-rose-500/50 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-600/30 text-rose-400 flex items-center justify-center flex-shrink-0">
+                      <span class="material-symbols-outlined text-2xl animate-pulse">sensors</span>
+                    </div>
+                    <div>
+                      <h5 class="text-xs font-bold text-white">Hospital ER In-Transit Telemetry</h5>
+                      <p class="text-[10px] text-slate-300">Broadcast patient vitals and ETA to hospital triage desk live.</p>
+                    </div>
+                  </div>
+                  <button onclick="openERStreamModal()" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white rounded-xl text-xs font-bold transition shadow-lg flex items-center justify-center gap-1.5 flex-shrink-0">
+                    <span class="material-symbols-outlined text-base">local_hospital</span>
+                    Stream Vitals to ER Desk
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- ER Telemetry Stream Modal -->
+            <div id="erStreamModal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <div class="bezel-hud-shell max-w-md w-full border-rose-500/50 shadow-2xl">
+                <div class="bezel-hud-core p-6 space-y-4 text-slate-100">
+                  <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h3 class="font-display text-sm font-bold text-white flex items-center gap-2">
+                      <span class="material-symbols-outlined text-rose-500">sensors</span> Stream Live Vitals to ER Reception
+                    </h3>
+                    <button onclick="closeERStreamModal()" class="text-slate-400 hover:text-white"><span class="material-symbols-outlined">close</span></button>
+                  </div>
+
+                  <div class="space-y-3 text-xs">
+                    <div>
+                      <label class="block font-bold text-slate-400 mb-1">ETA Countdown (Minutes)</label>
+                      <input type="number" id="erEtaMinutes" placeholder="e.g. 10" min="1" max="120" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white font-mono font-bold">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      <div>
+                        <label class="block font-bold text-slate-400 mb-1">Pulse (HR bpm)</label>
+                        <input type="number" id="erPulse" placeholder="e.g. 100" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-rose-400 font-mono font-bold">
+                      </div>
+                      <div>
+                        <label class="block font-bold text-slate-400 mb-1">SpO2 (%)</label>
+                        <input type="number" id="erSpO2" placeholder="e.g. 98" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-emerald-400 font-mono font-bold">
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      <div>
+                        <label class="block font-bold text-slate-400 mb-1">BP Systolic/Diastolic</label>
+                        <input type="text" id="erBp" placeholder="e.g. 120/80" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-indigo-300 font-mono font-bold">
+                      </div>
+                      <div>
+                        <label class="block font-bold text-slate-400 mb-1">Triage Severity</label>
+                        <select id="erTriageLevel" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-amber-300 font-bold">
+                          <option value="CRITICAL">🔴 CRITICAL</option>
+                          <option value="URGENT">🟠 URGENT</option>
+                          <option value="SEMI_URGENT">🟡 SEMI_URGENT</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="block font-bold text-slate-400 mb-1">Chief Clinical Complaint / Notes</label>
+                      <input type="text" id="erComplaint" placeholder="Enter patient chief complaint or trauma notes..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200">
+                    </div>
+                  </div>
+
+                  <div class="flex gap-2 pt-2">
+                    <button onclick="closeERStreamModal()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-300 transition">Cancel</button>
+                    <button onclick="sendERLiveStream()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-lg">
+                      Broadcast to ER Desk
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Leaflet Map Wrapper -->
+            <div id="mapWrapper" class="bezel-hud-shell">
+              <div class="bezel-hud-core p-6 space-y-4">
+                <div class="flex flex-wrap justify-between items-center gap-3 pb-3 border-b border-slate-800">
+                  <h3 class="font-display text-sm font-bold text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-rose-500">map</span>
+                    <span>Patient Live Emergency GPS Location</span>
+                  </h3>
+                  <a id="gmapsNavBtn" href="" target="_blank" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                    <span class="material-symbols-outlined text-base">navigation</span>
+                    <span>Open Google Maps</span>
+                  </a>
+                </div>
+                <div id="leafletMapContainer" class="w-full h-80 rounded-2xl border border-slate-800 overflow-hidden shadow-inner" style="z-index: 10;"></div>
+              </div>
+            </div>
+
+            <!-- Recommended Nearby Hospitals -->
+            <div id="hospitalWrapper" class="hidden bezel-hud-shell">
+              <div class="bezel-hud-core p-6 space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <h3 class="font-display text-sm font-bold text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-teal-400">local_hospital</span>
+                    <span>Recommended Nearby Trauma Centers</span>
+                  </h3>
+                  <span class="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-400 border border-teal-500/30 text-[10px] font-bold uppercase tracking-wider">LIVE ROUTING</span>
+                </div>
+                <div id="hospitalsList" class="grid sm:grid-cols-2 gap-3">
+                  <!-- Dynamically populated from /api/v1/hospitals/nearby -->
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Fixed Mobile Bottom Navigation Bar -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 z-50 px-2 py-1.5 pb-safe shadow-2xl flex items-center justify-around no-print">
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="mobile-bottom-nav-tab active text-slate-300" aria-label="SOS Dispatch Feed">
+      <span class="material-symbols-outlined text-xl text-rose-500">emergency</span>
+      <span class="text-rose-400 font-bold">SOS Feed</span>
+    </button>
+    <button onclick="startQRScanner()" class="mobile-bottom-nav-tab text-slate-300" aria-label="QR Camera Scan">
+      <span class="material-symbols-outlined text-xl">qr_code_scanner</span>
+      <span>QR Scan</span>
+    </button>
+    <button onclick="document.getElementById('mapWrapper')?.scrollIntoView({behavior: 'smooth'})" class="mobile-bottom-nav-tab text-slate-300" aria-label="GPS Location Map">
+      <span class="material-symbols-outlined text-xl text-emerald-400">map</span>
+      <span>GPS Map</span>
+    </button>
+    <button onclick="logout()" class="mobile-bottom-nav-tab text-slate-300" aria-label="Logout">
+      <span class="material-symbols-outlined text-xl">logout</span>
+      <span>Logout</span>
+    </button>
+  </nav>
+
+</body>
+</html>

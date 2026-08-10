@@ -61,7 +61,23 @@ const userSchema = new mongoose.Schema({
   },
   verificationReviewedAt: Date,
   resetPasswordToken: String,
-  resetPasswordExpires: Date
+  resetPasswordExpires: Date,
+  otpCode: {
+    type: String,
+    default: null
+  },
+  otpExpires: {
+    type: Date,
+    default: null
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false
+  },
+  isProfileComplete: {
+    type: Boolean,
+    default: false
+  }
 }, {
   timestamps: true
 });

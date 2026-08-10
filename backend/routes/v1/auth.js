@@ -229,6 +229,12 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Generate initial 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otpCode = otp;
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
     // Generate JWT token
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not configured');
@@ -245,18 +251,23 @@ router.post('/register', async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
     res.status(201).json({ 
       message: 'Registration successful',
+      requiresOtp: true,
+      otpCodeDemo: otp,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         gender: user.gender,
+        isPhoneVerified: false,
+        isProfileComplete: false,
         verificationStatus: user.verificationStatus
       }
     });
@@ -382,6 +393,181 @@ router.get('/verify', async (req, res) => {
     });
   } catch (error) {
     res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// Get Current User (/me)
+router.get('/me', async (req, res) => {
+  try {
+    let token = req.cookies && req.cookies.token;
+    if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+    
+    if (!token) {
+      return res.status(401).json({ authenticated: false, error: 'No active session' });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ authenticated: false, error: 'User not found' });
+    }
+
+    let profile = null;
+    if (user.role === 'patient') {
+      profile = await PatientProfile.findOne({ userId: user._id });
+    }
+
+    res.json({
+      authenticated: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        gender: user.gender,
+        isPhoneVerified: user.isPhoneVerified || false,
+        isProfileComplete: user.isProfileComplete || (!!profile && !!profile.bloodGroup),
+        verificationStatus: user.verificationStatus
+      },
+      profile
+    });
+  } catch (error) {
+    res.status(401).json({ authenticated: false, error: 'Invalid or expired session' });
+  }
+});
+
+// Send / Resend OTP route
+router.post('/send-otp', async (req, res) => {
+  try {
+    const { email, phone, userId } = req.body;
+    let user = null;
+
+    if (userId) {
+      user = await User.findById(userId);
+    } else if (email) {
+      user = await User.findOne({ email: email.toLowerCase().trim() });
+    } else if (phone) {
+      user = await User.findOne({ phone: phone.trim() });
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: 'User account not found' });
+    }
+
+    // Generate 6-digit numeric OTP code
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otpCode = otp;
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes valid
+    await user.save();
+
+    // Optionally send via email if configured
+    try {
+      if (user.email) {
+        await sendEmail({
+          to: user.email,
+          subject: 'Your LifeQR Verification OTP Code',
+          text: `Hello ${user.name},\n\nYour LifeQR verification OTP code is: ${otp}\n\nThis code is valid for 10 minutes.`,
+          html: `<p>Hello ${user.name},</p><p>Your LifeQR verification code is: <strong style="font-size: 20px; letter-spacing: 2px;">${otp}</strong></p><p>This code is valid for 10 minutes.</p>`
+        });
+      }
+    } catch (emailErr) {
+      console.warn('OTP email delivery skipped/failed:', emailErr.message);
+    }
+
+    logEvent('OTP_SENT', { userId: user._id, email: user.email });
+
+    res.json({
+      message: 'OTP sent successfully',
+      expiresInMinutes: 10,
+      otpCodeDemo: otp // Returned for smooth dev/testing demonstration
+    });
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    res.status(500).json({ error: 'Failed to send OTP code' });
+  }
+});
+
+// Verify OTP route
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { email, phone, userId, otp } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({ error: '6-digit OTP code is required' });
+    }
+
+    let user = null;
+    if (userId) {
+      user = await User.findById(userId);
+    } else if (email) {
+      user = await User.findOne({ email: email.toLowerCase().trim() });
+    } else if (phone) {
+      user = await User.findOne({ phone: phone.trim() });
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: 'User account not found' });
+    }
+
+    if (!user.otpCode || user.otpCode !== otp.trim()) {
+      return res.status(400).json({ error: 'Invalid verification code. Please check and try again.' });
+    }
+
+    if (user.otpExpires && user.otpExpires < new Date()) {
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
+    }
+
+    // Mark verified and clear OTP
+    user.isPhoneVerified = true;
+    user.otpCode = null;
+    user.otpExpires = null;
+    await user.save();
+
+    // Check if profile exists
+    const profile = await PatientProfile.findOne({ userId: user._id });
+    const isProfileComplete = user.isProfileComplete || (!!profile && !!profile.bloodGroup);
+
+    // Issue JWT cookie
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    logEvent('OTP_VERIFIED_SUCCESS', { userId: user._id, email: user.email });
+
+    res.json({
+      message: 'OTP verified successfully',
+      isProfileComplete,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        gender: user.gender,
+        isPhoneVerified: true,
+        isProfileComplete
+      }
+    });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ error: 'Failed to verify OTP code' });
   }
 });
 

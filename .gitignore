@@ -91,6 +91,12 @@ env/
 env.bak/
 venv.bak/
 
+# Gradle & Android build caches
+.gradle/
+android-wrapper/.gradle/
+android-wrapper/gradle-unpacked/
+*.zip
+
 # Misc
 *.orig
 *.pyc
@@ -99,4 +105,5 @@ venv.bak/
 __pycache__/
 *.so
 *.dll
+
 

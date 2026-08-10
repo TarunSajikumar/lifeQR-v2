@@ -7,7 +7,9 @@
     "start": "cd backend && node server.js",
     "dev": "cd backend && nodemon server.js",
     "install-all": "cd backend && npm install",
-    "build-css": "npx tailwindcss -i ./frontend/src/input.css -o ./frontend/dist/output.css --minify"
+    "sync": "node scripts/sync-frontend.js",
+    "sync:watch": "node scripts/sync-frontend.js --watch",
+    "build-css": "node scripts/sync-frontend.js && npx tailwindcss -i ./website/src/input.css -o ./website/dist/output.css --minify && node scripts/sync-frontend.js"
   },
   "keywords": [
     "medical",

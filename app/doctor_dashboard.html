@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="/manifest.json">
+  <title>Doctor Clinical Decision Portal | LifeQR</title>
+  
+  <!-- Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="stylesheet" href="dist/output.css">
+  <link rel="stylesheet" href="styles.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.js"></script>
+  <script src="qr-scanner.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/auth-guard.js"></script>
+  <script src="js/pwa-install.js"></script>
+  <script src="js/doctor-dashboard.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col antialiased relative overflow-x-hidden selection:bg-teal-500 selection:text-white">
+  
+  <!-- Ambient Specular Background -->
+  <div class="ambient-mesh"></div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 px-4 sm:px-8 py-3.5 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 shadow-xs">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-teal-600 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-teal-200">
+          <span class="material-symbols-outlined text-xl">clinical_notes</span>
+        </div>
+        <span class="font-display text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-teal-800 bg-clip-text text-transparent">LifeQR Clinical</span>
+      </a>
+      
+      <div class="flex items-center gap-3">
+        <span class="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-xs font-extrabold tracking-wider">DOCTOR PORTAL</span>
+        <span class="hidden sm:inline text-xs text-slate-600 font-semibold">Attending: <strong id="userName" class="text-slate-900">Dr. Staff</strong></span>
+        <button onclick="logout()" class="text-xs text-rose-600 hover:text-rose-700 font-bold px-3 py-1.5 rounded-xl hover:bg-rose-50 transition flex items-center gap-1">
+          <span class="material-symbols-outlined text-base">logout</span>
+          <span class="hidden sm:inline">Logout</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative z-10 flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl mx-auto w-full">
+    
+    <!-- Page Title -->
+    <div class="mb-8">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-100 text-teal-700 text-xs font-extrabold mb-2 shadow-xs">
+        <span class="material-symbols-outlined text-sm">psychology</span> CLINICAL DECISION CO-PILOT
+      </div>
+      <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Physician Clinical Workstation</h2>
+      <p class="text-xs sm:text-sm text-slate-500 font-medium">Review authorized patient medical records, analyze AI clinical summaries, and record treatment progress.</p>
+    </div>
+
+    <!-- Verification Status Alert Banner -->
+    <div id="verificationBannerContainer"></div>
+
+    <div class="grid lg:grid-cols-12 gap-6">
+      
+      <!-- Search & Authorized Patients List (4 Columns) -->
+      <div class="lg:col-span-4 space-y-6">
+        
+        <!-- Search Patient Card -->
+        <div class="bezel-shell">
+          <div class="bezel-core p-6 space-y-4">
+            <h3 class="font-display text-sm font-bold text-slate-800 flex items-center gap-2">
+              <span class="material-symbols-outlined text-indigo-600">search</span>
+              <span>Patient Quick Access</span>
+            </h3>
+            
+            <div class="space-y-3">
+              <div>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Patient QR Code ID</label>
+                <div class="flex gap-2">
+                  <input 
+                    type="text" 
+                    id="patientQrId" 
+                    placeholder="e.g. TAR-A1B2C3D4"
+                    class="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 font-mono text-xs font-semibold text-slate-800"
+                  >
+                  <button onclick="searchPatient()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                    Search
+                  </button>
+                </div>
+              </div>
+
+              <button onclick="startQRScanner()" class="btn-island btn-island-primary w-full justify-center text-xs py-2.5">
+                <span>Scan Patient QR Camera</span>
+                <span class="btn-icon-bubble w-7 h-7">
+                  <span class="material-symbols-outlined text-sm">photo_camera</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Authorized Patients List Card -->
+        <div class="bezel-shell">
+          <div class="bezel-core p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 class="font-display text-sm font-bold text-slate-800 flex items-center gap-2">
+                <span class="material-symbols-outlined text-teal-600">folder_shared</span>
+                <span>Authorized Patients</span>
+              </h3>
+              <span class="text-[10px] font-bold text-teal-700 uppercase">ACTIVE CASES</span>
+            </div>
+            <div id="authorizedPatientsList" class="space-y-2.5">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Patient Details Display Panel (8 Columns) -->
+      <div class="lg:col-span-8">
+        <div id="patientDetailsPanel" class="hidden space-y-6">
+          
+          <!-- Skeleton State -->
+          <div id="patientSkeleton" class="bezel-shell h-96 skeleton"></div>
+
+          <!-- Patient Profile Info -->
+          <div id="patientContent" class="hidden space-y-6">
+            
+            <div class="bezel-shell">
+              <div class="bezel-core p-6 sm:p-8 space-y-4">
+                <div class="flex items-center gap-4">
+                  <img id="patPhoto" src="" class="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-200 shadow-md">
+                  <div>
+                    <h3 class="font-display text-2xl font-bold text-slate-900" id="patName">Name</h3>
+                    <p class="text-xs text-slate-400 font-mono">Patient QR Identifier: <span id="patId" class="font-bold text-indigo-600">ID</span></p>
+                  </div>
+                </div>
+
+                <!-- Access Permission Banner -->
+                <div id="accessStatusContainer"></div>
+
+                <div class="grid grid-cols-3 gap-4 text-center border-y border-slate-100 py-3.5 my-2">
+                  <div>
+                    <p class="text-[10px] uppercase font-bold text-slate-400">Gender</p>
+                    <p class="text-xs font-bold text-slate-800" id="patGender">-</p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] uppercase font-bold text-slate-400">Phone</p>
+                    <p class="text-xs font-bold text-slate-800 font-tabular" id="patPhone">-</p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] uppercase font-bold text-slate-400">Security Clearance</p>
+                    <span class="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold rounded-full">Active Access</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Clinical Copilot Suite -->
+            <div id="aiClinicalSuite" class="bezel-hud-shell">
+              <div class="bezel-hud-core p-6 sm:p-7 space-y-5 text-white">
+                
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-teal-500 flex items-center justify-center text-white shadow-lg animate-pulse">
+                      <span class="material-symbols-outlined text-xl">psychology</span>
+                    </div>
+                    <div>
+                      <h3 class="font-display text-base font-extrabold tracking-tight text-white flex items-center gap-2">
+                        AI Clinical Copilot
+                        <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-[10px] uppercase font-bold tracking-wider">v2.5 AI Clinical Suite</span>
+                      </h3>
+                      <p class="text-xs text-slate-300 font-medium">5 Diagnostic Tools for Attending Doctors</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 5 AI Tools Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                  <button onclick="runAiPatientSummary()" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition text-left flex flex-col justify-between space-y-2 group cursor-pointer">
+                    <span class="material-symbols-outlined text-amber-400 text-xl group-hover:scale-110 transition-transform">summarize</span>
+                    <div>
+                      <h4 class="font-bold text-xs text-white">Patient Brief</h4>
+                      <p class="text-[10px] text-slate-300 font-medium">Pre-consult summary</p>
+                    </div>
+                  </button>
+
+                  <button onclick="openAiScribeModal()" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition text-left flex flex-col justify-between space-y-2 group cursor-pointer">
+                    <span class="material-symbols-outlined text-purple-400 text-xl group-hover:scale-110 transition-transform">mic</span>
+                    <div>
+                      <h4 class="font-bold text-xs text-white">Medical Scribe</h4>
+                      <p class="text-[10px] text-slate-300 font-medium">Auto note-taking</p>
+                    </div>
+                  </button>
+
+                  <button onclick="runAiDifferential()" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition text-left flex flex-col justify-between space-y-2 group cursor-pointer">
+                    <span class="material-symbols-outlined text-teal-400 text-xl group-hover:scale-110 transition-transform">diagnostics</span>
+                    <div>
+                      <h4 class="font-bold text-xs text-white">Differential Dx</h4>
+                      <p class="text-[10px] text-slate-300 font-medium">Clinical reasoning</p>
+                    </div>
+                  </button>
+
+                  <button onclick="checkPrescriptionSafety()" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition text-left flex flex-col justify-between space-y-2 group cursor-pointer">
+                    <span class="material-symbols-outlined text-emerald-400 text-xl group-hover:scale-110 transition-transform">verified_user</span>
+                    <div>
+                      <h4 class="font-bold text-xs text-white">Rx Safety Check</h4>
+                      <p class="text-[10px] text-slate-300 font-medium">Allergy &amp; Drug safety</p>
+                    </div>
+                  </button>
+
+                  <button onclick="generateSoapNote()" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition text-left flex flex-col justify-between space-y-2 group cursor-pointer">
+                    <span class="material-symbols-outlined text-blue-400 text-xl group-hover:scale-110 transition-transform">post_add</span>
+                    <div>
+                      <h4 class="font-bold text-xs text-white">SOAP Notes</h4>
+                      <p class="text-[10px] text-slate-300 font-medium">Fast EHR documentation</p>
+                    </div>
+                  </button>
+                </div>
+
+                <!-- AI Output Display Box -->
+                <div id="aiOutputContainer" class="hidden p-4 bg-slate-950/95 border border-indigo-500/40 rounded-2xl space-y-3 text-xs text-slate-200">
+                  <!-- Dynamically populated by JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Doctor Decision Tree Suite -->
+            <div id="doctorDecisionTreeSuite" class="bezel-shell">
+              <div class="bezel-core p-6 sm:p-7 space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
+                      <span class="material-symbols-outlined text-xl">account_tree</span>
+                    </div>
+                    <div>
+                      <h3 class="font-display text-base font-bold text-slate-900 flex items-center gap-2">
+                        Doctor Decision Tree
+                        <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-extrabold uppercase">26 Stages • 38 Scenarios</span>
+                      </h3>
+                      <p class="text-xs text-slate-500 font-medium">Standardized Clinical Protocol &amp; Emergency Scenario Navigator</p>
+                    </div>
+                  </div>
+
+                  <!-- Emergency Quick Trigger Dropdown -->
+                  <div class="flex items-center gap-2">
+                    <select id="specialSituationSelect" onchange="triggerSpecialSituation(this.value)" class="px-3 py-2 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold focus:ring-2 focus:ring-rose-500 cursor-pointer">
+                      <option value="">🚨 Trigger Special Protocol...</option>
+                      <option value="❤️ STEMI / Heart Attack Protocol">❤️ STEMI / Heart Attack Alert</option>
+                      <option value="🧠 Stroke / Neurological Emergency">🧠 Stroke Alert Protocol</option>
+                      <option value="🦠 Critical Sepsis Protocol">🦠 Sepsis Alert</option>
+                      <option value="💉 Anaphylaxis Emergency">💉 Anaphylaxis Emergency</option>
+                      <option value="🩸 Massive Bleeding Protocol">🩸 Massive Bleeding</option>
+                      <option value="😷 Respiratory Failure">😷 Respiratory Failure</option>
+                      <option value="🚑 Trauma Protocol">🚑 Trauma Activation</option>
+                      <option value="⚠️ Severe Drug Allergy Detected">⚠️ Drug Allergy Detected</option>
+                      <option value="⚖️ Medico-Legal Case Identification">⚖️ Medico-Legal Case</option>
+                      <option value="🛡️ Child / Elder Abuse Suspicion">🛡️ Abuse Suspicion</option>
+                      <option value="📞 Telemedicine Consultation">📞 Telemedicine Protocol</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Track Selection Tabs -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-bold" id="decisionTrackTabs">
+                  <button onclick="switchDecisionTrack('track-1')" class="track-tab-btn active px-3.5 py-2 rounded-xl bg-indigo-600 text-white transition flex items-center gap-1.5 flex-shrink-0" data-track="track-1">
+                    <span class="material-symbols-outlined text-base">how_to_reg</span>
+                    <span>1. Intake &amp; Triage</span>
+                  </button>
+                  <button onclick="switchDecisionTrack('track-2')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0" data-track="track-2">
+                    <span class="material-symbols-outlined text-base">manage_search</span>
+                    <span>2. History &amp; Audits</span>
+                  </button>
+                  <button onclick="switchDecisionTrack('track-3')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0" data-track="track-3">
+                    <span class="material-symbols-outlined text-base">ecg_heart</span>
+                    <span>3. Exam &amp; Vitals</span>
+                  </button>
+                  <button onclick="switchDecisionTrack('track-4')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0" data-track="track-4">
+                    <span class="material-symbols-outlined text-base">biomedical</span>
+                    <span>4. Diagnosis &amp; Labs</span>
+                  </button>
+                  <button onclick="switchDecisionTrack('track-5')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0" data-track="track-5">
+                    <span class="material-symbols-outlined text-base">medication</span>
+                    <span>5. Treatment &amp; Rx</span>
+                  </button>
+                  <button onclick="switchDecisionTrack('track-6')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0" data-track="track-6">
+                    <span class="material-symbols-outlined text-base">assignment_turned_in</span>
+                    <span>6. Discharge</span>
+                  </button>
+                </div>
+
+                <!-- Track Content Display Container -->
+                <div id="decisionTrackContent" class="space-y-4">
+                  <!-- Dynamically rendered track stages -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Medical History & Reports -->
+            <div id="authorizedDetailsContainer" class="grid md:grid-cols-2 gap-6 hidden">
+              
+              <!-- Timeline history -->
+              <div class="bezel-shell">
+                <div class="bezel-core p-6 space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <h3 class="font-display text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <span class="material-symbols-outlined text-indigo-600">history_edu</span>
+                      <span>Medical History Timeline</span>
+                    </h3>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">CLINICAL LOG</span>
+                  </div>
+
+                  <div id="patientHistoryTimeline" class="space-y-3 max-h-96 overflow-y-auto pr-1 pt-1">
+                    <!-- Rendered dynamically -->
+                  </div>
+                  
+                  <!-- Add Treatment form -->
+                  <form id="addTreatmentForm" class="mt-4 pt-4 border-t border-slate-100 space-y-3">
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-indigo-700 flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-base">edit_note</span>
+                      Add Clinical Note
+                    </h4>
+                    <input type="text" id="treatmentTitle" required placeholder="Note Title (e.g. Asthma Evaluation / Medication Adjustment)" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500">
+                    <textarea id="treatmentDesc" required rows="3" placeholder="Clinical observations, prescriptions, or treatment details..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500"></textarea>
+                    <button type="submit" id="addTreatmentBtn" class="btn-island btn-island-primary text-xs py-2 px-4">
+                      <span>Add Clinical Note</span>
+                      <span class="btn-icon-bubble w-6 h-6">
+                        <span class="material-symbols-outlined text-xs">post_add</span>
+                      </span>
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Reports list -->
+              <div class="bezel-shell">
+                <div class="bezel-core p-6 space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <h3 class="font-display text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <span class="material-symbols-outlined text-teal-600">description</span>
+                      <span>Patient Medical Reports</span>
+                    </h3>
+                    <span class="text-[10px] font-bold text-teal-700 uppercase">LAB VAULT</span>
+                  </div>
+                  <div id="patientReportsList" class="space-y-2.5">
+                    <!-- Rendered dynamically -->
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</body>
+</html>

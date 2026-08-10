@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- SEO Metadata -->
+  <title>LifeQR — Emergency Medical Lifeline in a Single Scan</title>
+  <meta name="description" content="Instant medical data for emergencies. Allergies, blood type, medications, and emergency contacts — accessible in under 3 seconds with zero app installation.">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="LifeQR | Your Medical Lifeline in a QR Code">
+  <meta property="og:description" content="Instant medical data for emergencies. Allergies, blood type, medications, and emergency contacts — accessible with one scan.">
+  <meta property="og:image" content="/LifeQR.png">
+
+  <!-- Google Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+
+  <link rel="stylesheet" href="dist/output.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="/app/api-utils.js"></script>
+  <script src="/app/js/auth-guard.js"></script>
+  <script src="/app/js/pwa-install.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Ambient Specular Background -->
+  <div class="ambient-mesh"></div>
+
+  <!-- Top Announcement Bar -->
+  <div class="relative z-50 bg-slate-900 text-slate-200 text-xs py-2 px-4 border-b border-slate-800 text-center font-medium">
+    <div class="max-w-6xl mx-auto flex items-center justify-center gap-2 flex-wrap">
+      <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold text-[10px] tracking-wide uppercase border border-rose-500/30">
+        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span> Live SOS Dispatch Active
+      </span>
+      <span>Paramedic QR Triage response time is now under <strong>2.8 seconds</strong> worldwide.</span>
+      <a href="#how-it-works" class="text-indigo-400 hover:text-indigo-300 underline font-semibold ml-1">Learn how &rarr;</a>
+    </div>
+  </div>
+
+  <!-- Floating Island Navigation -->
+  <nav class="sticky top-4 z-40 max-w-6xl mx-auto px-4 sm:px-6 transition-all">
+    <div class="bezel-shell shadow-xl">
+      <div class="bezel-core px-5 py-3 flex items-center justify-between">
+        
+        <!-- Brand Logo -->
+        <a href="index.html" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-700 to-indigo-900 flex items-center justify-center text-white shadow-md shadow-indigo-200 group-hover:scale-105 transition-transform">
+            <span class="material-symbols-outlined text-2xl">qr_code_2</span>
+          </div>
+          <div>
+            <span class="font-display font-black text-xl tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-indigo-700 bg-clip-text text-transparent block leading-none">LifeQR</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-tight block">Emergency Medical Identity</span>
+          </div>
+        </a>
+
+        <!-- Desktop Links -->
+        <div class="hidden md:flex items-center gap-7">
+          <a href="#features" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Features</a>
+          <a href="#how-it-works" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Golden Hour</a>
+          <a href="#demo-preview" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Live Demo</a>
+          <a href="#faq" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">FAQ</a>
+        </div>
+
+        <!-- Navigation CTAs -->
+        <div class="hidden md:flex items-center gap-3">
+          <a href="../app/lifeqr_login.html" class="text-sm font-bold text-slate-700 hover:text-indigo-600 px-4 py-2 rounded-full hover:bg-slate-100/80 transition">
+            Sign In
+          </a>
+          <a href="../app/lifeqr_signup.html" class="btn-island btn-island-primary">
+            <span>Get My LifeQR</span>
+            <span class="btn-icon-bubble">
+              <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </span>
+          </a>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button id="mobileMenuBtn" type="button" aria-label="Toggle Navigation" class="md:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100 focus:outline-none">
+          <span class="material-symbols-outlined text-2xl">menu</span>
+        </button>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Drawer Menu -->
+  <div id="mobileDrawer" class="mobile-drawer closed fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md md:hidden">
+    <div class="absolute right-0 top-0 bottom-0 w-4/5 max-w-sm bg-white shadow-2xl p-6 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between pb-5 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+              <span class="material-symbols-outlined text-xl">qr_code_2</span>
+            </div>
+            <span class="font-display font-extrabold text-lg text-slate-900">LifeQR</span>
+          </div>
+          <button id="closeDrawerBtn" aria-label="Close Menu" class="p-2 text-slate-400 hover:text-slate-900">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="flex flex-col gap-4 mt-6">
+          <a href="#features" class="close-drawer-link text-base font-bold text-slate-700 hover:text-indigo-600 py-2 border-b border-slate-50">Features</a>
+          <a href="#how-it-works" class="close-drawer-link text-base font-bold text-slate-700 hover:text-indigo-600 py-2 border-b border-slate-50">Golden Hour Workflow</a>
+          <a href="#demo-preview" class="close-drawer-link text-base font-bold text-slate-700 hover:text-indigo-600 py-2 border-b border-slate-50">Interactive Demo</a>
+          <a href="../app/lifeqr_login.html" class="text-base font-bold text-indigo-600 py-2">Sign In</a>
+        </div>
+      </div>
+      <div class="space-y-3">
+        <a href="../app/lifeqr_signup.html" class="btn-island btn-island-primary w-full justify-center text-center">
+          <span>Create Free Profile</span>
+          <span class="btn-icon-bubble">
+            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+          </span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <main class="relative z-10">
+
+    <!-- ==================== HERO SECTION ==================== -->
+    <section class="px-4 sm:px-8 pt-12 pb-20 lg:pt-20 lg:pb-32 max-w-7xl mx-auto">
+      <div class="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+        
+        <!-- Left Hero Copy -->
+        <div class="lg:col-span-7 flex flex-col gap-6 text-left">
+          
+          <!-- Eyebrow Badge -->
+          <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-indigo-50/90 border border-indigo-100/80 text-indigo-700 text-xs font-extrabold w-fit shadow-xs">
+            <span class="w-2 h-2 rounded-full bg-indigo-600 animate-ping"></span>
+            <span class="material-symbols-outlined text-sm text-indigo-600">verified_user</span>
+            <span>NEXT-GEN EMERGENCY TRIAGE NETWORK</span>
+          </div>
+
+          <!-- Hero Headline -->
+          <h1 class="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.06]">
+            Seconds save lives. <br>
+            Your medical ID, <br>
+            <span class="bg-gradient-to-r from-indigo-600 via-indigo-500 to-rose-500 bg-clip-text text-transparent">instant & unlocked.</span>
+          </h1>
+
+          <p class="text-base sm:text-lg text-slate-600 max-w-2xl font-normal leading-relaxed">
+            Critical medical intelligence—blood group, severe drug allergies, active prescriptions, and emergency contacts—accessible in sub-3 seconds by first responders without requiring any app installation.
+          </p>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col sm:flex-row gap-4 pt-2">
+            <a href="../app/lifeqr_signup.html" class="btn-island btn-island-primary">
+              <span>Create My Free LifeQR</span>
+              <span class="btn-icon-bubble">
+                <span class="material-symbols-outlined text-sm">qr_code_scanner</span>
+              </span>
+            </a>
+            <a href="#how-it-works" class="btn-island btn-island-secondary">
+              <span>See How It Works</span>
+              <span class="btn-icon-bubble">
+                <span class="material-symbols-outlined text-sm">play_arrow</span>
+              </span>
+            </a>
+          </div>
+
+          <!-- Trust & Compliance Metrics -->
+          <div class="pt-6 grid grid-cols-3 gap-4 border-t border-slate-200/80 text-left">
+            <div>
+              <span class="font-display font-extrabold text-2xl sm:text-3xl text-indigo-600 block font-tabular">&lt; 2.8s</span>
+              <span class="text-xs text-slate-500 font-semibold">Triage Scan Time</span>
+            </div>
+            <div>
+              <span class="font-display font-extrabold text-2xl sm:text-3xl text-rose-600 block font-tabular">100%</span>
+              <span class="text-xs text-slate-500 font-semibold">Zero App Required</span>
+            </div>
+            <div>
+              <span class="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 block font-tabular">256-Bit</span>
+              <span class="text-xs text-slate-500 font-semibold">Field Encryption</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Interactive Hero 3D Card -->
+        <div class="lg:col-span-5 relative flex justify-center">
+          <div class="relative w-full max-w-md">
+            
+            <!-- Ambient Specular Glow -->
+            <div class="absolute -inset-2 bg-gradient-to-tr from-indigo-500/30 via-rose-500/20 to-cyan-500/20 rounded-[2.5rem] blur-2xl opacity-60"></div>
+
+            <!-- Double-Bezel Simulated Badge -->
+            <div class="bezel-shell relative">
+              <div class="bezel-core p-6 sm:p-7 space-y-5">
+                
+                <!-- Badge Top Header -->
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-[11px] font-bold tracking-widest text-slate-500 uppercase">OFFICIAL EMERGENCY BADGE</span>
+                  </div>
+                  <span class="px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-100 text-rose-600 text-[10px] font-extrabold uppercase">ICE ACTIVE</span>
+                </div>
+
+                <!-- QR Scanner Simulation Frame -->
+                <div class="scanner-frame bg-slate-950 p-6 flex flex-col items-center justify-center rounded-2xl shadow-inner relative group cursor-pointer">
+                  <div class="scanner-laser"></div>
+                  
+                  <div class="p-3 bg-white rounded-xl shadow-2xl relative z-10 transition-transform group-hover:scale-105 duration-300">
+                    <img src="LifeQR.png" alt="LifeQR Code" class="w-44 h-44 object-contain">
+                  </div>
+
+                  <p class="text-[11px] text-slate-400 text-center mt-3 font-semibold flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs text-indigo-400">photo_camera</span>
+                    <span>Point any phone camera to trigger immediate triage</span>
+                  </p>
+                </div>
+
+                <!-- Clinical Vitals Summary Tiles -->
+                <div class="grid grid-cols-2 gap-2.5 text-xs">
+                  <div class="p-3 rounded-xl bg-rose-50/70 border border-rose-100 flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-rose-600 text-xl">bloodtype</span>
+                    <div>
+                      <span class="block text-[9px] text-slate-500 font-bold uppercase tracking-wider">Blood Type</span>
+                      <span class="font-display font-extrabold text-slate-900 text-sm font-tabular">O+ Positive</span>
+                    </div>
+                  </div>
+
+                  <div class="p-3 rounded-xl bg-amber-50/70 border border-amber-100 flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-amber-600 text-xl">warning</span>
+                    <div>
+                      <span class="block text-[9px] text-slate-500 font-bold uppercase tracking-wider">Allergies</span>
+                      <span class="font-display font-extrabold text-slate-900 text-sm">Penicillin (Severe)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Emergency Dispatch Tag -->
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs font-semibold text-slate-700">
+                  <span class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-indigo-600 text-base">emergency_share</span>
+                    <span>1-Tap GPS Beacon Ready</span>
+                  </span>
+                  <span class="text-indigo-600 font-bold text-[11px]">ARMED</span>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== GOLDEN HOUR EMERGENCY JOURNEY ==================== -->
+    <section id="how-it-works" class="px-4 sm:px-8 py-20 bg-slate-900 text-slate-100 relative overflow-hidden">
+      <!-- Dark Mesh Glow -->
+      <div class="absolute -top-40 right-0 w-96 h-96 bg-rose-600/15 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-40 left-0 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="max-w-7xl mx-auto relative z-10">
+        
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 text-xs font-extrabold tracking-widest uppercase mb-3 border border-rose-500/30">
+            <span class="material-symbols-outlined text-sm">timer</span> THE GOLDEN HOUR PROTOCOL
+          </span>
+          <h2 class="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
+            Engineered for the critical minutes that determine survival.
+          </h2>
+          <p class="text-slate-400 text-base mt-4 font-normal">
+            When a patient is unresponsive, traditional EHR portals fail. LifeQR bridges the gap instantly.
+          </p>
+        </div>
+
+        <!-- 4-Step Golden Hour Progression Grid -->
+        <div class="grid md:grid-cols-4 gap-6">
+          
+          <!-- Step 1 -->
+          <div class="bezel-hud-shell">
+            <div class="bezel-hud-core p-6 space-y-4">
+              <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <span class="material-symbols-outlined text-2xl">qr_code_scanner</span>
+              </div>
+              <span class="text-[10px] font-extrabold uppercase tracking-widest text-indigo-400 block">Step 01 • Instant Scan</span>
+              <h3 class="font-display text-lg font-bold text-white">Zero-App QR Triage</h3>
+              <p class="text-slate-400 text-xs leading-relaxed">
+                Bystander or paramedic points standard camera at the badge or lockscreen. Immediate decrypted vitals load in 2.8s.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="bezel-hud-shell">
+            <div class="bezel-hud-core p-6 space-y-4">
+              <div class="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                <span class="material-symbols-outlined text-2xl">warning</span>
+              </div>
+              <span class="text-[10px] font-extrabold uppercase tracking-widest text-rose-400 block">Step 02 • Allergy Warning</span>
+              <h3 class="font-display text-lg font-bold text-white">Contraindication Guard</h3>
+              <p class="text-slate-400 text-xs leading-relaxed">
+                Prevents fatal medication errors. Attending medics immediately spot severe drug allergies and pre-existing conditions.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="bezel-hud-shell">
+            <div class="bezel-hud-core p-6 space-y-4">
+              <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <span class="material-symbols-outlined text-2xl">location_on</span>
+              </div>
+              <span class="text-[10px] font-extrabold uppercase tracking-widest text-cyan-400 block">Step 03 • Real-Time SOS</span>
+              <h3 class="font-display text-lg font-bold text-white">Live GPS Broadcast</h3>
+              <p class="text-slate-400 text-xs leading-relaxed">
+                1-tap distress broadcast sends pinpoint latitude & longitude coordinates to nearest registered emergency crews and ICE contacts.
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="bezel-hud-shell">
+            <div class="bezel-hud-core p-6 space-y-4">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <span class="material-symbols-outlined text-2xl">local_hospital</span>
+              </div>
+              <span class="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400 block">Step 04 • ER Handover</span>
+              <h3 class="font-display text-lg font-bold text-white">Trauma Bay Sync</h3>
+              <p class="text-slate-400 text-xs leading-relaxed">
+                Paramedics stream pre-arrival vital signs straight into the hospital ER dashboard for zero-delay trauma bay prep.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== ASYMMETRICAL ECOSYSTEM BENTO ==================== -->
+    <section id="features" class="px-4 sm:px-8 py-24 max-w-7xl mx-auto">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <span class="text-xs font-extrabold tracking-widest text-indigo-600 uppercase mb-2 block">COMPLETE EMERGENCY ECOSYSTEM</span>
+        <h2 class="font-display text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+          Everything first responders and patients need.
+        </h2>
+        <p class="text-slate-600 text-base mt-3">
+          Designed with clinical precision to eliminate ambiguity when every heartbeat matters.
+        </p>
+      </div>
+
+      <!-- Asymmetrical Bento Grid -->
+      <div class="grid md:grid-cols-12 gap-6">
+        
+        <!-- Large Card 1: Zero-App Bystander Access (Col 8) -->
+        <div class="md:col-span-8 bezel-shell">
+          <div class="bezel-core p-8 flex flex-col justify-between h-full space-y-6">
+            <div class="space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                <span class="material-symbols-outlined text-2xl">no_accounts</span>
+              </div>
+              <h3 class="font-display text-2xl font-bold text-slate-900">Zero App Installation Barrier</h3>
+              <p class="text-slate-600 text-sm leading-relaxed max-w-xl">
+                Bystanders and first responders do not need to download an app or create an account. Scanning the QR code instantly displays verified blood type, critical allergies, and one-tap emergency calling for family members.
+              </p>
+            </div>
+            <div class="flex items-center gap-4 pt-4 border-t border-slate-100 text-xs text-slate-500 font-semibold">
+              <span class="flex items-center gap-1 text-emerald-600"><span class="material-symbols-outlined text-sm">check_circle</span> Universal iOS &amp; Android Support</span>
+              <span class="flex items-center gap-1 text-indigo-600"><span class="material-symbols-outlined text-sm">lock</span> HIPAA Compliant Field Masking</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Wallet Card & Printable ID (Col 4) -->
+        <div class="md:col-span-4 bezel-shell">
+          <div class="bezel-core p-8 flex flex-col justify-between h-full space-y-6">
+            <div class="space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
+                <span class="material-symbols-outlined text-2xl">badge</span>
+              </div>
+              <h3 class="font-display text-xl font-bold text-slate-900">Printable Wallet Badge</h3>
+              <p class="text-slate-600 text-xs leading-relaxed">
+                Generate high-resolution credit-card sized physical emergency badges for your wallet, keychain, or vehicle visor.
+              </p>
+            </div>
+            <a href="../app/lifeqr_signup.html" class="text-xs font-bold text-rose-600 flex items-center gap-1 hover:underline">
+              Generate Printable Badge &rarr;
+            </a>
+          </div>
+        </div>
+
+        <!-- Card 3: Multi-Language Field Triage (Col 4) -->
+        <div class="md:col-span-4 bezel-shell">
+          <div class="bezel-core p-8 flex flex-col justify-between h-full space-y-6">
+            <div class="space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-cyan-50 border border-cyan-100 flex items-center justify-center text-cyan-600">
+                <span class="material-symbols-outlined text-2xl">translate</span>
+              </div>
+              <h3 class="font-display text-xl font-bold text-slate-900">Multi-Language Field Triage</h3>
+              <p class="text-slate-600 text-xs leading-relaxed">
+                Instant translation into English, Hindi, Kannada, Tamil, and Spanish ensures critical details are understood globally.
+              </p>
+            </div>
+            <span class="text-[10px] font-bold text-cyan-700 uppercase tracking-wider">5 Languages Supported</span>
+          </div>
+        </div>
+
+        <!-- Large Card 4: Paramedic Night HUD & ER Live Telemetry (Col 8) -->
+        <div class="md:col-span-8 bezel-shell">
+          <div class="bezel-core p-8 flex flex-col justify-between h-full space-y-6">
+            <div class="space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                <span class="material-symbols-outlined text-2xl">airport_shuttle</span>
+              </div>
+              <h3 class="font-display text-2xl font-bold text-slate-900">Tactical Responder Portal &amp; Live ER Stream</h3>
+              <p class="text-slate-600 text-sm leading-relaxed max-w-xl">
+                Ambulance crews access high-contrast night HUD dashboards with built-in camera QR scanner, live GPS telemetry radar, and instant ER pre-arrival handover notifications.
+              </p>
+            </div>
+            <div class="flex items-center gap-4 pt-4 border-t border-slate-100 text-xs text-slate-500 font-semibold">
+              <span class="flex items-center gap-1 text-emerald-600"><span class="material-symbols-outlined text-sm">sensors</span> Socket.IO Sub-second Sync</span>
+              <span class="flex items-center gap-1 text-slate-700"><span class="material-symbols-outlined text-sm">map</span> Live Dispatch Radius</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== CALL TO ACTION SECTION ==================== -->
+    <section class="px-4 sm:px-8 py-20 max-w-6xl mx-auto">
+      <div class="bezel-hud-shell">
+        <div class="bezel-hud-core p-10 sm:p-16 text-center space-y-8 relative overflow-hidden">
+          
+          <div class="max-w-2xl mx-auto space-y-4 relative z-10">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider border border-rose-500/30">
+              FREE FOR ALL CITIZENS
+            </span>
+            <h2 class="font-display text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+              Protect yourself and your family in under 2 minutes.
+            </h2>
+            <p class="text-slate-300 text-sm sm:text-base">
+              Set up your encrypted emergency profile today. Free forever for patients.
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
+            <a href="../app/lifeqr_signup.html" class="btn-island btn-island-primary">
+              <span>Create Free LifeQR Badge</span>
+              <span class="btn-icon-bubble">
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+              </span>
+            </a>
+            <a href="../app/lifeqr_login.html" class="btn-island btn-island-secondary">
+              <span>Sign In to Existing Account</span>
+              <span class="btn-icon-bubble">
+                <span class="material-symbols-outlined text-sm">login</span>
+              </span>
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== LUXURY FOOTER ==================== -->
+  <footer class="bg-slate-950 text-slate-400 py-16 px-4 sm:px-8 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto grid md:grid-cols-12 gap-10">
+      
+      <!-- Brand column -->
+      <div class="md:col-span-5 space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
+            <span class="material-symbols-outlined text-2xl">qr_code_2</span>
+          </div>
+          <span class="font-display font-black text-2xl text-white">LifeQR</span>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-400 max-w-sm leading-relaxed">
+          Critical medical emergency identity network. Sub-second QR triage access and real-time paramedic GPS dispatch coordination.
+        </p>
+        <div class="flex items-center gap-2 pt-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span class="text-xs font-semibold text-slate-300">All Emergency Services Operational</span>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="md:col-span-3 space-y-3">
+        <h4 class="font-display text-xs font-extrabold text-slate-200 uppercase tracking-widest">Emergency Portals</h4>
+        <ul class="space-y-2 text-xs">
+          <li><a href="../app/patient_dashboard.html" class="hover:text-white transition">Patient Dashboard</a></li>
+          <li><a href="../app/CrewAmbulance_dashboard.html" class="hover:text-white transition">Ambulance Crew Dispatch</a></li>
+          <li><a href="../app/doctor_dashboard.html" class="hover:text-white transition">Doctor Clinical Decision Portal</a></li>
+          <li><a href="../app/er_dashboard.html" class="hover:text-white transition">Hospital ER Live Bay</a></li>
+        </ul>
+      </div>
+
+      <!-- Compliance & Security -->
+      <div class="md:col-span-4 space-y-3">
+        <h4 class="font-display text-xs font-extrabold text-slate-200 uppercase tracking-widest">Security &amp; Legal</h4>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          LifeQR utilizes client-side verified masking and TLS 1.3 encryption. For life-threatening emergencies, always dial 911 or 112 directly.
+        </p>
+        <p class="text-xs text-slate-600 pt-4">
+          © 2025-2026 LifeQR Emergency Network. All rights reserved.
+        </p>
+      </div>
+
+    </div>
+  </footer>
+
+  <script>
+    // Mobile drawer toggle logic
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const closeBtn = document.getElementById('closeDrawerBtn');
+    const drawer = document.getElementById('mobileDrawer');
+    const links = document.querySelectorAll('.close-drawer-link');
+
+    if (mobileBtn && drawer) {
+      mobileBtn.addEventListener('click', () => {
+        drawer.classList.remove('closed');
+      });
+    }
+    if (closeBtn && drawer) {
+      closeBtn.addEventListener('click', () => {
+        drawer.classList.add('closed');
+      });
+    }
+    links.forEach(link => {
+      link.addEventListener('click', () => {
+        if (drawer) drawer.classList.add('closed');
+      });
+    });
+  </script>
+
+</body>
+</html>

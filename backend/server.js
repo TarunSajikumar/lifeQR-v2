@@ -12,40 +12,34 @@ const cookieParser = require("cookie-parser");
 const socketIo = require("socket.io");
 const jwt = require("jsonwebtoken");
 const { getFrontendUrl, isSecureUrl } = require("./utils/frontendUrl");
-require("dotenv").config();
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const app = express();
 app.set('trust proxy', 1);
 
 // Security Headers with Helmet
 app.use(helmet({
+  crossOriginResourcePolicy: false,
+  crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
+    useDefaults: true,
     directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      defaultSrc: ["'self'", "*"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
       scriptSrcAttr: ["'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://fonts.material.com", "https://fonts.googleapis.com/css2"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "blob:", "https://lifeqr-new.onrender.com"],
-      connectSrc: ["'self'", "https://lifeqr-new.onrender.com", "ws:", "wss:", "http://localhost:5000", "https://localhost:5000"]
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://fonts.material.com", "https://fonts.googleapis.com/css2", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
+      connectSrc: ["'self'", "https:", "http:", "ws:", "wss:"],
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' && isSecureUrl(getFrontendUrl()) ? [] : null
     }
   }
 }));
 
-// CORS Configuration
-const allowedOrigins = [
-  getFrontendUrl(),
-  "https://lifeqr-new.onrender.com",
-  "http://localhost:5000",
-  "https://localhost:5000"
-];
+// CORS Configuration - Allow local network IPs, localhost, and production domains
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    callback(null, true);
   },
   credentials: true
 }));
@@ -65,10 +59,47 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ limit: '50kb', extended: true }));
 app.use(cookieParser());
 
-// Serve static files from frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
+// Live Reload Clients list for local development
+let devClients = [];
+
+// Run two-way frontend directory sync on server boot & start watcher
+try {
+  const { syncAll, startWatcher } = require("../scripts/sync-frontend");
+  syncAll();
+  startWatcher((file) => {
+    // Notify all connected development clients to reload
+    devClients.forEach(client => {
+      try {
+        client.write(`data: ${file}\n\n`);
+      } catch (err) {
+        // Handle closed connection errors gracefully
+      }
+    });
+  });
+} catch (syncErr) {
+  console.warn("[Frontend Sync Warning]", syncErr.message);
+}
+
+// Serve static files from app and website directories
+app.use('/app', express.static(path.join(__dirname, '../app')));
+app.use(express.static(path.join(__dirname, '../app')));
+app.use(express.static(path.join(__dirname, '../website')));
 app.use('/uploads/photos', (req, res) => {
   res.status(404).json({ error: 'Photo access is restricted and not publicly available' });
+});
+
+// Development Live Reload endpoint (Event Stream)
+app.get('/api/v1/dev-live-reload', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  devClients.push(res);
+
+  req.on('close', () => {
+    devClients = devClients.filter(c => c !== res);
+  });
 });
 
 // API Version 1 Routes
@@ -81,9 +112,15 @@ const doctorAccessRoutes = require("./routes/v1/doctorAccess");
 const adminRoutes = require("./routes/v1/admin");
 const verificationRoutes = require("./routes/v1/verification");
 const emergencyCredentialRoutes = require("./routes/v1/emergencyCredentials");
+const erHandoverRoutes = require("./routes/v1/erHandover");
+const patientAppRoutes = require("./routes/v1/patientApp");
+const aiClinicalRoutes = require("./routes/v1/aiClinical");
+const doctorDecisionTreeRoutes = require("./routes/v1/doctorDecisionTree");
+const hospitalRoutes = require("./routes/v1/hospitals");
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/patient", patientProfileRoutes);
+app.use("/api/v1/patient-app", patientAppRoutes);
 app.use("/api/v1/sos", sosRoutes);
 app.use("/api/v1/reports", reportsRoutes);
 app.use("/api/v1/history", medicalHistoryRoutes);
@@ -92,9 +129,25 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/verification", verificationRoutes);
 app.use("/api/v1/emergency-credentials", emergencyCredentialRoutes);
 app.use("/api/v1/emergency-access", emergencyCredentialRoutes);
+app.use("/api/v1/er", erHandoverRoutes);
+app.use("/api/v1/ai-clinical", aiClinicalRoutes);
+app.use("/api/v1/doctor-decision-tree", doctorDecisionTreeRoutes);
+app.use("/api/v1/hospitals", hospitalRoutes);
+
+// Public configuration endpoint for frontend (OneSignal, etc)
+app.get("/api/v1/config", (req, res) => {
+  res.json({
+    oneSignalAppId: process.env.ONESIGNAL_APP_ID || null,
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
 app.get('/e/:token', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/emergency_access.html'));
+  res.sendFile(path.join(__dirname, '../app/emergency_access.html'));
+});
+
+app.get('/patient-app', (req, res) => {
+  res.sendFile(path.join(__dirname, '../app/patient_app.html'));
 });
 
 // Health check route
@@ -119,9 +172,9 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// Serve frontend for all other routes (SPA support)
+// Serve website index for all other routes (SPA support)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+  res.sendFile(path.join(__dirname, '../website/index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
@@ -181,7 +234,7 @@ const startServer = async () => {
     // Integrate Socket.IO with server instance
     const io = socketIo(server, {
       cors: {
-        origin: allowedOrigins,
+        origin: (origin, callback) => { callback(null, true); },
         credentials: true
       }
     });
@@ -229,10 +282,13 @@ const startServer = async () => {
         socket.join(`patient:${userId}`);
       } else if (role === 'doctor') {
         socket.join(`doctor:${userId}`);
+        socket.join('hospital:er');
       } else if (role === 'crew') {
         socket.join('crew:all');
+        socket.join('hospital:er');
       } else if (role === 'admin') {
         socket.join('admin:all');
+        socket.join('hospital:er');
       }
 
       socket.on('disconnect', () => {

@@ -1,0 +1,514 @@
+/* LifeQR - Elite Agency Design System */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Brand Palettes */
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-light: rgba(79, 70, 229, 0.08);
+  --primary-glow: rgba(99, 102, 241, 0.35);
+
+  --secondary: #06b6d4;
+  --secondary-glow: rgba(6, 182, 212, 0.3);
+
+  --emergency: #e11d48;
+  --emergency-hover: #be123c;
+  --emergency-light: rgba(225, 29, 72, 0.1);
+  --emergency-glow: rgba(225, 29, 72, 0.4);
+
+  --success: #10b981;
+  --success-light: rgba(16, 185, 129, 0.1);
+
+  --warning: #f59e0b;
+  --warning-light: rgba(245, 158, 11, 0.1);
+
+  /* Surface Neutrals (Daylight) */
+  --bg-surface: #f8fafc;
+  --bg-surface-elevated: #ffffff;
+  --border-subtle: rgba(226, 232, 240, 0.9);
+  --border-highlight: rgba(79, 70, 229, 0.18);
+  
+  /* Text */
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* Easings */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Dark Mode Tokens */
+[data-theme="dark"], .dark-mode, .theme-hud {
+  --bg-surface: #070b14;
+  --bg-surface-elevated: #0f172a;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-highlight: rgba(99, 102, 241, 0.35);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+}
+
+/* Base resets & typography */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  background-color: var(--bg-surface);
+  color: var(--text-main);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Display & Headline Typography */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+h1, h2, h3, h4, .headline-tight {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+/* Specular Atmospheric Background Mesh */
+.ambient-mesh {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.ambient-mesh::before {
+  content: '';
+  position: absolute;
+  top: -15%;
+  left: 10%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.12) 0%, transparent 70%);
+  filter: blur(80px);
+  animation: pulseMesh 14s infinite alternate ease-in-out;
+}
+
+.ambient-mesh::after {
+  content: '';
+  position: absolute;
+  bottom: 10%;
+  right: 5%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(225, 29, 72, 0.08) 0%, transparent 70%);
+  filter: blur(80px);
+  animation: pulseMesh 18s infinite alternate-reverse ease-in-out;
+}
+
+@keyframes pulseMesh {
+  0% { transform: scale(1) translate(0, 0); }
+  50% { transform: scale(1.15) translate(30px, -20px); }
+  100% { transform: scale(0.95) translate(-20px, 30px); }
+}
+
+/* ==========================================================================
+   DOUBLE-BEZEL (DOPPELRAND) ARCHITECTURE
+   ========================================================================== */
+.bezel-shell {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 6px;
+  border-radius: 2rem;
+  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.07), 0 1px 3px rgba(0, 0, 0, 0.02);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.4s var(--ease-spring);
+}
+
+.bezel-shell:hover {
+  border-color: rgba(79, 70, 229, 0.25);
+  box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.12);
+}
+
+.bezel-core {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: calc(2rem - 6px);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Dark Tactical HUD Bezel */
+.bezel-hud-shell {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px;
+  border-radius: 2rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.4s var(--ease-spring);
+}
+
+.bezel-hud-shell:hover {
+  border-color: rgba(225, 29, 72, 0.35);
+  box-shadow: 0 30px 60px -15px rgba(225, 29, 72, 0.2);
+}
+
+.bezel-hud-core {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: calc(2rem - 6px);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Glass Card Utility */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.06);
+  transition: all 0.3s var(--ease-spring);
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.1);
+}
+
+.glass-card-dark {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.5);
+}
+
+/* ==========================================================================
+   BUTTON-IN-BUTTON & ISLAND CTA ARCHITECTURE
+   ========================================================================== */
+.btn-island {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 24px;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  transition: all 0.3s var(--ease-spring);
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-island:active {
+  transform: scale(0.97);
+}
+
+.btn-island-primary {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+}
+
+.btn-island-primary:hover {
+  box-shadow: 0 15px 30px -5px rgba(79, 70, 229, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-island-emergency {
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 25px -5px rgba(225, 29, 72, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+}
+
+.btn-island-emergency:hover {
+  box-shadow: 0 15px 35px -5px rgba(225, 29, 72, 0.6);
+  transform: translateY(-1px);
+}
+
+.btn-island-secondary {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.btn-island-secondary:hover {
+  border-color: rgba(79, 70, 229, 0.3);
+  background: #f8fafc;
+}
+
+.btn-icon-bubble {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  transition: transform 0.3s var(--ease-spring);
+}
+
+.btn-island:hover .btn-icon-bubble {
+  transform: translateX(3px) scale(1.05);
+}
+
+.btn-island-secondary .btn-icon-bubble {
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--primary);
+}
+
+/* ==========================================================================
+   SCANNER LASER & HUD MICRO-ANIMATIONS
+   ========================================================================== */
+.scanner-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+}
+
+.scanner-laser {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, #f43f5e 20%, #ffffff 50%, #f43f5e 80%, transparent 100%);
+  box-shadow: 0 0 16px 4px rgba(244, 63, 94, 0.7);
+  animation: laserScan 3s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 20;
+}
+
+@keyframes laserScan {
+  0% { top: 4%; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { top: 96%; opacity: 0; }
+}
+
+/* Radar Pulse for Real-time SOS Feeds */
+.radar-pulse {
+  position: relative;
+}
+
+.radar-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 2px solid var(--emergency);
+  animation: radarRing 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes radarRing {
+  0% { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ==========================================================================
+   PRINTABLE WALLET CARD STYLES
+   ========================================================================== */
+.wallet-card-container {
+  width: 85.6mm;
+  height: 53.98mm;
+  padding: 4mm;
+  background: #ffffff;
+  border: 1.5px solid var(--primary);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 3.5mm;
+  color: #0f172a;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-size: 11px;
+  position: relative;
+}
+
+.wallet-card-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--emergency) 0%, var(--primary) 100%);
+}
+
+.wallet-card-qr {
+  width: 32mm;
+  height: 32mm;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+/* Print CSS Rules */
+@media print {
+  body {
+    background: none !important;
+    color: #000000 !important;
+  }
+  
+  header, footer, nav, button, .no-print {
+    display: none !important;
+  }
+
+  .print-page {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  .wallet-card-print {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+    border: 1px solid #000 !important;
+    page-break-inside: avoid;
+  }
+}
+
+/* ==========================================================================
+   TOAST NOTIFICATIONS
+   ========================================================================== */
+.toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+  width: calc(100% - 48px);
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 1.25rem;
+  background: #ffffff;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.15);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  transform: translateY(-20px);
+  opacity: 0;
+  animation: slideToast 0.4s forwards var(--ease-spring);
+  transition: all 0.3s var(--ease-spring);
+}
+
+@keyframes slideToast {
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.toast.toast-success {
+  border-left: 5px solid var(--success);
+  background: #f0fdf4;
+  color: #065f46;
+}
+
+.toast.toast-error {
+  border-left: 5px solid var(--emergency);
+  background: #fff1f2;
+  color: #9f1239;
+}
+
+.toast.toast-warning {
+  border-left: 5px solid var(--warning);
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.toast.toast-info {
+  border-left: 5px solid var(--primary);
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.toast.toast-emergency {
+  border-left: 5px solid var(--emergency);
+  background: var(--emergency);
+  color: #ffffff;
+  animation: pulseToastAlert 2s infinite;
+}
+
+@keyframes pulseToastAlert {
+  0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.5); }
+  70% { box-shadow: 0 0 0 16px rgba(225, 29, 72, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+}
+
+/* ==========================================================================
+   SKELETON LOADERS
+   ========================================================================== */
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: loadingSkeleton 1.6s infinite ease-in-out;
+  border-radius: 1rem;
+}
+
+.skeleton-dark {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: loadingSkeleton 1.6s infinite ease-in-out;
+  border-radius: 1rem;
+}
+
+@keyframes loadingSkeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Focus and Accessibility */
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.35);
+}
+
+::selection {
+  background: rgba(79, 70, 229, 0.2);
+  color: #0f172a;
+}
+
+/* Mobile App Navigation Utilities */
+.mobile-drawer {
+  transition: transform 0.4s var(--ease-spring), opacity 0.3s ease;
+}
+.mobile-drawer.closed {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .toast-container { right: 16px; left: 16px; width: auto; }
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}

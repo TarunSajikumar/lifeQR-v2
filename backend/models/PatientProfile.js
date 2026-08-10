@@ -116,6 +116,4 @@ const patientProfileSchema = new mongoose.Schema({
   timestamps: true
 });
 
-patientProfileSchema.index({ qrCodeId: 1 });
-
 module.exports = mongoose.model("PatientProfile", patientProfileSchema);

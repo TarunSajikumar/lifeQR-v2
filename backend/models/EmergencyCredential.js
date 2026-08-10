@@ -4,8 +4,7 @@ const emergencyCredentialSchema = new mongoose.Schema({
   patientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'PatientProfile',
-    required: true,
-    index: true
+    required: true
   },
   credentialType: {
     type: String,
@@ -15,8 +14,7 @@ const emergencyCredentialSchema = new mongoose.Schema({
   tokenHash: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   tokenPrefix: {
     type: String,

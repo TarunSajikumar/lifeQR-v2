@@ -4,6 +4,7 @@ const PatientProfile = require('../../models/PatientProfile');
 const { authenticateToken } = require('../../middleware/auth');
 const { logEvent } = require('../../services/securityLogger');
 const { sendEmail } = require('../../services/emailService');
+const { sendNotification } = require('../../services/notificationService');
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ router.post('/sos', authenticateToken, async (req, res) => {
     
     await profile.save();
 
-    // Broadcast SOS event to verified crew members only
+    // 1. Real-time Socket Broadcast (Crew Dashboards)
     const io = req.app.get('io');
     if (io) {
       io.to('crew:all').emit('sos-alert', {
@@ -62,10 +63,21 @@ router.post('/sos', authenticateToken, async (req, res) => {
         emergencyContacts: profile.emergencyContacts,
         timestamp: new Date()
       });
-      console.log('📶 Real-time SOS alert sent to crew room via Socket.IO');
     }
 
-    // Trigger emails to emergency contacts
+    // 2. Multi-Channel Free Alerts (Telegram & OneSignal Push)
+    sendNotification({
+      type: 'SOS',
+      payload: {
+        name: patient.name,
+        message: sosAlert.message,
+        location: { lat, lng },
+        contacts: profile.emergencyContacts,
+        patientId: patient._id
+      }
+    });
+
+    // 3. Email Backup
     profile.emergencyContacts.forEach(contact => {
       // If contact has email details (for simplicity we check phone or assume mock notification flow)
       // Here we simulate alert dispatch using their phone or email if stored.

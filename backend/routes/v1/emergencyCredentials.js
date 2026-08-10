@@ -10,7 +10,17 @@ const { authenticateToken } = require('../../middleware/auth');
 const { getFrontendUrl } = require('../../utils/frontendUrl');
 const { logEvent } = require('../../services/securityLogger');
 
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
+
+// Rate limiting for emergency token resolution (brute force protection)
+const emergencyLookupLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20, // limit each IP to 20 lookups per hour
+  message: "Too many emergency access attempts. Please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 function createToken() {
   return crypto.randomBytes(32).toString('hex');
@@ -248,7 +258,7 @@ router.get('/:token/photo', async (req, res) => {
   }
 });
 
-router.get('/:token', async (req, res) => {
+router.get('/:token', emergencyLookupLimiter, async (req, res) => {
   try {
     const token = req.params.token;
     if (!token) {

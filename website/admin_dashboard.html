@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="/manifest.json">
+  <title>System Administration & Audit | LifeQR</title>
+  
+  <!-- Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="stylesheet" href="dist/output.css">
+  <link rel="stylesheet" href="styles.css">
+  
+  <script src="js/toast.js"></script>
+  <script src="js/auth-guard.js"></script>
+  <script src="js/pwa-install.js"></script>
+  <script src="js/admin-dashboard.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col antialiased relative overflow-x-hidden selection:bg-indigo-500 selection:text-white">
+  
+  <!-- Ambient Specular Background -->
+  <div class="ambient-mesh"></div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 px-4 sm:px-8 py-3.5 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 shadow-xs">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-800 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+          <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+        </div>
+        <span class="font-display text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-indigo-800 bg-clip-text text-transparent">LifeQR Admin</span>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <span class="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-extrabold rounded-full tracking-wider">ADMINISTRATOR</span>
+        <span class="hidden sm:inline text-xs text-slate-600 font-semibold">Admin: <strong id="userName" class="text-slate-900">Manager</strong></span>
+        <button onclick="logout()" class="text-xs text-rose-600 hover:text-rose-700 font-bold px-3 py-1.5 rounded-xl hover:bg-rose-50 transition flex items-center gap-1">
+          <span class="material-symbols-outlined text-base">logout</span>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative z-10 flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl mx-auto w-full space-y-6">
+    
+    <!-- Page Header -->
+    <div class="mb-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-extrabold mb-2 shadow-xs">
+        <span class="material-symbols-outlined text-sm">settings_suggest</span> INFRASTRUCTURE COMMAND
+      </div>
+      <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Systems Administration</h2>
+      <p class="text-xs sm:text-sm text-slate-500 font-medium">Manage user accounts, review practitioner credentials, and monitor system metrics.</p>
+    </div>
+
+    <!-- Analytics Stats Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 font-tabular">
+      <div class="bezel-shell">
+        <div class="bezel-core p-4 text-center">
+          <p class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Total Users</p>
+          <p class="font-display text-2xl font-black text-indigo-600 mt-1" id="statTotalUsers">0</p>
+        </div>
+      </div>
+      <div class="bezel-shell">
+        <div class="bezel-core p-4 text-center">
+          <p class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Patients</p>
+          <p class="font-display text-2xl font-black text-indigo-800 mt-1" id="statPatients">0</p>
+        </div>
+      </div>
+      <div class="bezel-shell">
+        <div class="bezel-core p-4 text-center">
+          <p class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Doctors</p>
+          <p class="font-display text-2xl font-black text-teal-600 mt-1" id="statDoctors">0</p>
+        </div>
+      </div>
+      <div class="bezel-shell">
+        <div class="bezel-core p-4 text-center">
+          <p class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Paramedics</p>
+          <p class="font-display text-2xl font-black text-rose-600 mt-1" id="statCrew">0</p>
+        </div>
+      </div>
+      <div class="bezel-shell">
+        <div class="bezel-core p-4 text-center">
+          <p class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">QR Scans</p>
+          <p class="font-display text-2xl font-black text-emerald-600 mt-1" id="statTotalScans">0</p>
+        </div>
+      </div>
+      <div class="bezel-shell">
+        <div class="bezel-core p-4 text-center">
+          <p class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Pending Queue</p>
+          <p class="font-display text-2xl font-black text-amber-600 mt-1" id="statPendingVerifications">0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="flex items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
+      <button onclick="switchTab('users')" id="tabUsers" class="px-5 py-2.5 rounded-full text-xs font-bold transition-all shadow-xs bg-indigo-600 text-white cursor-pointer">
+        User Accounts Management
+      </button>
+      <button onclick="switchTab('verifications')" id="tabVerifications" class="px-5 py-2.5 rounded-full text-xs font-bold transition-all shadow-xs bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 cursor-pointer">
+        Professional Verification Queue
+      </button>
+    </div>
+
+    <!-- User Management Table Card -->
+    <div id="sectionUsers" class="bezel-shell">
+      <div class="bezel-core p-6 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <h3 class="font-display text-sm font-bold text-slate-800 flex items-center gap-2">
+            <span class="material-symbols-outlined text-indigo-600">manage_accounts</span>
+            <span>Registered Users Directory</span>
+          </h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 text-slate-400 text-[10px] uppercase font-extrabold tracking-wider">
+                <th class="p-3">#</th>
+                <th class="p-3">User Details</th>
+                <th class="p-3">System Role</th>
+                <th class="p-3">Registration Date</th>
+                <th class="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody" class="divide-y divide-slate-100 text-xs">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verification Queue Card -->
+    <div id="sectionVerifications" class="hidden bezel-shell">
+      <div class="bezel-core p-6 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <h3 class="font-display text-sm font-bold text-slate-800 flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-600">verified_user</span>
+            <span>Doctor &amp; Ambulance Crew Verification</span>
+          </h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 text-slate-400 text-[10px] uppercase font-extrabold tracking-wider">
+                <th class="p-3">Practitioner</th>
+                <th class="p-3">Role</th>
+                <th class="p-3">Uploaded Credentials</th>
+                <th class="p-3">Status</th>
+                <th class="p-3 text-right">Review Actions</th>
+              </tr>
+            </thead>
+            <tbody id="verificationsTableBody" class="divide-y divide-slate-100 text-xs">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>

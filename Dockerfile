@@ -13,9 +13,10 @@ RUN npm install --production
 # Copy backend files
 COPY backend/ .
 
-# Copy frontend files
+# Copy app and website static files
 WORKDIR /app
-COPY frontend/ ./frontend/
+COPY app/ ./app/
+COPY website/ ./website/
 
 # Expose port
 EXPOSE 5000

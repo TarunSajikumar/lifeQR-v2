@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#070b14">
+  <link rel="manifest" href="/manifest.json">
+  <title>Hospital ER Trauma Command Center | LifeQR</title>
+  
+  <!-- Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="stylesheet" href="dist/output.css">
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Leaflet Maps API -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/auth-guard.js"></script>
+  <script src="js/pwa-install.js"></script>
+  <script src="js/er-dashboard.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased relative overflow-x-hidden selection:bg-rose-500 selection:text-white theme-hud">
+  
+  <!-- Ambient Specular Glow -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute -top-32 left-1/4 w-96 h-96 bg-rose-600/15 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-10 right-10 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 px-4 sm:px-8 py-3.5 bg-slate-900/90 backdrop-blur-xl border-b border-rose-500/30 shadow-xl">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-600 to-red-700 flex items-center justify-center text-white shadow-lg shadow-rose-950/80">
+          <span class="material-symbols-outlined text-2xl animate-pulse">local_hospital</span>
+        </div>
+        <div>
+          <h1 class="font-display text-lg sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-2 leading-none">
+            LifeQR <span class="text-rose-400 font-bold text-xs uppercase px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30">ER COMMAND</span>
+          </h1>
+          <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider hidden sm:block">Pre-Hospital In-Transit Triage &amp; Trauma Bay Sync</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-4">
+        <span class="px-3 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-extrabold rounded-full flex items-center gap-1.5 font-tabular">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          LIVE TELEMETRY STREAM
+        </span>
+        <span class="hidden sm:inline text-xs text-slate-400 font-medium">Triage Desk: <strong id="userName" class="text-white">Central ER Desk</strong></span>
+        <button onclick="logout()" class="text-xs text-rose-400 hover:text-rose-300 font-bold px-3 py-1.5 rounded-xl hover:bg-rose-500/10 transition flex items-center gap-1">
+          <span class="material-symbols-outlined text-base">logout</span>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative z-10 flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl mx-auto w-full space-y-6">
+    
+    <!-- Top Summary Metrics Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 font-tabular">
+      <div class="bezel-hud-shell">
+        <div class="bezel-hud-core p-4">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-1">
+            <span>INCOMING AMBULANCES</span>
+            <span class="material-symbols-outlined text-rose-400 text-lg">airport_shuttle</span>
+          </div>
+          <div id="metricIncomingCount" class="font-display text-2xl sm:text-4xl font-extrabold text-white">0</div>
+          <p class="text-[10px] text-slate-400 mt-1">En route to Trauma Center</p>
+        </div>
+      </div>
+
+      <div class="bezel-hud-shell">
+        <div class="bezel-hud-core p-4">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-1">
+            <span>CRITICAL RED ALERTS</span>
+            <span class="material-symbols-outlined text-rose-500 text-lg">warning</span>
+          </div>
+          <div id="metricCriticalCount" class="font-display text-2xl sm:text-4xl font-extrabold text-rose-500">0</div>
+          <p class="text-[10px] text-rose-400 mt-1 font-semibold">Immediate Triage Action</p>
+        </div>
+      </div>
+
+      <div class="bezel-hud-shell">
+        <div class="bezel-hud-core p-4">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-1">
+            <span>OPEN TRAUMA BAYS</span>
+            <span class="material-symbols-outlined text-emerald-400 text-lg">king_bed</span>
+          </div>
+          <div id="metricBaysOpen" class="font-display text-2xl sm:text-4xl font-extrabold text-emerald-400">3 / 4</div>
+          <p class="text-[10px] text-emerald-400 mt-1 font-semibold">Ready for Resuscitation</p>
+        </div>
+      </div>
+
+      <div class="bezel-hud-shell">
+        <div class="bezel-hud-core p-4">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-bold mb-1">
+            <span>AVG RESPONSE ETA</span>
+            <span class="material-symbols-outlined text-indigo-400 text-lg">timer</span>
+          </div>
+          <div id="metricAvgEta" class="font-display text-2xl sm:text-4xl font-extrabold text-indigo-300">8 Mins</div>
+          <p class="text-[10px] text-slate-400 mt-1">In-Transit Telemetry Active</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Layout Grid -->
+    <div class="grid lg:grid-cols-12 gap-6">
+      
+      <!-- Left 7 Columns: In-Transit Telemetry Cards -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-display text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-rose-500">sensors</span> Active In-Transit Ambulances
+          </h2>
+          <button onclick="loadIncomingAmbulances()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-1 border border-slate-700">
+            <span class="material-symbols-outlined text-sm">refresh</span> Refresh Feed
+          </button>
+        </div>
+
+        <div id="incomingContainer" class="space-y-4">
+          <div class="bezel-hud-shell">
+            <div class="bezel-hud-core p-8 text-center space-y-2">
+              <span class="material-symbols-outlined text-3xl text-slate-500 animate-spin">sync</span>
+              <p class="text-xs text-slate-400 font-medium">Connecting to Hospital ER Telemetry Stream...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right 5 Columns: Interactive Leaflet Live Route Map -->
+      <div class="lg:col-span-5 space-y-4">
+        <h2 class="font-display text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-indigo-400">map</span> Live Ambulance GPS Tracker
+        </h2>
+        
+        <div class="bezel-hud-shell">
+          <div class="bezel-hud-core p-4 space-y-3">
+            <div id="erMap" class="w-full h-80 rounded-2xl overflow-hidden border border-slate-800 z-0"></div>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium px-1">
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Ambulance Unit Location</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Hospital ER Trauma Center</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>

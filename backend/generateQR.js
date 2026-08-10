@@ -2,30 +2,34 @@ const mongoose = require("mongoose");
 const QRCode = require('qrcode');
 const User = require("./models/User");
 const { getFrontendUrl } = require('./utils/frontendUrl');
-require("dotenv").config();
+require("dotenv").config({ path: require('path').join(__dirname, '.env') });
 
-async function generateQRForDemoAccount() {
+async function generateQRForAccount(email) {
   try {
     const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/lifeqr';
-    
-    // Connect to MongoDB
+
     await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
-    
+
     console.log("✅ MongoDB Connected");
 
-    // Find the demo user
-    const user = await User.findOne({ email: "tarunsajikumar123@gmail.com" });
-    
+    const targetEmail = email || process.argv[2];
+    if (!targetEmail) {
+      console.error('❌ Provide a user email as an argument, for example: node generateQR.js user@example.com');
+      await mongoose.connection.close();
+      process.exit(1);
+    }
+
+    const user = await User.findOne({ email: targetEmail });
+
     if (!user) {
-      console.log("❌ User not found");
+      console.log(`❌ User not found for ${targetEmail}`);
       await mongoose.connection.close();
       return;
     }
 
-    // Generate QR code with URL that points to emergency access page
     const frontendUrl = getFrontendUrl();
     const qrUrl = `${frontendUrl}/emergency_access.html?id=${user.qrCodeId}`;
 
@@ -42,7 +46,6 @@ async function generateQRForDemoAccount() {
       }
     });
 
-    // Update user with QR code
     user.qrCode = qrCodeDataUrl;
     await user.save();
 
@@ -57,11 +60,11 @@ async function generateQRForDemoAccount() {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     await mongoose.connection.close();
-    console.log("\n✅ Done! Try logging in again to see the QR code");
+    console.log("\n✅ Done! The QR code is ready for the selected account.");
   } catch (error) {
     console.error("❌ Error generating QR code:", error.message);
     process.exit(1);
   }
 }
 
-generateQRForDemoAccount();
+generateQRForAccount();
