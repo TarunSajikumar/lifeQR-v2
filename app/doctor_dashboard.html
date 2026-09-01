@@ -6,9 +6,9 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#4f46e5">
+  <meta name="theme-color" content="#0d9488">
   <link rel="manifest" href="/manifest.json">
-  <title>Doctor Clinical Decision Portal | LifeQR</title>
+  <title>Physician Clinical Workstation | LifeQR</title>
   
   <!-- Fonts & Material Symbols -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,6 +20,7 @@
   
   <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.js"></script>
   <script src="qr-scanner.js"></script>
+  <script src="api-utils.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/auth-guard.js"></script>
   <script src="js/pwa-install.js"></script>
@@ -27,39 +28,68 @@
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col antialiased relative overflow-x-hidden selection:bg-teal-500 selection:text-white">
   
-  <!-- Ambient Specular Background -->
+  <!-- Ambient Specular Background Mesh -->
   <div class="ambient-mesh"></div>
 
-  <!-- Header -->
-  <header class="sticky top-0 z-40 px-4 sm:px-8 py-3.5 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 shadow-xs">
+  <!-- Floating Crystal Navigation Header -->
+  <header class="sticky top-0 z-40 px-4 sm:px-8 py-3.5 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 shadow-xs no-print">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
-      <a href="index.html" class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-teal-600 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-teal-200">
-          <span class="material-symbols-outlined text-xl">clinical_notes</span>
+      
+      <!-- Brand & Section Badge -->
+      <a href="index.html" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-600 via-teal-700 to-indigo-800 flex items-center justify-center text-white shadow-md shadow-teal-200 group-hover:scale-105 transition-transform">
+          <span class="material-symbols-outlined text-2xl">clinical_notes</span>
         </div>
-        <span class="font-display text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-teal-800 bg-clip-text text-transparent">LifeQR Clinical</span>
+        <div>
+          <span class="font-display font-black text-xl tracking-tight bg-gradient-to-r from-slate-900 via-teal-950 to-teal-700 bg-clip-text text-transparent block leading-none">LifeQR</span>
+          <span class="text-[9px] font-bold text-teal-700 uppercase tracking-widest leading-tight block">Clinical Decision Suite</span>
+        </div>
       </a>
       
-      <div class="flex items-center gap-3">
-        <span class="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-xs font-extrabold tracking-wider">DOCTOR PORTAL</span>
-        <span class="hidden sm:inline text-xs text-slate-600 font-semibold">Attending: <strong id="userName" class="text-slate-900">Dr. Staff</strong></span>
-        <button onclick="logout()" class="text-xs text-rose-600 hover:text-rose-700 font-bold px-3 py-1.5 rounded-xl hover:bg-rose-50 transition flex items-center gap-1">
+      <!-- Attending Doctor Status & Actions -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <!-- Live Clinical Node Badge -->
+        <div class="hidden md:flex items-center gap-2 px-3.5 py-1.5 bg-teal-50 border border-teal-200/80 rounded-full text-xs font-semibold text-teal-800">
+          <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
+          <span>Station: <strong class="text-slate-900">Workstation Online</strong></span>
+        </div>
+
+        <!-- Doctor Identity Badge -->
+        <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-100/90 border border-slate-200/80 rounded-full text-xs font-semibold text-slate-700">
+          <span class="w-6 h-6 rounded-full bg-teal-600 text-white flex items-center justify-center text-[10px] font-bold">Dr</span>
+          <span class="hidden sm:inline">Attending:</span>
+          <strong id="userName" class="text-slate-900">Dr. Staff</strong>
+        </div>
+        
+        <!-- Logout Action -->
+        <button onclick="logout()" class="text-xs text-rose-600 hover:text-rose-700 font-bold px-3.5 py-1.5 rounded-xl hover:bg-rose-50 border border-transparent hover:border-rose-200 transition flex items-center gap-1.5 cursor-pointer">
           <span class="material-symbols-outlined text-base">logout</span>
           <span class="hidden sm:inline">Logout</span>
         </button>
       </div>
+
     </div>
   </header>
 
   <main class="relative z-10 flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl mx-auto w-full">
     
-    <!-- Page Title -->
-    <div class="mb-8">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-100 text-teal-700 text-xs font-extrabold mb-2 shadow-xs">
-        <span class="material-symbols-outlined text-sm">psychology</span> CLINICAL DECISION CO-PILOT
+    <!-- Hero / Workspace Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-extrabold mb-2 shadow-xs">
+          <span class="material-symbols-outlined text-sm">psychology</span> CLINICAL CO-PILOT v2.5
+        </div>
+        <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Physician Clinical Workstation</h2>
+        <p class="text-xs sm:text-sm text-slate-500 font-medium">Review authorized patient medical records, analyze AI clinical summaries, and record diagnostic treatment entries.</p>
       </div>
-      <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Physician Clinical Workstation</h2>
-      <p class="text-xs sm:text-sm text-slate-500 font-medium">Review authorized patient medical records, analyze AI clinical summaries, and record treatment progress.</p>
+
+      <!-- Quick Session Indicator -->
+      <div class="hidden lg:flex items-center gap-3">
+        <div class="flex items-center gap-2 px-4 py-2 bg-white/80 border border-slate-200 rounded-2xl shadow-xs text-xs font-medium text-slate-600">
+          <span class="material-symbols-outlined text-teal-600 text-lg">verified</span>
+          <span>HIPAA &amp; Zero-Knowledge Audit Active</span>
+        </div>
+      </div>
     </div>
 
     <!-- Verification Status Alert Banner -->
@@ -73,27 +103,34 @@
         <!-- Search Patient Card -->
         <div class="bezel-shell">
           <div class="bezel-core p-6 space-y-4">
-            <h3 class="font-display text-sm font-bold text-slate-800 flex items-center gap-2">
-              <span class="material-symbols-outlined text-indigo-600">search</span>
-              <span>Patient Quick Access</span>
-            </h3>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 class="font-display text-sm font-bold text-slate-800 flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-base">search</span>
+                </span>
+                <span>Patient Quick Access</span>
+              </h3>
+              <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">FAST LOOKUP</span>
+            </div>
             
-            <div class="space-y-3">
+            <div class="space-y-3.5">
               <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Patient QR Code ID</label>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">Enter Patient QR Code ID</label>
                 <div class="flex gap-2">
                   <input 
                     type="text" 
                     id="patientQrId" 
                     placeholder="e.g. TAR-A1B2C3D4"
-                    class="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 font-mono text-xs font-semibold text-slate-800"
+                    class="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 font-mono text-xs font-semibold text-slate-800 transition"
+                    onkeydown="if(event.key==='Enter') searchPatient()"
                   >
-                  <button onclick="searchPatient()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
-                    Search
+                  <button onclick="searchPatient()" class="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1 cursor-pointer">
+                    <span>Search</span>
                   </button>
                 </div>
               </div>
 
+              <!-- Camera QR Scanner Button -->
               <button onclick="startQRScanner()" class="btn-island btn-island-primary w-full justify-center text-xs py-2.5">
                 <span>Scan Patient QR Camera</span>
                 <span class="btn-icon-bubble w-7 h-7">
@@ -109,122 +146,176 @@
           <div class="bezel-core p-6 space-y-4">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 class="font-display text-sm font-bold text-slate-800 flex items-center gap-2">
-                <span class="material-symbols-outlined text-teal-600">folder_shared</span>
+                <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-base">folder_shared</span>
+                </span>
                 <span>Authorized Patients</span>
               </h3>
-              <span class="text-[10px] font-bold text-teal-700 uppercase">ACTIVE CASES</span>
+              <span class="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full uppercase tracking-wider">ACTIVE CASES</span>
             </div>
-            <div id="authorizedPatientsList" class="space-y-2.5">
+            
+            <div id="authorizedPatientsList" class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
               <!-- Rendered dynamically -->
             </div>
           </div>
         </div>
+
       </div>
 
       <!-- Patient Details Display Panel (8 Columns) -->
       <div class="lg:col-span-8">
+        
+        <!-- Empty / Unselected State Prompt -->
+        <div id="patientDetailsEmptyPrompt" class="bezel-shell">
+          <div class="bezel-core p-12 text-center space-y-4">
+            <div class="w-16 h-16 rounded-3xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center mx-auto shadow-sm">
+              <span class="material-symbols-outlined text-3xl">medical_information</span>
+            </div>
+            <div class="max-w-md mx-auto space-y-1">
+              <h3 class="font-display text-lg font-bold text-slate-800">No Patient Record Selected</h3>
+              <p class="text-xs text-slate-500 font-medium">Search for a patient using their QR Code identifier or choose an authorized patient from your active cases on the left.</p>
+            </div>
+            <div class="pt-2 flex items-center justify-center gap-2 text-xs font-semibold text-teal-700">
+              <span class="material-symbols-outlined text-sm">qr_code_scanner</span>
+              <span>Ready for QR optical scanning or manual identifier lookup</span>
+            </div>
+          </div>
+        </div>
+
         <div id="patientDetailsPanel" class="hidden space-y-6">
           
           <!-- Skeleton State -->
-          <div id="patientSkeleton" class="bezel-shell h-96 skeleton"></div>
+          <div id="patientSkeleton" class="bezel-shell h-96 skeleton hidden"></div>
 
           <!-- Patient Profile Info -->
           <div id="patientContent" class="hidden space-y-6">
             
+            <!-- Patient Profile Identity Card -->
             <div class="bezel-shell">
-              <div class="bezel-core p-6 sm:p-8 space-y-4">
-                <div class="flex items-center gap-4">
-                  <img id="patPhoto" src="" class="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-200 shadow-md">
-                  <div>
-                    <h3 class="font-display text-2xl font-bold text-slate-900" id="patName">Name</h3>
-                    <p class="text-xs text-slate-400 font-mono">Patient QR Identifier: <span id="patId" class="font-bold text-indigo-600">ID</span></p>
+              <div class="bezel-core p-6 sm:p-7 space-y-4">
+                
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div class="flex items-center gap-4">
+                    <div class="relative">
+                      <img id="patPhoto" src="https://www.w3schools.com/howto/img_avatar.png" class="w-16 h-16 rounded-2xl object-cover border-2 border-teal-300 shadow-md">
+                      <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-[10px] text-white">✓</span>
+                    </div>
+                    <div>
+                      <h3 class="font-display text-2xl font-extrabold text-slate-900 leading-tight" id="patName">Patient Name</h3>
+                      <p class="text-xs text-slate-500 font-mono mt-0.5">Patient QR Identifier: <strong id="patId" class="font-bold text-teal-700">ID</strong></p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 self-start sm:self-auto">
+                    <span class="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-xs font-extrabold tracking-wider flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500"></span> ACTIVE PROFILE
+                    </span>
                   </div>
                 </div>
 
                 <!-- Access Permission Banner -->
                 <div id="accessStatusContainer"></div>
 
-                <div class="grid grid-cols-3 gap-4 text-center border-y border-slate-100 py-3.5 my-2">
+                <!-- Quick Demographics Matrix -->
+                <div class="grid grid-cols-3 gap-3 text-center bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80">
                   <div>
-                    <p class="text-[10px] uppercase font-bold text-slate-400">Gender</p>
-                    <p class="text-xs font-bold text-slate-800" id="patGender">-</p>
+                    <p class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400">Gender</p>
+                    <p class="text-xs font-bold text-slate-800 mt-0.5" id="patGender">-</p>
                   </div>
                   <div>
-                    <p class="text-[10px] uppercase font-bold text-slate-400">Phone</p>
-                    <p class="text-xs font-bold text-slate-800 font-tabular" id="patPhone">-</p>
+                    <p class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400">Contact Phone</p>
+                    <p class="text-xs font-bold text-slate-800 font-tabular mt-0.5" id="patPhone">-</p>
                   </div>
                   <div>
-                    <p class="text-[10px] uppercase font-bold text-slate-400">Security Clearance</p>
-                    <span class="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold rounded-full">Active Access</span>
+                    <p class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400">Clearance</p>
+                    <p class="text-xs font-bold text-emerald-700 mt-0.5">Clinical Access</p>
                   </div>
                 </div>
+
               </div>
             </div>
 
-            <!-- AI Clinical Copilot Suite -->
-            <div id="aiClinicalSuite" class="bezel-hud-shell">
-              <div class="bezel-hud-core p-6 sm:p-7 space-y-5 text-white">
+            <!-- AI Clinical Copilot Suite (v2.5) -->
+            <div id="aiClinicalSuite" class="bezel-shell">
+              <div class="bezel-core p-6 sm:p-7 space-y-5 bg-gradient-to-b from-slate-900 to-indigo-950 text-white">
                 
-                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-indigo-900/60">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-teal-500 flex items-center justify-center text-white shadow-lg animate-pulse">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-400 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-teal-500/20">
                       <span class="material-symbols-outlined text-xl">psychology</span>
                     </div>
                     <div>
                       <h3 class="font-display text-base font-extrabold tracking-tight text-white flex items-center gap-2">
-                        AI Clinical Copilot
-                        <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-[10px] uppercase font-bold tracking-wider">v2.5 AI Clinical Suite</span>
+                        AI Clinical Copilot Suite
+                        <span class="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-400/30 text-[10px] uppercase font-bold tracking-wider">v2.5 Clinical Engine</span>
                       </h3>
-                      <p class="text-xs text-slate-300 font-medium">5 Diagnostic Tools for Attending Doctors</p>
+                      <p class="text-xs text-slate-300 font-medium">5 AI diagnostic and documentation tools for attending physicians</p>
                     </div>
                   </div>
                 </div>
 
                 <!-- 5 AI Tools Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                  <button onclick="runAiPatientSummary()" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition text-left flex flex-col justify-between space-y-2 group cursor-pointer">
-                    <span class="material-symbols-outlined text-amber-400 text-xl group-hover:scale-110 transition-transform">summarize</span>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  
+                  <!-- Tool 1: Patient Summary -->
+                  <button onclick="runAiPatientSummary()" class="p-3.5 bg-white/10 hover:bg-white/15 border border-white/10 hover:border-amber-400/40 rounded-2xl transition text-left flex flex-col justify-between space-y-2.5 group cursor-pointer shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/30 text-amber-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span class="material-symbols-outlined text-lg">summarize</span>
+                    </div>
                     <div>
-                      <h4 class="font-bold text-xs text-white">Patient Brief</h4>
+                      <h4 class="font-bold text-xs text-white group-hover:text-amber-300 transition-colors">Patient Brief</h4>
                       <p class="text-[10px] text-slate-300 font-medium">Pre-consult summary</p>
                     </div>
                   </button>
 
-                  <button onclick="openAiScribeModal()" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition text-left flex flex-col justify-between space-y-2 group cursor-pointer">
-                    <span class="material-symbols-outlined text-purple-400 text-xl group-hover:scale-110 transition-transform">mic</span>
+                  <!-- Tool 2: Medical Scribe -->
+                  <button onclick="openAiScribeModal()" class="p-3.5 bg-white/10 hover:bg-white/15 border border-white/10 hover:border-purple-400/40 rounded-2xl transition text-left flex flex-col justify-between space-y-2.5 group cursor-pointer shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-400/30 text-purple-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span class="material-symbols-outlined text-lg">mic</span>
+                    </div>
                     <div>
-                      <h4 class="font-bold text-xs text-white">Medical Scribe</h4>
-                      <p class="text-[10px] text-slate-300 font-medium">Auto note-taking</p>
+                      <h4 class="font-bold text-xs text-white group-hover:text-purple-300 transition-colors">Medical Scribe</h4>
+                      <p class="text-[10px] text-slate-300 font-medium">Voice auto-noter</p>
                     </div>
                   </button>
 
-                  <button onclick="runAiDifferential()" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition text-left flex flex-col justify-between space-y-2 group cursor-pointer">
-                    <span class="material-symbols-outlined text-teal-400 text-xl group-hover:scale-110 transition-transform">diagnostics</span>
+                  <!-- Tool 3: Differential Diagnosis -->
+                  <button onclick="runAiDifferential()" class="p-3.5 bg-white/10 hover:bg-white/15 border border-white/10 hover:border-teal-400/40 rounded-2xl transition text-left flex flex-col justify-between space-y-2.5 group cursor-pointer shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-teal-500/20 border border-teal-400/30 text-teal-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span class="material-symbols-outlined text-lg">diagnostics</span>
+                    </div>
                     <div>
-                      <h4 class="font-bold text-xs text-white">Differential Dx</h4>
+                      <h4 class="font-bold text-xs text-white group-hover:text-teal-300 transition-colors">Differential Dx</h4>
                       <p class="text-[10px] text-slate-300 font-medium">Clinical reasoning</p>
                     </div>
                   </button>
 
-                  <button onclick="checkPrescriptionSafety()" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition text-left flex flex-col justify-between space-y-2 group cursor-pointer">
-                    <span class="material-symbols-outlined text-emerald-400 text-xl group-hover:scale-110 transition-transform">verified_user</span>
+                  <!-- Tool 4: Rx Safety Check -->
+                  <button onclick="checkPrescriptionSafety()" class="p-3.5 bg-white/10 hover:bg-white/15 border border-white/10 hover:border-emerald-400/40 rounded-2xl transition text-left flex flex-col justify-between space-y-2.5 group cursor-pointer shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span class="material-symbols-outlined text-lg">verified_user</span>
+                    </div>
                     <div>
-                      <h4 class="font-bold text-xs text-white">Rx Safety Check</h4>
-                      <p class="text-[10px] text-slate-300 font-medium">Allergy &amp; Drug safety</p>
+                      <h4 class="font-bold text-xs text-white group-hover:text-emerald-300 transition-colors">Rx Safety</h4>
+                      <p class="text-[10px] text-slate-300 font-medium">Interaction audit</p>
                     </div>
                   </button>
 
-                  <button onclick="generateSoapNote()" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 transition text-left flex flex-col justify-between space-y-2 group cursor-pointer">
-                    <span class="material-symbols-outlined text-blue-400 text-xl group-hover:scale-110 transition-transform">post_add</span>
+                  <!-- Tool 5: SOAP Notes -->
+                  <button onclick="generateSoapNote()" class="p-3.5 bg-white/10 hover:bg-white/15 border border-white/10 hover:border-blue-400/40 rounded-2xl transition text-left flex flex-col justify-between space-y-2.5 group cursor-pointer shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <span class="material-symbols-outlined text-lg">post_add</span>
+                    </div>
                     <div>
-                      <h4 class="font-bold text-xs text-white">SOAP Notes</h4>
-                      <p class="text-[10px] text-slate-300 font-medium">Fast EHR documentation</p>
+                      <h4 class="font-bold text-xs text-white group-hover:text-blue-300 transition-colors">SOAP Notes</h4>
+                      <p class="text-[10px] text-slate-300 font-medium">EHR documentation</p>
                     </div>
                   </button>
+
                 </div>
 
                 <!-- AI Output Display Box -->
-                <div id="aiOutputContainer" class="hidden p-4 bg-slate-950/95 border border-indigo-500/40 rounded-2xl space-y-3 text-xs text-slate-200">
+                <div id="aiOutputContainer" class="hidden p-5 bg-slate-950/90 border border-indigo-500/40 rounded-2xl space-y-3.5 text-xs text-slate-200 shadow-inner">
                   <!-- Dynamically populated by JS -->
                 </div>
               </div>
@@ -233,15 +324,16 @@
             <!-- Doctor Decision Tree Suite -->
             <div id="doctorDecisionTreeSuite" class="bezel-shell">
               <div class="bezel-core p-6 sm:p-7 space-y-5">
+                
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-800 text-white flex items-center justify-center shadow-md">
                       <span class="material-symbols-outlined text-xl">account_tree</span>
                     </div>
                     <div>
                       <h3 class="font-display text-base font-bold text-slate-900 flex items-center gap-2">
                         Doctor Decision Tree
-                        <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-extrabold uppercase">26 Stages • 38 Scenarios</span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-extrabold uppercase">26 Stages • 38 Scenarios</span>
                       </h3>
                       <p class="text-xs text-slate-500 font-medium">Standardized Clinical Protocol &amp; Emergency Scenario Navigator</p>
                     </div>
@@ -249,7 +341,7 @@
 
                   <!-- Emergency Quick Trigger Dropdown -->
                   <div class="flex items-center gap-2">
-                    <select id="specialSituationSelect" onchange="triggerSpecialSituation(this.value)" class="px-3 py-2 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold focus:ring-2 focus:ring-rose-500 cursor-pointer">
+                    <select id="specialSituationSelect" onchange="triggerSpecialSituation(this.value)" class="px-3.5 py-2.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold focus:ring-2 focus:ring-rose-500 cursor-pointer shadow-xs">
                       <option value="">🚨 Trigger Special Protocol...</option>
                       <option value="❤️ STEMI / Heart Attack Protocol">❤️ STEMI / Heart Attack Alert</option>
                       <option value="🧠 Stroke / Neurological Emergency">🧠 Stroke Alert Protocol</option>
@@ -268,27 +360,27 @@
 
                 <!-- Track Selection Tabs -->
                 <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-bold" id="decisionTrackTabs">
-                  <button onclick="switchDecisionTrack('track-1')" class="track-tab-btn active px-3.5 py-2 rounded-xl bg-indigo-600 text-white transition flex items-center gap-1.5 flex-shrink-0" data-track="track-1">
+                  <button onclick="switchDecisionTrack('track-1')" class="track-tab-btn active px-3.5 py-2 rounded-xl bg-teal-600 text-white transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer shadow-sm" data-track="track-1">
                     <span class="material-symbols-outlined text-base">how_to_reg</span>
                     <span>1. Intake &amp; Triage</span>
                   </button>
-                  <button onclick="switchDecisionTrack('track-2')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0" data-track="track-2">
+                  <button onclick="switchDecisionTrack('track-2')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer" data-track="track-2">
                     <span class="material-symbols-outlined text-base">manage_search</span>
                     <span>2. History &amp; Audits</span>
                   </button>
-                  <button onclick="switchDecisionTrack('track-3')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0" data-track="track-3">
+                  <button onclick="switchDecisionTrack('track-3')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer" data-track="track-3">
                     <span class="material-symbols-outlined text-base">ecg_heart</span>
                     <span>3. Exam &amp; Vitals</span>
                   </button>
-                  <button onclick="switchDecisionTrack('track-4')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0" data-track="track-4">
+                  <button onclick="switchDecisionTrack('track-4')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer" data-track="track-4">
                     <span class="material-symbols-outlined text-base">biomedical</span>
                     <span>4. Diagnosis &amp; Labs</span>
                   </button>
-                  <button onclick="switchDecisionTrack('track-5')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0" data-track="track-5">
+                  <button onclick="switchDecisionTrack('track-5')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer" data-track="track-5">
                     <span class="material-symbols-outlined text-base">medication</span>
                     <span>5. Treatment &amp; Rx</span>
                   </button>
-                  <button onclick="switchDecisionTrack('track-6')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0" data-track="track-6">
+                  <button onclick="switchDecisionTrack('track-6')" class="track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer" data-track="track-6">
                     <span class="material-symbols-outlined text-base">assignment_turned_in</span>
                     <span>6. Discharge</span>
                   </button>
@@ -309,10 +401,12 @@
                 <div class="bezel-core p-6 space-y-4">
                   <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <h3 class="font-display text-sm font-bold text-slate-900 flex items-center gap-2">
-                      <span class="material-symbols-outlined text-indigo-600">history_edu</span>
+                      <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-base">history_edu</span>
+                      </span>
                       <span>Medical History Timeline</span>
                     </h3>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">CLINICAL LOG</span>
+                    <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full uppercase">CLINICAL LOG</span>
                   </div>
 
                   <div id="patientHistoryTimeline" class="space-y-3 max-h-96 overflow-y-auto pr-1 pt-1">
@@ -321,13 +415,29 @@
                   
                   <!-- Add Treatment form -->
                   <form id="addTreatmentForm" class="mt-4 pt-4 border-t border-slate-100 space-y-3">
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-indigo-700 flex items-center gap-1.5">
-                      <span class="material-symbols-outlined text-base">edit_note</span>
-                      Add Clinical Note
-                    </h4>
-                    <input type="text" id="treatmentTitle" required placeholder="Note Title (e.g. Asthma Evaluation / Medication Adjustment)" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500">
-                    <textarea id="treatmentDesc" required rows="3" placeholder="Clinical observations, prescriptions, or treatment details..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500"></textarea>
-                    <button type="submit" id="addTreatmentBtn" class="btn-island btn-island-primary text-xs py-2 px-4">
+                    <div class="flex items-center justify-between">
+                      <h4 class="font-bold text-xs uppercase tracking-wider text-teal-700 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base">edit_note</span>
+                        Record Clinical Note
+                      </h4>
+                      <span class="text-[10px] text-slate-400 font-medium">SOAP or free-text</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      id="treatmentTitle" 
+                      required 
+                      placeholder="Note Title (e.g. Asthma Evaluation / Medication Adjustment)" 
+                      class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-teal-500 transition"
+                    >
+                    <textarea 
+                      id="treatmentDesc" 
+                      required 
+                      rows="3" 
+                      placeholder="Clinical observations, prescriptions, differential considerations, or treatment details..." 
+                      class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-teal-500 transition"
+                    ></textarea>
+                    
+                    <button type="submit" id="addTreatmentBtn" class="btn-island btn-island-primary text-xs py-2 px-4 cursor-pointer">
                       <span>Add Clinical Note</span>
                       <span class="btn-icon-bubble w-6 h-6">
                         <span class="material-symbols-outlined text-xs">post_add</span>
@@ -342,10 +452,12 @@
                 <div class="bezel-core p-6 space-y-4">
                   <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <h3 class="font-display text-sm font-bold text-slate-800 flex items-center gap-2">
-                      <span class="material-symbols-outlined text-teal-600">description</span>
+                      <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-base">description</span>
+                      </span>
                       <span>Patient Medical Reports</span>
                     </h3>
-                    <span class="text-[10px] font-bold text-teal-700 uppercase">LAB VAULT</span>
+                    <span class="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full uppercase">LAB VAULT</span>
                   </div>
                   <div id="patientReportsList" class="space-y-2.5">
                     <!-- Rendered dynamically -->

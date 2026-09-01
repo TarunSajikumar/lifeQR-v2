@@ -50,10 +50,22 @@ function ensureDirExists(filePath) {
   }
 }
 
+const EXCLUDE_FROM_SYNC = ['index.html'];
+
+function isExcluded(fileRelative) {
+  if (!fileRelative) return true;
+  const norm = fileRelative.replace(/\\/g, '/').toLowerCase().trim();
+  return EXCLUDE_FROM_SYNC.some(ex => norm === ex.toLowerCase());
+}
+
 /**
  * Copies source file to destination if destination doesn't exist or is older
  */
 function syncFile(fileRelative) {
+  if (isExcluded(fileRelative)) {
+    return;
+  }
+
   const pathWebsite = path.join(websiteDir, fileRelative);
   const pathApp = path.join(appDir, fileRelative);
 

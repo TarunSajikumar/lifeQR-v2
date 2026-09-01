@@ -81,6 +81,7 @@ try {
 }
 
 // Serve static files from app and website directories
+app.use('/website', express.static(path.join(__dirname, '../website')));
 app.use('/app', express.static(path.join(__dirname, '../app')));
 app.use(express.static(path.join(__dirname, '../app')));
 app.use(express.static(path.join(__dirname, '../website')));

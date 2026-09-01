@@ -20,7 +20,7 @@
   - `doctor_dashboard.html` & `js/doctor-dashboard.js`
   - `admin_dashboard.html` & `js/admin-dashboard.js`
   - `emergency_access.html` & `js/emergency-access.js` (Zero-login emergency QR page)
-- **Backend API (`backend/`)**: Node.js + Express API (`/api/v1/...`), MongoDB Mongoose schemas (`User`, `PatientProfile`, `EmergencyContact`, `QRProfile`, `MedicalRecord`, `Doctor`, `AmbulanceCrew`, `Hospital`, `Consultation`, `Prescription`, `SOS`, `ERHandover`, `AuditLog`), Socket.IO real-time event server, Helmet security headers, rate limiters, JWT cookie auth.
+- **Backend API (`backend/`)**: Node.js + Express API (`/api/v1/...`), MongoDB Mongoose schemas (`User`, `UserSecurity`, `PatientProfile`, `EmergencyContact`, `QRProfile`, `MedicalRecord`, `Doctor`, `AmbulanceCrew`, `Hospital`, `Consultation`, `Prescription`, `SOS`, `ERHandover`, `AuditLog`), Socket.IO real-time event server, Helmet security headers, rate limiters, JWT cookie auth. Note: `UserSecurity` synchronizes with `users` during registration/resets to store credentials in the `'user securities'` collection.
 - **Notification Services**: Integrated OneSignal for multi-platform push notifications and Telegram Bot support for professional crew dispatch.
 - **AI Clinical Engine**: Integrated logic for AI Patient Summaries, Medical Scribe (Auto-note), Differential Diagnosis, and Rx Safety validation.
 
@@ -29,8 +29,12 @@
 ## 🔑 Verified Account Notes
 
 - **Patient Account**:
-  - Use a real registered patient account with a valid profile and QR code identifier.
-  - Profile should include blood group, allergies, medications, and emergency contacts.
+  - **Email**: `patient@lifeqr.com` | **Password**: `Password@123`
+  - **Name**: Rahul Sharma (`+91 9876543210`)
+  - **QR Code ID**: `RAH-D3200470`
+  - **Blood Group**: `O+` | **Allergies**: Penicillin, Peanuts (Severe Anaphylaxis)
+  - **Medications**: Albuterol Inhaler (PRN), Cetirizine 10mg
+  - **Emergency Contacts**: Priya Sharma (`+91 9876543211`, Spouse), Dr. Amit Sharma (`+91 9876543212`, Brother)
 - **Ambulance Crew Account**:
   - Use a verified crew account for live dispatch workflows.
   - Unit and station details should be populated from the registered profile.

@@ -74,8 +74,21 @@ router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
 // Retrieve all user records for admin user management table
 router.get('/users', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
-    res.json({ users });
+    const users = await User.find({}).sort({ createdAt: -1 }).lean();
+
+    const safeUsers = users.map((user) => ({
+      id: user._id,
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      active: user.active,
+      createdAt: user.createdAt,
+      password: user.password || null,
+      encryptedPassword: user.password || null
+    }));
+
+    res.json({ users: safeUsers });
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users list' });

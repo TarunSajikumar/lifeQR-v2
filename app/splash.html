@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#f7f9fc">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="LifeQR.png" type="image/png">
+
+    <title>LifeQR — Loading</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet"/>
+    
+    <script src="/app/api-utils.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#d8dadd",
+                        "background": "#f7f9fc",
+                        "on-tertiary-fixed-variant": "#763300",
+                        "secondary-container": "#58bcfd",
+                        "on-secondary-fixed": "#001e2f",
+                        "tertiary": "#592500",
+                        "secondary-fixed-dim": "#8ccdff",
+                        "outline": "#737782",
+                        "outline-variant": "#c2c6d2",
+                        "on-tertiary-container": "#ffa570",
+                        "tertiary-fixed": "#ffdbc9",
+                        "on-secondary-container": "#004a6d",
+                        "on-secondary-fixed-variant": "#004b6f",
+                        "secondary": "#006492",
+                        "tertiary-fixed-dim": "#ffb68d",
+                        "surface-container-highest": "#e0e3e6",
+                        "tertiary-container": "#7c3600",
+                        "surface-container-low": "#f2f4f7",
+                        "on-primary-fixed": "#001b3d",
+                        "on-primary-fixed-variant": "#00468b",
+                        "inverse-surface": "#2d3133",
+                        "on-surface-variant": "#424751",
+                        "surface-container": "#eceef1",
+                        "on-surface": "#191c1e",
+                        "inverse-primary": "#a9c7ff",
+                        "secondary-fixed": "#cae6ff",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#e0e3e6",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#d6e3ff",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#331200",
+                        "surface-container-high": "#e6e8eb",
+                        "surface-tint": "#2b5ea4",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "surface": "#f7f9fc",
+                        "on-primary-container": "#94bcff",
+                        "primary-container": "#0a4a8f",
+                        "primary": "#003369",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#eff1f4",
+                        "surface-bright": "#f7f9fc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "unit": "8px",
+                        "container-max": "1280px",
+                        "touch-target-min": "48px",
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "display": ["Space Grotesk", "Inter", "sans-serif"],
+                        "body-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .fade-in-delayed {
+            animation: fadeIn 1s ease-out 0.6s forwards;
+            opacity: 0;
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite linear;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface h-screen w-screen overflow-hidden flex flex-col items-center justify-center relative select-none">
+
+    <!-- Ambient Background Elements (Subtle Clinical Warmth) -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
+        <div class="absolute w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl opacity-50 -top-1/4 -right-1/4"></div>
+        <div class="absolute w-[600px] h-[600px] bg-secondary-container/10 rounded-full blur-3xl opacity-50 -bottom-1/4 -left-1/4"></div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col items-center justify-center z-10 w-full px-margin-mobile md:px-margin-desktop">
+        <!-- Logo Section -->
+        <div class="relative flex flex-col items-center justify-center mb-12 fade-in-up">
+            <!-- Logo Graphic -->
+            <div class="relative mb-6">
+                <!-- Pulse rings for active scanning/loading feel -->
+                <div class="absolute inset-0 bg-primary/20 rounded-full pulse-ring z-0"></div>
+                <div class="absolute inset-0 bg-primary/10 rounded-full pulse-ring z-0" style="animation-delay: 1s;"></div>
+                
+                <!-- Core Logo Symbol -->
+                <div class="relative z-10 w-24 h-24 bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant flex items-center justify-center overflow-hidden">
+                    <!-- Shimmer effect overlay -->
+                    <div class="absolute inset-0 shimmer pointer-events-none z-20"></div>
+                    <span class="material-symbols-outlined text-primary" style="font-size: 56px; font-variation-settings: 'FILL' 1;">
+                        medical_services
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Brand Name -->
+            <h1 class="font-display text-4xl sm:text-5xl font-bold text-primary tracking-tight">
+                LifeQR
+            </h1>
+            <p class="font-body-md text-body-md text-on-surface-variant mt-2 max-w-sm text-center">
+                Your Health. Connected.
+            </p>
+        </div>
+    </div>
+
+    <!-- Status / Loading Area -->
+    <div class="absolute bottom-12 left-0 w-full flex flex-col items-center justify-center z-10 px-margin-mobile fade-in-delayed">
+        <!-- Loading Progress Indicator (Indeterminate) -->
+        <div class="w-48 h-1 bg-surface-container-high rounded-full overflow-hidden mb-4">
+            <div class="h-full bg-primary rounded-full w-1/3 animate-[shimmer_1.5s_infinite_linear] relative">
+                <!-- Inner gradient for depth -->
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+            </div>
+        </div>
+
+        <!-- Status Text -->
+        <div class="flex items-center space-x-2 text-on-surface-variant">
+            <span class="material-symbols-outlined text-[16px] animate-spin" style="font-variation-settings: 'FILL' 0;">
+                sync
+            </span>
+            <span id="loadingStatusText" class="font-label-md text-label-md tracking-wide">
+                Loading secure environment...
+            </span>
+        </div>
+
+        <!-- Security Badge (Clinical Trust Anchor) -->
+        <div class="mt-6 flex items-center space-x-1.5 opacity-60">
+            <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">
+                lock
+            </span>
+            <span class="font-label-sm text-label-sm uppercase tracking-widest text-outline">
+                End-to-End Encrypted
+            </span>
+        </div>
+    </div>
+
+    <!-- Auto-Redirect Logic (with URL override capability) -->
+    <script>
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const noRedirect = urlParams.get('no_redirect') === 'true' || urlParams.get('preview') === 'true';
+            const targetOverride = urlParams.get('target');
+            const statusEl = document.getElementById('loadingStatusText');
+
+            if (noRedirect) {
+                if (statusEl) statusEl.textContent = 'Preview Mode Active';
+                return;
+            }
+
+            // Simulate clinical environment hydration
+            setTimeout(() => {
+                if (statusEl) statusEl.textContent = 'Authenticating session...';
+            }, 800);
+
+            setTimeout(() => {
+                if (targetOverride) {
+                    window.location.href = targetOverride;
+                    return;
+                }
+
+                // Check stored auth session
+                try {
+                    const token = localStorage.getItem('token');
+                    const userStr = localStorage.getItem('user');
+
+                    if (token && userStr) {
+                        const user = JSON.parse(userStr);
+                        const role = (user.role || '').toLowerCase();
+
+                        if (role === 'doctor') {
+                            window.location.href = 'doctor_dashboard.html';
+                            return;
+                        } else if (role === 'crew' || role === 'paramedic' || role === 'ambulance') {
+                            window.location.href = 'CrewAmbulance_dashboard.html';
+                            return;
+                        } else if (role === 'er' || role === 'hospital') {
+                            window.location.href = 'er_dashboard.html';
+                            return;
+                        } else if (role === 'admin') {
+                            window.location.href = 'admin_dashboard.html';
+                            return;
+                        } else {
+                            window.location.href = 'patient_dashboard.html';
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Session check fallback:', e);
+                }
+
+                // Default destination for unauthenticated visitors
+                window.location.href = 'lifeqr_login.html';
+            }, 1800);
+        })();
+    </script>
+</body>
+</html>

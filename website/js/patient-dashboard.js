@@ -5,9 +5,40 @@ let reportsPage = 1;
 let activitiesPage = 1;
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // Pre-populate username and cached fields from localStorage if available
+  const cachedName = localStorage.getItem('userName');
+  if (cachedName) {
+    const nameEl = document.getElementById('userName');
+    if (nameEl) nameEl.textContent = cachedName;
+  }
+  const cachedQr = localStorage.getItem('offline_qrCode');
+  const cachedQrId = localStorage.getItem('offline_qrCodeId');
+  if (cachedQr) {
+    const qrImg = document.getElementById('qrCodeImage');
+    if (qrImg) qrImg.src = cachedQr;
+  }
+  if (cachedQrId) {
+    const qrVal = document.getElementById('qrCodeIdValue');
+    if (qrVal) qrVal.textContent = cachedQrId;
+  }
+
   // Check auth and role
   currentUser = await checkDashboardAccess(['patient']);
   if (!currentUser) return;
+
+  // Immediately render data received from auth verification
+  if (currentUser.name) {
+    const nameEl = document.getElementById('userName');
+    if (nameEl) nameEl.textContent = currentUser.name;
+    const nameInput = document.getElementById('profileName');
+    if (nameInput && !nameInput.value) nameInput.value = currentUser.name;
+  }
+  if (currentUser.qrCode) {
+    const qrImg = document.getElementById('qrCodeImage');
+    if (qrImg) qrImg.src = currentUser.qrCode;
+    const qrVal = document.getElementById('qrCodeIdValue');
+    if (qrVal && currentUser.qrCodeId) qrVal.textContent = currentUser.qrCodeId;
+  }
 
   // Initialize Socket.IO connection for notifications
   initSocketConnection();
@@ -21,9 +52,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function initSocketConnection() {
   try {
-    // Socket.IO auto-authenticates via httpOnly cookie
-    // Server assigns patient:{userId} room based on verified role
-    const socket = io({ withCredentials: true });
+    const socketUrl = (typeof window !== 'undefined' && window.API_URL)
+      ? window.API_URL.replace(/\/api\/v1\/?$/, '')
+      : window.location.origin;
+    const socket = io(socketUrl, { withCredentials: true });
     
     // Listen for authorized doctor accesses or SOS status updates
     socket.on('sos-acknowledged', (data) => {
@@ -38,14 +70,15 @@ function initSocketConnection() {
 async function loadDashboardData() {
   showSkeletons();
   try {
-    const response = await fetch('/api/v1/patient/me', {
-      credentials: 'include'
-    });
+    const response = await (window.authFetch 
+      ? window.authFetch('/api/v1/patient/me') 
+      : fetch((window.getApiUrl ? window.getApiUrl('/patient/me') : '/api/v1/patient/me'), { credentials: 'include' }));
+    
     const data = await response.json();
     
     if (!response.ok) throw new Error(data.error || 'Failed to load details');
     
-    currentUser = data.user;
+    currentUser = data.user || currentUser;
     currentProfile = data.profile || {};
 
     renderProfileDetails();
@@ -56,7 +89,12 @@ async function loadDashboardData() {
     await loadMedicalHistory();
 
   } catch (err) {
-    showToast(err.message, 'error');
+    console.error('loadDashboardData error:', err);
+    showToast(err.message || 'Failed to load details', 'error');
+    if (currentUser) {
+      renderProfileDetails();
+      renderQRDetails();
+    }
   } finally {
     hideSkeletons();
   }
@@ -73,54 +111,83 @@ function hideSkeletons() {
 }
 
 function renderProfileDetails() {
-  document.getElementById('userName').textContent = currentUser.name;
-  document.getElementById('profileName').value = currentUser.name || '';
-  document.getElementById('profilePhone').value = currentUser.phone || '+91 ';
-  document.getElementById('profileAddress').value = currentUser.address || '';
-  document.getElementById('profileCity').value = currentUser.city || '';
-  document.getElementById('profileState').value = currentUser.state || '';
-  document.getElementById('profileGender').value = currentUser.gender || '';
+  if (!currentUser) return;
+
+  const nameEl = document.getElementById('userName');
+  if (nameEl) nameEl.textContent = currentUser.name || 'Patient';
+
+  const nameInput = document.getElementById('profileName');
+  if (nameInput) nameInput.value = currentUser.name || '';
+
+  const phoneInput = document.getElementById('profilePhone');
+  if (phoneInput) phoneInput.value = currentUser.phone || '+91 ';
+
+  const addrInput = document.getElementById('profileAddress');
+  if (addrInput) addrInput.value = currentUser.address || '';
+
+  const cityInput = document.getElementById('profileCity');
+  if (cityInput) cityInput.value = currentUser.city || '';
+
+  const stateInput = document.getElementById('profileState');
+  if (stateInput) stateInput.value = currentUser.state || '';
+
+  const genderInput = document.getElementById('profileGender');
+  if (genderInput) genderInput.value = currentUser.gender || '';
   
-  document.getElementById('profileAge').value = currentProfile.age || '';
-  document.getElementById('profileBloodGroup').value = currentProfile.bloodGroup || '';
-  document.getElementById('profileAllergies').value = currentProfile.allergies || '';
-  document.getElementById('profileMedications').value = currentProfile.medications || '';
-  document.getElementById('profileHealthIssues').value = currentProfile.healthIssues || '';
+  const ageInput = document.getElementById('profileAge');
+  if (ageInput) ageInput.value = currentProfile?.age || '';
+
+  const bloodInput = document.getElementById('profileBloodGroup');
+  if (bloodInput) bloodInput.value = currentProfile?.bloodGroup || '';
+
+  const allergiesInput = document.getElementById('profileAllergies');
+  if (allergiesInput) allergiesInput.value = currentProfile?.allergies || '';
+
+  const medsInput = document.getElementById('profileMedications');
+  if (medsInput) medsInput.value = currentProfile?.medications || '';
+
+  const healthIssuesInput = document.getElementById('profileHealthIssues');
+  if (healthIssuesInput) healthIssuesInput.value = currentProfile?.healthIssues || '';
 
   // Render profile photo
   const photoEl = document.getElementById('userProfilePhoto');
-  if (currentUser.profilePhoto) {
-    photoEl.src = '/api/v1/patient/photo';
-  } else {
-    photoEl.src = 'https://www.w3schools.com/howto/img_avatar.png'; // default avatar
+  if (photoEl) {
+    if (currentUser.profilePhoto) {
+      photoEl.src = window.getApiUrl ? window.getApiUrl('/patient/photo') : '/api/v1/patient/photo';
+    } else {
+      photoEl.src = 'https://www.w3schools.com/howto/img_avatar.png'; // default avatar
+    }
   }
 
   // Set toggle visibility state
-  document.getElementById('publicProfileToggle').checked = currentProfile.publicProfile !== false;
+  const toggle = document.getElementById('publicProfileToggle');
+  if (toggle) toggle.checked = currentProfile?.publicProfile !== false;
 
   // Render multiple emergency contacts
   const contactsList = document.getElementById('emergencyContactsContainer');
-  contactsList.innerHTML = '';
-  
-  const contacts = currentProfile.emergencyContacts || [];
-  if (contacts.length === 0) {
-    contactsList.innerHTML = `<p class="text-sm text-gray-500 italic">No emergency contacts configured.</p>`;
-  } else {
-    contacts.forEach((c) => {
-      const contactRow = document.createElement('div');
-      contactRow.className = 'flex justify-between items-center p-3 bg-purple-50 rounded-xl border border-purple-100';
-      contactRow.innerHTML = `
-        <div>
-          <p class="font-bold text-gray-800 text-sm">${c.name} (${c.relationship})</p>
-          <p class="text-xs text-gray-600">${c.phone}</p>
-        </div>
-        <span class="px-2 py-1 bg-purple-100 text-[#6818f4] text-xs font-bold rounded-lg">Priority ${c.priority}</span>
-      `;
-      contactsList.appendChild(contactRow);
-    });
+  if (contactsList) {
+    contactsList.innerHTML = '';
+    const contacts = currentProfile?.emergencyContacts || [];
+    if (contacts.length === 0) {
+      contactsList.innerHTML = `<p class="text-sm text-gray-500 italic">No emergency contacts configured.</p>`;
+    } else {
+      contacts.forEach((c) => {
+        const contactRow = document.createElement('div');
+        contactRow.className = 'flex justify-between items-center p-3 bg-purple-50 rounded-xl border border-purple-100';
+        contactRow.innerHTML = `
+          <div>
+            <p class="font-bold text-gray-800 text-sm">${c.name} (${c.relationship || 'Emergency'})</p>
+            <p class="text-xs text-gray-600">${c.phone}</p>
+          </div>
+          <span class="px-2 py-1 bg-purple-100 text-[#6818f4] text-xs font-bold rounded-lg">Priority ${c.priority || 1}</span>
+        `;
+        contactsList.appendChild(contactRow);
+      });
+    }
   }
 
   // Populate emergency contact form fields
+  const contacts = currentProfile?.emergencyContacts || [];
   for (let i = 1; i <= 3; i++) {
     const contact = contacts[i - 1] || {};
     const nameInput = document.getElementById(`emergencyContactName${i}`);
@@ -133,37 +200,47 @@ function renderProfileDetails() {
 }
 
 function renderQRDetails() {
-  if (currentProfile.qrCode) {
-    document.getElementById('qrCodeImage').src = currentProfile.qrCode;
-    document.getElementById('qrCodeIdValue').textContent = currentProfile.qrCodeId;
-    
-    // Store QR code locally in cache for offline view triggers
-    localStorage.setItem('offline_qrCode', currentProfile.qrCode);
-    localStorage.setItem('offline_qrCodeId', currentProfile.qrCodeId);
+  const qrCode = currentProfile?.qrCode || currentUser?.qrCode;
+  const qrCodeId = currentProfile?.qrCodeId || currentUser?.qrCodeId;
+
+  if (qrCode) {
+    const qrImg = document.getElementById('qrCodeImage');
+    if (qrImg) qrImg.src = qrCode;
+    localStorage.setItem('offline_qrCode', qrCode);
+  }
+  if (qrCodeId) {
+    const qrVal = document.getElementById('qrCodeIdValue');
+    if (qrVal) qrVal.textContent = qrCodeId;
+    localStorage.setItem('offline_qrCodeId', qrCodeId);
+  }
+  if (currentUser?.name) {
     localStorage.setItem('offline_name', currentUser.name);
-    localStorage.setItem('offline_bloodGroup', currentProfile.bloodGroup || 'N/A');
+  }
+  if (currentProfile?.bloodGroup) {
+    localStorage.setItem('offline_bloodGroup', currentProfile.bloodGroup);
   }
 }
 
 async function loadReports() {
   try {
-    const response = await fetch(`/api/v1/reports?page=${reportsPage}&limit=4`, {
-      credentials: 'include'
-    });
+    const apiUrl = window.getApiUrl ? window.getApiUrl(`/reports?page=${reportsPage}&limit=4`) : `/api/v1/reports?page=${reportsPage}&limit=4`;
+    const response = await (window.authFetch ? window.authFetch(apiUrl) : fetch(apiUrl, { credentials: 'include' }));
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
 
     const container = document.getElementById('medicalReportsList');
+    if (!container) return;
     container.innerHTML = '';
 
-    if (data.reports.length === 0) {
+    if (!data.reports || data.reports.length === 0) {
       container.innerHTML = `
         <div class="text-center p-8 bg-gray-50 rounded-2xl border border-gray-100">
           <span class="material-symbols-outlined text-4xl text-gray-400">description</span>
           <p class="text-gray-500 mt-2 text-sm">No medical reports uploaded yet.</p>
         </div>
       `;
-      document.getElementById('reportsPagination').innerHTML = '';
+      const pagEl = document.getElementById('reportsPagination');
+      if (pagEl) pagEl.innerHTML = '';
       return;
     }
 
@@ -183,24 +260,23 @@ async function loadReports() {
       container.appendChild(card);
     });
 
-    renderPagination('reportsPagination', data.pagination, 'reportsPage', loadReports);
+    renderPagination('reportsPagination', data.pagination || {}, 'reportsPage', loadReports);
 
   } catch (err) {
-    showToast(err.message, 'error');
+    console.warn('loadReports notice:', err.message);
   }
 }
 
 async function loadActivities() {
   try {
-    // Read activities list
-    const response = await fetch(`/api/v1/patient/me`, {
-      credentials: 'include'
-    });
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/patient/me') : '/api/v1/patient/me';
+    const response = await (window.authFetch ? window.authFetch(apiUrl) : fetch(apiUrl, { credentials: 'include' }));
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
 
-    const list = data.profile.activities || [];
+    const list = (data.profile && data.profile.activities) || [];
     const container = document.getElementById('activitiesList');
+    if (!container) return;
     container.innerHTML = '';
 
     // Paginate manually on client
@@ -214,7 +290,8 @@ async function loadActivities() {
           <p class="text-gray-500 text-sm">No activity recorded yet.</p>
         </div>
       `;
-      document.getElementById('activitiesPagination').innerHTML = '';
+      const pagEl = document.getElementById('activitiesPagination');
+      if (pagEl) pagEl.innerHTML = '';
       return;
     }
 
@@ -236,29 +313,29 @@ async function loadActivities() {
 
     const paginationData = {
       currentPage: activitiesPage,
-      totalPages: Math.ceil(list.length / limit),
+      totalPages: Math.ceil(list.length / limit) || 1,
       hasNextPage: startIndex + limit < list.length,
       hasPrevPage: activitiesPage > 1
     };
     renderPagination('activitiesPagination', paginationData, 'activitiesPage', loadActivities);
 
   } catch (err) {
-    showToast(err.message, 'error');
+    console.warn('loadActivities notice:', err.message);
   }
 }
 
 async function loadAccessRequests() {
   try {
-    const response = await fetch('/api/v1/doctor-access/requests', {
-      credentials: 'include'
-    });
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/doctor-access/requests') : '/api/v1/doctor-access/requests';
+    const response = await (window.authFetch ? window.authFetch(apiUrl) : fetch(apiUrl, { credentials: 'include' }));
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
 
     const container = document.getElementById('doctorAccessRequests');
+    if (!container) return;
     container.innerHTML = '';
 
-    if (data.requests.length === 0) {
+    if (!data.requests || data.requests.length === 0) {
       container.innerHTML = `<p class="text-xs text-gray-500 italic">No pending doctor requests.</p>`;
       return;
     }
@@ -269,33 +346,38 @@ async function loadAccessRequests() {
       row.innerHTML = `
         <div class="flex justify-between items-start">
           <div>
-            <p class="text-xs font-bold text-gray-800">Dr. ${r.metadata.doctorName}</p>
-            <p class="text-[10px] text-gray-500">${r.metadata.specialization} • ${r.metadata.hospital}</p>
+            <p class="text-xs font-bold text-gray-800">Dr. ${r.metadata?.doctorName || 'Doctor'}</p>
+            <p class="text-[10px] text-gray-500">${r.metadata?.specialization || ''} • ${r.metadata?.hospital || ''}</p>
           </div>
           <span class="text-[9px] text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full font-bold">Pending</span>
         </div>
         <div class="flex gap-2 justify-end">
-          <button onclick="respondToRequest('${r.metadata.requestId}', false)" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold">Decline</button>
-          <button onclick="respondToRequest('${r.metadata.requestId}', true)" class="px-3 py-1 bg-[#6818f4] text-white rounded-lg text-xs font-semibold">Approve</button>
+          <button onclick="respondToRequest('${r.metadata?.requestId}', false)" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold">Decline</button>
+          <button onclick="respondToRequest('${r.metadata?.requestId}', true)" class="px-3 py-1 bg-[#6818f4] text-white rounded-lg text-xs font-semibold">Approve</button>
         </div>
       `;
       container.appendChild(row);
     });
   } catch (err) {
-    showToast(err.message, 'error');
+    console.warn('loadAccessRequests notice:', err.message);
   }
 }
 
 window.respondToRequest = async function(requestId, approve) {
   try {
-    const response = await fetch('/api/v1/doctor-access/respond', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include',
-      body: JSON.stringify({ requestId, approve })
-    });
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/doctor-access/respond') : '/api/v1/doctor-access/respond';
+    const response = await (window.authFetch 
+      ? window.authFetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requestId, approve })
+        })
+      : fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ requestId, approve })
+        }));
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
     
@@ -308,9 +390,8 @@ window.respondToRequest = async function(requestId, approve) {
 
 async function loadMedicalHistory() {
   try {
-    const response = await fetch('/api/v1/history', {
-      credentials: 'include'
-    });
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/history') : '/api/v1/history';
+    const response = await (window.authFetch ? window.authFetch(apiUrl) : fetch(apiUrl, { credentials: 'include' }));
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
 
@@ -385,15 +466,16 @@ async function loadMedicalHistory() {
       container.appendChild(item);
     });
   } catch (err) {
-    showToast(err.message, 'error');
+    console.warn('loadMedicalHistory notice:', err.message);
   }
 }
 
 function renderPagination(containerId, pagination, pageVarName, callback) {
   const container = document.getElementById(containerId);
+  if (!container) return;
   container.innerHTML = '';
   
-  if (pagination.totalPages <= 1) return;
+  if (!pagination || pagination.totalPages <= 1) return;
 
   const btnPrev = document.createElement('button');
   btnPrev.className = `px-3 py-1 text-xs border rounded-lg ${pagination.hasPrevPage ? 'hover:bg-gray-50' : 'opacity-40 cursor-not-allowed'}`;
@@ -407,7 +489,7 @@ function renderPagination(containerId, pagination, pageVarName, callback) {
 
   const pageNum = document.createElement('span');
   pageNum.className = 'text-xs font-semibold text-gray-600 px-3 flex items-center';
-  pageNum.textContent = `Page ${pagination.currentPage} of ${pagination.totalPages}`;
+  pageNum.textContent = `Page ${pagination.currentPage || 1} of ${pagination.totalPages || 1}`;
 
   const btnNext = document.createElement('button');
   btnNext.className = `px-3 py-1 text-xs border rounded-lg ${pagination.hasNextPage ? 'hover:bg-gray-50' : 'opacity-40 cursor-not-allowed'}`;
@@ -425,97 +507,125 @@ function renderPagination(containerId, pagination, pageVarName, callback) {
 }
 
 function setupFormListeners() {
-  // Profile Form Edit Listener
-  document.getElementById('profileForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('saveProfileBtn');
-    btn.disabled = true;
-    btn.textContent = 'Saving...';
+  const profileForm = document.getElementById('profileForm');
+  if (profileForm) {
+    profileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('saveProfileBtn') || e.target.querySelector('button[type="submit"]');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+      }
 
-    try {
-      const formData = new FormData(e.target);
-      const data = Object.fromEntries(formData.entries());
-      
-      // Restructure emergency contacts
-      const contacts = [];
-      for (let i = 1; i <= 3; i++) {
-        const nameVal = document.getElementById(`emergencyContactName${i}`).value;
-        const phoneVal = document.getElementById(`emergencyContactPhone${i}`).value;
-        const relVal = document.getElementById(`emergencyContactRelationship${i}`).value;
-        if (nameVal && phoneVal) {
-          contacts.push({ name: nameVal, phone: phoneVal, relationship: relVal });
+      try {
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Restructure emergency contacts
+        const contacts = [];
+        for (let i = 1; i <= 3; i++) {
+          const nameInput = document.getElementById(`emergencyContactName${i}`);
+          const phoneInput = document.getElementById(`emergencyContactPhone${i}`);
+          const relInput = document.getElementById(`emergencyContactRelationship${i}`);
+          const nameVal = nameInput ? nameInput.value.trim() : '';
+          const phoneVal = phoneInput ? phoneInput.value.trim() : '';
+          const relVal = relInput ? relInput.value.trim() : '';
+          if (nameVal && phoneVal && phoneVal !== '+91' && phoneVal !== '+91 ') {
+            contacts.push({ name: nameVal, phone: phoneVal, relationship: relVal });
+          }
+        }
+        data.emergencyContacts = contacts;
+
+        const apiUrl = window.getApiUrl ? window.getApiUrl('/patient/update') : '/api/v1/patient/update';
+        const response = await (window.authFetch 
+          ? window.authFetch(apiUrl, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data)
+            })
+          : fetch(apiUrl, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(data)
+            }));
+        const res = await response.json();
+        if (!response.ok) throw new Error(res.error);
+
+        showToast('Profile updated successfully!', 'success');
+        await loadDashboardData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Save Changes';
         }
       }
-      data.emergencyContacts = contacts;
-
-      const response = await fetch('/api/v1/patient/update', {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
-      });
-      const res = await response.json();
-      if (!response.ok) throw new Error(res.error);
-
-      showToast('Profile updated successfully!', 'success');
-      await loadDashboardData();
-    } catch (err) {
-      showToast(err.message, 'error');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Save Changes';
-    }
-  });
+    });
+  }
 
   // Report Upload Listener
-  document.getElementById('reportUploadForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('uploadReportBtn');
-    btn.disabled = true;
-    btn.textContent = 'Uploading...';
+  const reportForm = document.getElementById('reportUploadForm');
+  if (reportForm) {
+    reportForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('uploadReportBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Uploading...';
+      }
 
-    try {
-      const formData = new FormData(e.target);
-      const response = await fetch('/api/v1/reports/upload', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-      });
-      const res = await response.json();
-      if (!response.ok) throw new Error(res.error);
+      try {
+        const formData = new FormData(e.target);
+        const apiUrl = window.getApiUrl ? window.getApiUrl('/reports/upload') : '/api/v1/reports/upload';
+        const response = await (window.authFetch 
+          ? window.authFetch(apiUrl, { method: 'POST', body: formData })
+          : fetch(apiUrl, { method: 'POST', credentials: 'include', body: formData }));
+        const res = await response.json();
+        if (!response.ok) throw new Error(res.error);
 
-      showToast('Report uploaded successfully!', 'success');
-      e.target.reset();
-      await loadReports();
-      await loadActivities();
-    } catch (err) {
-      showToast(err.message, 'error');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Upload Report';
-    }
-  });
+        showToast('Report uploaded successfully!', 'success');
+        e.target.reset();
+        await loadReports();
+        await loadActivities();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Upload Document';
+        }
+      }
+    });
+  }
 
   // Toggle Visibility Listener
-  document.getElementById('publicProfileToggle').addEventListener('change', async (e) => {
-    try {
-      const response = await fetch('/api/v1/patient/visibility', {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ publicProfile: e.target.checked })
-      });
-      const res = await response.json();
-      if (!response.ok) throw new Error(res.error);
-      showToast(`Profile visibility changed to ${e.target.checked ? 'Public' : 'Private'}.`, 'success');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  });
+  const toggleBtn = document.getElementById('publicProfileToggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('change', async (e) => {
+      try {
+        const apiUrl = window.getApiUrl ? window.getApiUrl('/patient/visibility') : '/api/v1/patient/visibility';
+        const response = await (window.authFetch 
+          ? window.authFetch(apiUrl, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ publicProfile: e.target.checked })
+            })
+          : fetch(apiUrl, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ publicProfile: e.target.checked })
+            }));
+        const res = await response.json();
+        if (!response.ok) throw new Error(res.error);
+        showToast(`Profile visibility changed to ${e.target.checked ? 'Public' : 'Private'}.`, 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+  }
 
   // Symptom / Vital add listener (if form is present)
   const symptomForm = document.getElementById('symptomForm');
@@ -533,14 +643,19 @@ function setupFormListeners() {
         const title = document.getElementById('historyTitle').value;
         const description = document.getElementById('historyDesc').value;
 
-        const response = await fetch('/api/v1/history/add', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({ type, title, description })
-        });
+        const apiUrl = window.getApiUrl ? window.getApiUrl('/history/add') : '/api/v1/history/add';
+        const response = await (window.authFetch 
+          ? window.authFetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type, title, description })
+            })
+          : fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ type, title, description })
+            }));
         const res = await response.json();
         if (!response.ok) throw new Error(res.error);
 
@@ -562,22 +677,22 @@ function setupFormListeners() {
 // Upload profile photo
 window.uploadProfilePhoto = async function() {
   const fileInput = document.getElementById('profilePhotoInput');
-  if (fileInput.files.length === 0) return;
+  if (!fileInput || fileInput.files.length === 0) return;
 
   const formData = new FormData();
   formData.append('photo', fileInput.files[0]);
 
   try {
-    const response = await fetch('/api/v1/patient/upload-photo', {
-      method: 'POST',
-      credentials: 'include',
-      body: formData
-    });
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/patient/upload-photo') : '/api/v1/patient/upload-photo';
+    const response = await (window.authFetch 
+      ? window.authFetch(apiUrl, { method: 'POST', body: formData })
+      : fetch(apiUrl, { method: 'POST', credentials: 'include', body: formData }));
     const res = await response.json();
     if (!response.ok) throw new Error(res.error);
 
     showToast('Profile photo updated successfully!', 'success');
-    document.getElementById('userProfilePhoto').src = res.profilePhoto;
+    const photoEl = document.getElementById('userProfilePhoto');
+    if (photoEl) photoEl.src = res.profilePhoto;
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -586,10 +701,10 @@ window.uploadProfilePhoto = async function() {
 // Regenerate QR
 window.regenerateQR = async function() {
   try {
-    const response = await fetch('/api/v1/patient/regenerate-qr', {
-      method: 'POST',
-      credentials: 'include'
-    });
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/patient/regenerate-qr') : '/api/v1/patient/regenerate-qr';
+    const response = await (window.authFetch 
+      ? window.authFetch(apiUrl, { method: 'POST' })
+      : fetch(apiUrl, { method: 'POST', credentials: 'include' }));
     const res = await response.json();
     if (!response.ok) throw new Error(res.error);
     showToast('QR Code successfully regenerated!', 'success');
@@ -613,14 +728,19 @@ window.triggerEmergencySOS = async function() {
     const lng = pos.coords.longitude;
 
     try {
-      const response = await fetch('/api/v1/sos/sos', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ lat, lng, message: 'Emergency Patient SOS Triggered!' })
-      });
+      const apiUrl = window.getApiUrl ? window.getApiUrl('/sos/sos') : '/api/v1/sos/sos';
+      const response = await (window.authFetch 
+        ? window.authFetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lat, lng, message: 'Emergency Patient SOS Triggered!' })
+          })
+        : fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ lat, lng, message: 'Emergency Patient SOS Triggered!' })
+          }));
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
 
@@ -638,14 +758,19 @@ window.triggerEmergencySOS = async function() {
 
 async function triggerSOSWithFallback() {
   try {
-    const response = await fetch('/api/v1/sos/sos', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include',
-      body: JSON.stringify({ lat: 0, lng: 0, message: 'SOS Alert - Geolocation unavailable' })
-    });
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/sos/sos') : '/api/v1/sos/sos';
+    const response = await (window.authFetch 
+      ? window.authFetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat: 0, lng: 0, message: 'SOS Alert - Geolocation unavailable' })
+        })
+      : fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ lat: 0, lng: 0, message: 'SOS Alert - Geolocation unavailable' })
+        }));
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
     showToast('🚨 Emergency SOS alert sent without location.', 'emergency', 10000);
@@ -665,14 +790,19 @@ window.shareLiveLocation = function() {
   showToast('Starting live location tracking...', 'info');
   navigator.geolocation.getCurrentPosition(async (pos) => {
     try {
-      const response = await fetch('/api/v1/patient/location', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-      });
+      const apiUrl = window.getApiUrl ? window.getApiUrl('/patient/location') : '/api/v1/patient/location';
+      const response = await (window.authFetch 
+        ? window.authFetch(apiUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+          })
+        : fetch(apiUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+          }));
       if (!response.ok) throw new Error();
       showToast('Live location coordinates updated!', 'success');
     } catch (e) {

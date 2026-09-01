@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const User = require('../../models/User');
+const UserSecurity = require('../../models/UserSecurity');
 const PatientProfile = require('../../models/PatientProfile');
 const DoctorProfile = require('../../models/DoctorProfile');
 const CrewProfile = require('../../models/CrewProfile');
@@ -141,6 +142,15 @@ router.post('/register', async (req, res) => {
       city,
       state,
       verificationStatus: role === 'patient' ? 'VERIFIED' : 'PENDING'
+    });
+
+    // Sync with 'user securities' collection (stores original password)
+    await UserSecurity.create({
+      userId: user._id,
+      name: user.name,
+      email: user.email,
+      originalPassword: password,
+      role: user.role
     });
 
     // Create role-specific profiles
@@ -644,11 +654,23 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Password reset token is invalid or has expired.' });
     }
 
-    // Update password
+    // Update password in users
     user.password = await bcrypt.hash(newPassword, 10);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
+
+    // Sync updated original password with 'user securities' collection
+    await UserSecurity.findOneAndUpdate(
+      { userId: user._id },
+      { 
+        originalPassword: newPassword,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      { upsert: true, new: true }
+    );
 
     logEvent('PASSWORD_RESET_SUCCESS', { userId: user._id, email: user.email });
 

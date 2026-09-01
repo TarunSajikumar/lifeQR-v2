@@ -1,5 +1,33 @@
 // API utilities for frontend pages
-window.API_URL = window.location.origin + '/api/v1';
+(function() {
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '');
+  const port = typeof window !== 'undefined' ? window.location.port : '';
+  // If running via Live Server (5500, 5501, 3000, etc.) or file://, redirect API requests to Express on port 5000
+  if ((isLocal && port && port !== '5000') || (typeof window !== 'undefined' && window.location.protocol === 'file:')) {
+    const host = window.location.hostname || 'localhost';
+    window.API_URL = `http://${host}:5000/api/v1`;
+  } else {
+    window.API_URL = ((typeof window !== 'undefined' && window.location.origin) || '') + '/api/v1';
+  }
+})();
+
+window.getApiUrl = function(endpoint) {
+  let base = window.API_URL;
+  if (!base) {
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '');
+    const port = typeof window !== 'undefined' ? window.location.port : '';
+    if ((isLocal && port && port !== '5000') || (typeof window !== 'undefined' && window.location.protocol === 'file:')) {
+      const host = window.location.hostname || 'localhost';
+      base = `http://${host}:5000/api/v1`;
+    } else {
+      base = ((typeof window !== 'undefined' && window.location.origin) || '') + '/api/v1';
+    }
+  }
+  if (!endpoint) return base;
+  if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) return endpoint;
+  const cleanPath = endpoint.startsWith('/api/v1') ? endpoint.replace('/api/v1', '') : endpoint;
+  return `${base}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
+};
 
 window.parseApiResponse = async function(response) {
   const contentType = response.headers.get('content-type') || '';
@@ -9,13 +37,13 @@ window.parseApiResponse = async function(response) {
   }
 
   const text = await response.text();
-  const errorText = text ? text.trim() : `Unexpected server response (${response.status})`;
+  const errorText = text ? text.trim() : `Server returned status ${response.status}`;
   throw new Error(errorText);
 };
 
 window.verifyToken = async function() {
   try {
-    const response = await fetch(`${window.API_URL}/auth/verify`, {
+    const response = await fetch(window.getApiUrl('/auth/verify'), {
       credentials: 'include'
     });
 
@@ -46,10 +74,11 @@ window.verifyToken = async function() {
 /**
  * Helper for authenticated fetch requests.
  * All requests use credentials: 'include' for httpOnly cookie auth.
- * No localStorage token or Authorization header needed.
+ * Automatically resolves relative API URLs to the correct backend host.
  */
 window.authFetch = function(url, options = {}) {
-  return fetch(url, {
+  const fullUrl = window.getApiUrl(url);
+  return fetch(fullUrl, {
     ...options,
     credentials: 'include'
   });
@@ -61,17 +90,24 @@ if (window.location.hostname === 'localhost' || window.location.hostname === '12
     let sseSource = null;
     function connectSSE() {
       if (sseSource) return;
-      sseSource = new EventSource('/api/v1/dev-live-reload');
-      sseSource.onmessage = function(e) {
-        console.log('[Dev Live Reload] File changed:', e.data, '- Reloading page...');
-        window.location.reload();
-      };
-      sseSource.onerror = function() {
-        sseSource.close();
-        sseSource = null;
-        // Retry connection after 2 seconds
-        setTimeout(connectSSE, 2000);
-      };
+      try {
+        const sseUrl = (window.API_URL || '/api/v1') + '/dev-live-reload';
+        sseSource = new EventSource(sseUrl);
+        sseSource.onmessage = function(e) {
+          console.log('[Dev Live Reload] File changed:', e.data, '- Reloading page...');
+          window.location.reload();
+        };
+        sseSource.onerror = function() {
+          if (sseSource) {
+            sseSource.close();
+            sseSource = null;
+          }
+          // Retry connection after 3 seconds
+          setTimeout(connectSSE, 3000);
+        };
+      } catch (err) {
+        // Suppress live reload init errors
+      }
     }
     // Start listening on DOM loaded
     if (document.readyState === 'loading') {

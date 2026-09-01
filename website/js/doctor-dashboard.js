@@ -23,7 +23,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function checkVerificationStatus() {
   try {
-    const res = await fetch('/api/v1/verification/status', { credentials: 'include' });
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/verification/status') : '/api/v1/verification/status';
+    const res = await (window.authFetch ? window.authFetch(apiUrl) : fetch(apiUrl, { credentials: 'include' }));
     if (!res.ok) return;
     const data = await res.json();
     
@@ -74,9 +75,8 @@ async function loadAuthorizedPatients() {
   if (!container) return;
 
   try {
-    const response = await fetch('/api/v1/doctor-access/patients', {
-      credentials: 'include'
-    });
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/doctor-access/patients') : '/api/v1/doctor-access/patients';
+    const response = await (window.authFetch ? window.authFetch(apiUrl) : fetch(apiUrl, { credentials: 'include' }));
     const data = await response.json();
     if (!response.ok) {
       if (response.status === 403 && data.error === 'Account not verified') {
@@ -95,7 +95,7 @@ async function loadAuthorizedPatients() {
 
     data.patients.forEach(p => {
       const card = document.createElement('div');
-      card.className = 'p-3.5 bg-indigo-50/50 hover:bg-indigo-100/60 border border-indigo-100 rounded-2xl flex items-center justify-between cursor-pointer transition shadow-xs group';
+      card.className = 'p-3.5 bg-teal-50/40 hover:bg-teal-50/90 border border-teal-100/80 hover:border-teal-300 rounded-2xl flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm group';
       card.onclick = () => {
         document.getElementById('patientQrId').value = p.qrCodeId;
         searchPatient();
@@ -104,13 +104,21 @@ async function loadAuthorizedPatients() {
       const photo = p.profilePhoto || 'https://www.w3schools.com/howto/img_avatar.png';
       card.innerHTML = `
         <div class="flex items-center gap-3">
-          <img src="${photo}" class="w-9 h-9 rounded-xl object-cover border border-indigo-200 shadow-xs">
+          <div class="relative">
+            <img src="${photo}" class="w-10 h-10 rounded-xl object-cover border border-teal-200 shadow-xs">
+            <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border border-white"></span>
+          </div>
           <div>
-            <p class="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">${p.name}</p>
-            <p class="text-[10px] text-slate-500 font-mono">ID: ${p.qrCodeId} • Blood: <span class="font-bold text-rose-600">${p.bloodGroup || 'N/A'}</span></p>
+            <p class="text-xs font-bold text-slate-900 group-hover:text-teal-700 transition-colors">${p.name}</p>
+            <p class="text-[10px] text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
+              <span>${p.qrCodeId}</span>
+              <span class="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 rounded font-bold">${p.bloodGroup || 'N/A'}</span>
+            </p>
           </div>
         </div>
-        <span class="material-symbols-outlined text-base text-indigo-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all">chevron_right</span>
+        <div class="w-7 h-7 rounded-lg bg-white/80 border border-teal-100 flex items-center justify-center text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-all shadow-xs">
+          <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+        </div>
       `;
       container.appendChild(card);
     });
@@ -170,16 +178,20 @@ async function logDoctorScan(qrCodeId) {
 }
 
 function showPatientSkeleton() {
+  const prompt = document.getElementById('patientDetailsEmptyPrompt');
   const panel = document.getElementById('patientDetailsPanel');
   const skel = document.getElementById('patientSkeleton');
   const content = document.getElementById('patientContent');
+  if (prompt) prompt.classList.add('hidden');
   if (panel) panel.classList.remove('hidden');
   if (skel) skel.classList.remove('hidden');
   if (content) content.classList.add('hidden');
 }
 
 function hidePatientView() {
+  const prompt = document.getElementById('patientDetailsEmptyPrompt');
   const panel = document.getElementById('patientDetailsPanel');
+  if (prompt) prompt.classList.remove('hidden');
   if (panel) panel.classList.add('hidden');
 }
 
@@ -727,9 +739,9 @@ async function initDoctorDecisionTree() {
 window.switchDecisionTrack = function(trackId) {
   document.querySelectorAll('.track-tab-btn').forEach(btn => {
     if (btn.getAttribute('data-track') === trackId) {
-      btn.className = 'track-tab-btn active px-3.5 py-2 rounded-xl bg-indigo-600 text-white transition flex items-center gap-1.5 flex-shrink-0';
+      btn.className = 'track-tab-btn active px-3.5 py-2 rounded-xl bg-teal-600 text-white transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer shadow-sm';
     } else {
-      btn.className = 'track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0';
+      btn.className = 'track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer';
     }
   });
   renderDecisionTrack(trackId);
@@ -753,45 +765,45 @@ function renderDecisionTrack(trackId) {
     
     if (stage.options) {
       actionButtons = stage.options.map(opt => `
-        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${opt}', 'Triage Priority Set: ${opt}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 transition flex items-center gap-1">
+        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${opt}', 'Triage Priority Set: ${opt}')" class="px-3 py-1.5 bg-slate-100 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-300 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 transition flex items-center gap-1 cursor-pointer">
           <span>${opt}</span>
         </button>
       `).join('');
     } else if (stage.actions) {
       actionButtons = stage.actions.map(act => `
-        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${act}', 'Clinical action executed: ${act}')" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition flex items-center gap-1">
+        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${act}', 'Clinical action executed: ${act}')" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer">
           <span class="material-symbols-outlined text-xs">play_arrow</span> ${act}
         </button>
       `).join('');
     } else if (stage.elements) {
       actionButtons = stage.elements.map(el => `
-        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', 'Audited ${el}', 'Verified and reviewed patient ${el}')" class="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-[11px] font-semibold transition">
+        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', 'Audited ${el}', 'Verified and reviewed patient ${el}')" class="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-[11px] font-semibold transition cursor-pointer">
           ✓ ${el}
         </button>
       `).join('');
     } else if (stage.categories) {
       actionButtons = stage.categories.map(c => `
-        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', 'Allergy Check: ${c}', 'Audited ${c} allergy safety matrix')" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition">
+        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', 'Allergy Check: ${c}', 'Audited ${c} allergy safety matrix')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition cursor-pointer">
           ⚠️ ${c} Allergy
         </button>
       `).join('');
     } else if (stage.examples || stage.systems || stage.vitals || stage.levels || stage.types || stage.choices || stage.forms || stage.list || stage.steps || stage.specialties || stage.units || stage.protocols || stage.destinations || stage.panels || stage.docs || stage.topics || stage.intervals) {
       const items = stage.examples || stage.systems || stage.vitals || stage.levels || stage.types || stage.choices || stage.forms || stage.list || stage.steps || stage.specialties || stage.units || stage.protocols || stage.destinations || stage.panels || stage.docs || stage.topics || stage.intervals;
       actionButtons = items.map(item => `
-        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${item}', 'Clinical Decision Protocol: ${item}')" class="px-2.5 py-1.5 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 transition">
+        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${item}', 'Clinical Decision Protocol: ${item}')" class="px-3 py-1.5 bg-slate-50 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-300 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 transition cursor-pointer">
           ${item}
         </button>
       `).join('');
     }
 
     stagesHtml += `
-      <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-2.5 hover:border-indigo-300 transition">
+      <div class="p-4.5 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-3 hover:border-teal-300 transition">
         <div class="flex items-center justify-between">
           <h4 class="font-bold text-xs text-slate-900 flex items-center gap-2">
-            <span class="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center font-mono font-bold">${stage.id}</span>
+            <span class="w-5 h-5 rounded-full bg-teal-600 text-white text-[10px] flex items-center justify-center font-mono font-bold">${stage.id}</span>
             <span>${stage.name}</span>
           </h4>
-          <span class="text-[10px] text-slate-400 font-medium">Stage ${stage.id} of 26</span>
+          <span class="text-[10px] text-slate-400 font-medium font-tabular">Stage ${stage.id} of 26</span>
         </div>
         <div class="flex flex-wrap gap-1.5">
           ${actionButtons}

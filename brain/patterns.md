@@ -43,3 +43,8 @@ Frontend common files (styles, images, scripts, Tailwind build outputs, login/si
 - **CLI Sync**: `npm run sync` runs two-way timestamp comparison and mirror copying.
 - **Watcher Mode**: `npm run sync:watch` or server startup continuously watches `website/` and `app/` using `fs.watch` to instantly replicate changes made in either directory.
 
+## 🎨 6. Landing Page Design Standard (Apple Health & Linear Tier)
+- **Cards & Surfaces**: Use razor-sharp micro-hairlines (`border: 1px solid rgba(226, 232, 240, 0.85)` / `border: 1px solid rgba(255, 255, 255, 0.08)`), subtle inset light highlights, and soft ambient drop shadows. Avoid thick, bulky double-bezel bubbles.
+- **Buttons**: Use ergonomic pill buttons (`.btn-pill`, `.btn-pill-primary`, `.btn-pill-secondary`) with smooth spring hover transitions and trailing micro-icons.
+- **Typography**: Display headings in `Outfit`, body in `Plus Jakarta Sans`, and medical telemetry in `JetBrains Mono`.
+

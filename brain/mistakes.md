@@ -30,3 +30,17 @@
 - **Fix**: Configured Helmet CSP with `upgradeInsecureRequests: null` for local development/HTTP and opened CORS for all LAN network interfaces. Rebuilt Tailwind CSS distribution bundle.
 - **Status**: Resolved.
 
+## Issue 006: Post-Signup Dashboard Redirection & Cross-Origin Auth Guard
+- **Symptom**: After successfully creating an account, the browser failed to reach the dashboard or got bounced back to login.
+- **Root Cause**: `js/auth-guard.js` hardcoded `const API_BASE = '/api/v1'`, causing session verification on alternate dev ports/origins (e.g. 5500, 3000) to 404 and kick the user back to login. Dashboard HTML files also omitted `api-utils.js`, and signup redirection had fixed timing without immediate role resolution.
+- **Fix**: Upgraded `auth-guard.js` to dynamically detect `API_BASE` and sync `localStorage` user metadata. Included `api-utils.js` across all dashboards. Updated `lifeqr_signup.html` to resolve target dashboard immediately based on user role and redirect cleanly.
+- **Status**: Resolved.
+
+## Issue 007: Dashboard Data Failing to Populate Due to Hardcoded Relative Fetch Calls
+- **Symptom**: Upon landing on `patient_dashboard.html`, the patient's name showed `Patient: Loading...`, the QR badge was broken, and form inputs stayed empty.
+- **Root Cause**: `patient-dashboard.js` (and other dashboard JS controllers) made unrouted relative `fetch('/api/v1/patient/me')` calls instead of utilizing `window.authFetch` and dynamic `getApiUrl()`. When running via separate dev ports (e.g., Live Server on port 5500), these requests failed with 404, throwing an unhandled rejection and skipping DOM rendering. Additionally, `userName` and QR badge were not populated immediately from the verified session object.
+- **Fix**: Updated `api-utils.js` to expose `window.getApiUrl()` and upgraded `patient-dashboard.js`, `doctor-dashboard.js`, and `crew-dashboard.js` to use `window.authFetch` across all endpoints. Added immediate pre-rendering of patient name, phone, gender, and QR badge from the authenticated user object on `DOMContentLoaded`.
+- **Status**: Resolved.
+
+
+

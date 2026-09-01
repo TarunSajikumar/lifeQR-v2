@@ -95,12 +95,14 @@ function renderIncomingAmbulances(list) {
 
   if (!list || list.length === 0) {
     container.innerHTML = `
-      <div class="p-8 text-center bg-slate-900/80 border border-slate-800 rounded-3xl backdrop-blur-md">
-        <div class="w-12 h-12 rounded-2xl bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
-          <span class="material-symbols-outlined text-2xl">local_shipping</span>
+      <div class="bezel-hud-shell">
+        <div class="bezel-hud-core p-8 text-center space-y-3">
+          <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-center mx-auto shadow-inner">
+            <span class="material-symbols-outlined text-2xl">local_shipping</span>
+          </div>
+          <h4 class="font-display font-bold text-white text-base">No Ambulance En Route Currently</h4>
+          <p class="text-xs text-slate-400 font-medium max-w-sm mx-auto">When paramedics trigger an in-transit vitals stream, live telemetry, GPS routing, and trauma bay allocations will appear here instantly.</p>
         </div>
-        <h4 class="font-bold text-white text-sm">No Ambulance En Route Currently</h4>
-        <p class="text-xs text-slate-400 font-medium mt-1">When paramedics trigger an in-transit vitals stream, live telemetry will appear here.</p>
       </div>
     `;
     return;
@@ -111,79 +113,88 @@ function renderIncomingAmbulances(list) {
   list.forEach(item => {
     const vitals = item.vitals || {};
     const card = document.createElement('div');
-    card.className = 'p-5 bg-gradient-to-r from-slate-900 via-slate-900 to-rose-950/40 border-2 border-rose-500/50 rounded-3xl shadow-xl space-y-4 backdrop-blur-md';
+    card.className = 'bezel-hud-shell';
 
     const isCritical = item.triageLevel === 'CRITICAL';
     const triageBadgeClass = isCritical 
       ? 'bg-rose-500 text-white font-extrabold animate-pulse'
-      : 'bg-amber-500/30 text-amber-300 font-bold border border-amber-500/40';
+      : 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40';
 
     card.innerHTML = `
-      <div class="flex items-start justify-between gap-3 border-b border-slate-800 pb-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-rose-600/30 border border-rose-500/50 flex items-center justify-center text-rose-400 font-extrabold text-sm">
-            ${item.bloodGroup || 'O+'}
+      <div class="bezel-hud-core p-5 sm:p-6 space-y-4">
+        
+        <div class="flex items-start justify-between gap-3 border-b border-slate-800 pb-3.5">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-rose-950/80 border border-rose-500/50 flex items-center justify-center text-rose-400 font-display font-extrabold text-base shadow-md">
+              ${item.bloodGroup || 'O+'}
+            </div>
+            <div>
+              <h3 class="font-display font-extrabold text-white text-base flex items-center gap-2">
+                ${item.patientName || 'Emergency Patient'}
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider ${triageBadgeClass}">${item.triageLevel || 'CRITICAL'}</span>
+              </h3>
+              <p class="text-xs text-slate-400 font-medium mt-0.5">
+                Unit: <strong class="text-white">${item.vehicleNumber}</strong> • Complaint: <span class="text-rose-300 font-semibold">${item.chiefComplaint || 'Acute Trauma'}</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 class="font-headline font-extrabold text-white text-base flex items-center gap-2">
-              ${item.patientName || 'Emergency Patient'}
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider ${triageBadgeClass}">${item.triageLevel || 'CRITICAL'}</span>
-            </h3>
-            <p class="text-xs text-slate-400 font-medium">Unit: <strong class="text-white">${item.vehicleNumber}</strong> • Complaint: <span class="text-rose-300">${item.chiefComplaint || 'Acute Trauma'}</span></p>
+
+          <div class="text-right">
+            <div class="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">ETA COUNTDOWN</div>
+            <div class="text-xl sm:text-2xl font-black text-rose-400 font-mono flex items-center justify-end gap-1 mt-0.5">
+              <span class="material-symbols-outlined text-base animate-spin">schedule</span>
+              <span>${item.etaMinutes || 8} Mins</span>
+            </div>
           </div>
         </div>
 
-        <div class="text-right">
-          <div class="text-xs font-bold text-slate-400">ETA COUNTDOWN</div>
-          <div class="text-xl font-extrabold text-rose-400 font-mono flex items-center justify-end gap-1">
-            <span class="material-symbols-outlined text-sm animate-spin">schedule</span> ${item.etaMinutes} Mins
+        <!-- Severe Allergy Warning Banner -->
+        <div class="px-3.5 py-2.5 bg-rose-950/60 border border-rose-500/30 rounded-xl flex items-center justify-between text-xs text-rose-300">
+          <span class="flex items-center gap-2 font-bold">
+            <span class="material-symbols-outlined text-base text-rose-400">warning</span>
+            <span>Critical Allergies: <strong>${item.allergies || 'None Reported'}</strong></span>
+          </span>
+          <span class="text-[10px] text-slate-400 font-mono">QR ID: ${item.qrCodeId || 'N/A'}</span>
+        </div>
+
+        <!-- Live Vitals Telemetry Metrics Grid -->
+        <div class="grid grid-cols-4 gap-2.5 bg-slate-950/90 p-3.5 rounded-2xl border border-slate-800/80 text-center font-tabular">
+          <div class="space-y-0.5">
+            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">PULSE (HR)</p>
+            <p class="text-base sm:text-lg font-extrabold text-rose-400">${vitals.heartRate ? vitals.heartRate + ' <span class="text-[10px] font-normal text-slate-400">bpm</span>' : '--'}</p>
+          </div>
+          <div class="space-y-0.5">
+            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">BLOOD PRESSURE</p>
+            <p class="text-base sm:text-lg font-extrabold text-indigo-300">${vitals.bpSystolic ? `${vitals.bpSystolic}/${vitals.bpDiastolic || 80}` : '--'}</p>
+          </div>
+          <div class="space-y-0.5">
+            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">SpO2</p>
+            <p class="text-base sm:text-lg font-extrabold text-emerald-400">${vitals.spO2 ? vitals.spO2 + '%' : '--'}</p>
+          </div>
+          <div class="space-y-0.5">
+            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">GCS SCORE</p>
+            <p class="text-base sm:text-lg font-extrabold text-amber-300">${vitals.gcs ? vitals.gcs + '/15' : '--'}</p>
           </div>
         </div>
-      </div>
 
-      <!-- Severe Allergy Warning Banner -->
-      <div class="px-3.5 py-2 bg-rose-950/60 border border-rose-500/30 rounded-xl flex items-center justify-between text-xs text-rose-300">
-        <span class="flex items-center gap-1.5 font-bold">
-          <span class="material-symbols-outlined text-base text-rose-400">warning</span>
-          Critical Allergies: ${item.allergies || 'None Reported'}
-        </span>
-        <span class="text-[10px] text-slate-400 font-mono">QR ID: ${item.qrCodeId}</span>
-      </div>
+        <!-- Trauma Bay Reservation Dispatcher -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+          <div class="text-xs text-slate-300 font-medium">
+            Assigned Trauma Bay: <strong class="text-white bg-slate-800/90 px-2.5 py-1 rounded-lg border border-slate-700 font-mono">${item.assignedBay || 'PENDING ASSIGNMENT'}</strong>
+          </div>
 
-      <!-- Live Vitals Telemetry Metrics Grid -->
-      <div class="grid grid-cols-4 gap-2 bg-slate-950/80 p-3 rounded-2xl border border-slate-800 text-center">
-        <div>
-          <p class="text-[10px] font-bold text-slate-400">PULSE (HR)</p>
-          <p class="text-base font-extrabold text-rose-400">${vitals.heartRate ? vitals.heartRate + ' <span class="text-[9px] font-normal text-slate-400">bpm</span>' : '--'}</p>
-        </div>
-        <div>
-          <p class="text-[10px] font-bold text-slate-400">BLOOD PRESSURE</p>
-          <p class="text-base font-extrabold text-indigo-300">${vitals.bpSystolic ? `${vitals.bpSystolic}/${vitals.bpDiastolic || 80}` : '--'}</p>
-        </div>
-        <div>
-          <p class="text-[10px] font-bold text-slate-400">SpO2</p>
-          <p class="text-base font-extrabold text-emerald-400">${vitals.spO2 ? vitals.spO2 + '%' : '--'}</p>
-        </div>
-        <div>
-          <p class="text-[10px] font-bold text-slate-400">GCS SCORE</p>
-          <p class="text-base font-extrabold text-amber-300">${vitals.gcs ? vitals.gcs + '/15' : '--'}</p>
-        </div>
-      </div>
-
-      <!-- Trauma Bay Reservation Dispatcher -->
-      <div class="flex items-center justify-between gap-3 pt-1">
-        <div class="text-xs text-slate-300 font-medium">
-          Assigned Location: <strong class="text-white bg-slate-800 px-2 py-1 rounded-lg border border-slate-700">${item.assignedBay || 'PENDING'}</strong>
+          <div class="flex items-center gap-2">
+            <button onclick="reserveTraumaBay('${item._id}', 'Bay 1 - Critical')" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center gap-1 cursor-pointer">
+              <span class="material-symbols-outlined text-sm">meeting_room</span>
+              <span>Reserve Bay 1</span>
+            </button>
+            <button onclick="reserveTraumaBay('${item._id}', 'Bay 2 - Resuscitation')" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center gap-1 cursor-pointer">
+              <span class="material-symbols-outlined text-sm">meeting_room</span>
+              <span>Reserve Bay 2</span>
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button onclick="reserveTraumaBay('${item._id}', 'Bay 1 - Critical')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-md">
-            Reserve Bay 1
-          </button>
-          <button onclick="reserveTraumaBay('${item._id}', 'Bay 2 - Resuscitation')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-md">
-            Reserve Bay 2
-          </button>
-        </div>
       </div>
     `;
 
@@ -216,16 +227,33 @@ function initERMap() {
   const defaultLat = 37.7749;
   const defaultLng = -122.4194;
 
-  erMapInstance = L.map('erMap').setView([defaultLat, defaultLng], 12);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© OpenStreetMap'
-  }).addTo(erMapInstance);
+  try {
+    erMapInstance = L.map('erMap').setView([defaultLat, defaultLng], 12);
+    
+    // CartoDB Dark Matter tiles for tactical HUD styling
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap, © CARTO'
+    }).addTo(erMapInstance);
 
-  // Hospital ER Marker
-  L.marker([defaultLat, defaultLng]).addTo(erMapInstance)
-    .bindPopup('<b>Central Hospital ER Trauma Center</b>')
-    .openPopup();
+    // Hospital ER Marker
+    const hospitalIcon = L.divIcon({
+      className: 'custom-er-icon',
+      html: '<div style="width:32px;height:32px;background:#e11d48;border:2px solid #ffffff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;box-shadow:0 0 15px #e11d48;">🏥</div>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
+    });
+
+    L.marker([defaultLat, defaultLng], { icon: hospitalIcon }).addTo(erMapInstance)
+      .bindPopup('<b>Central Hospital ER Trauma Center</b><br>37.7749° N, 122.4194° W')
+      .openPopup();
+
+    setTimeout(() => {
+      if (erMapInstance) erMapInstance.invalidateSize();
+    }, 300);
+  } catch (e) {
+    console.warn('Failed to initialize Leaflet map on ER dashboard:', e);
+  }
 }
 
 function updateERMap(list) {

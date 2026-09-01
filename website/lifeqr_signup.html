@@ -1,482 +1,736 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#4f46e5">
-  <link rel="manifest" href="/manifest.json">
-  <title>Create Free Medical Profile | LifeQR</title>
-  
-  <!-- Fonts & Material Symbols -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-  <link rel="stylesheet" href="dist/output.css">
-  <link rel="stylesheet" href="styles.css">
-  <script src="js/toast.js"></script>
-  <script src="js/auth-guard.js"></script>
-  <script src="js/pwa-install.js"></script>
-</head>
-<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col antialiased relative overflow-x-hidden selection:bg-indigo-500 selection:text-white">
-  
-  <!-- Ambient Specular Mesh -->
-  <div class="ambient-mesh"></div>
-
-  <!-- Header -->
-  <header class="relative z-10 px-4 sm:px-8 py-4 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 shadow-xs">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
-      <a href="index.html" class="flex items-center gap-2.5 group">
-        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-800 flex items-center justify-center text-white shadow-md shadow-indigo-200 group-hover:scale-105 transition-transform">
-          <span class="material-symbols-outlined text-xl">qr_code_2</span>
-        </div>
-        <span class="font-display text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-indigo-800 bg-clip-text text-transparent">LifeQR</span>
-      </a>
-      <a href="lifeqr_login.html" class="text-xs sm:text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Already registered? <span class="text-indigo-600 font-bold underline">Sign In</span></a>
-    </div>
-  </header>
-
-  <main class="relative z-10 flex-1 px-4 sm:px-6 py-8 sm:py-12 max-w-3xl mx-auto w-full">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="LifeQR.png" type="image/png">
     
-    <div class="bezel-shell">
-      <div class="bezel-core p-6 sm:p-10 space-y-6">
-        
-        <div class="text-center space-y-2">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-extrabold uppercase tracking-widest">
-            FREE CITIZEN REGISTRATION
-          </span>
-          <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Create Your LifeQR Profile</h2>
-          <p class="text-xs sm:text-sm text-slate-500 font-medium max-w-lg mx-auto">Set up your encrypted medical profile for instant paramedic scan access during emergencies.</p>
+    <title>Create Free Medical Profile | LifeQR Emergency Network</title>
+    <meta name="description" content="Create your encrypted LifeQR emergency medical identity. Zero-cost registration for patients, families, ambulance crews, and physicians.">
+
+    <!-- Google Fonts & Material Symbols -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,200..700,0..1,-50..200" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script src="api-utils.js"></script>
+    <script src="js/toast.js"></script>
+    <script src="js/auth-guard.js"></script>
+    <script src="js/pwa-install.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html, body {
+            overscroll-behavior-y: contain;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+        }
+        body {
+            font-family: 'Archivo', system-ui, -apple-system, sans-serif;
+            background: #ffffff;
+            color: #111111;
+            overflow-x: hidden;
+        }
+        ::selection {
+            background: #111111;
+            color: #ffffff;
+        }
+        .font-black {
+            font-family: 'Archivo Black', 'Archivo', sans-serif;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Editorial Structural Rules */
+        .rule {
+            border-top: 2px solid #111111;
+        }
+        .rule-b {
+            border-bottom: 2px solid #111111;
+        }
+        .rule-r {
+            border-right: 2px solid #111111;
+        }
+
+        /* Editorial Buttons */
+        .btn-primary {
+            background: #111111;
+            color: #ffffff;
+            font-weight: 700;
+            border: 2px solid #111111;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn-primary:hover {
+            background: #E11D2E;
+            border-color: #E11D2E;
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            border: 2px solid #111111;
+            color: #111111;
+            font-weight: 700;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn-secondary:hover {
+            background: #111111;
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+        .btn-secondary:active {
+            transform: scale(0.98);
+        }
+
+        .num-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #E11D2E;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* Editorial Card Surface */
+        .editorial-card {
+            background: #ffffff;
+            border: 2px solid #111111;
+            box-shadow: 6px 6px 0px #111111;
+        }
+
+        /* Live Status Dot */
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #E11D2E;
+            animation: blink 1.4s ease-in-out infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0.25; }
+        }
+
+        /* Custom Input */
+        .editorial-input {
+            width: 100%;
+            background: #ffffff;
+            border: 2px solid #111111;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #111111;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .editorial-input:focus {
+            border-color: #E11D2E;
+            box-shadow: 3px 3px 0px #E11D2E;
+        }
+        .editorial-input::placeholder {
+            color: #888888;
+            font-weight: 400;
+        }
+
+        /* Role Button */
+        .role-btn {
+            border: 2px solid #111111;
+            background: #ffffff;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+        .role-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 4px 4px 0px #111111;
+        }
+        .role-btn.active-role {
+            background: #111111;
+            color: #ffffff;
+            box-shadow: 4px 4px 0px #E11D2E;
+            transform: translate(-2px, -2px);
+        }
+        .role-btn.active-role .role-icon {
+            color: #E11D2E;
+        }
+        .role-btn.active-role .role-sub {
+            color: #ffffff;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Top Live Telemetry Bar -->
+    <div class="bg-[#111111] text-white py-2.5 px-6 sm:px-10 text-xs font-mono">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap text-[11px]">
+            <div class="flex items-center gap-2.5">
+                <span class="live-dot"></span>
+                <span class="uppercase tracking-widest text-white font-bold">REGISTRATION PORTAL &bull; 100% FREE CITIZEN LIFELINE</span>
+            </div>
         </div>
-
-        <!-- Role Selection Cards -->
-        <div class="grid grid-cols-3 gap-3 sm:gap-4 pt-2">
-          <button type="button" onclick="selectRole('patient')" id="role-patient" class="role-btn p-3.5 sm:p-4 border-2 rounded-2xl text-center transition-all bg-white hover:border-indigo-500 shadow-xs cursor-pointer">
-            <div class="w-10 h-10 mx-auto rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-1.5">
-              <span class="material-symbols-outlined text-2xl">person</span>
-            </div>
-            <span class="text-xs sm:text-sm font-bold text-slate-800 block">Patient</span>
-            <span class="text-[10px] text-slate-400 font-medium hidden sm:block">Personal Lifeline</span>
-          </button>
-
-          <button type="button" onclick="selectRole('doctor')" id="role-doctor" class="role-btn p-3.5 sm:p-4 border-2 border-slate-200 rounded-2xl text-center transition-all bg-white hover:border-indigo-500 shadow-xs cursor-pointer">
-            <div class="w-10 h-10 mx-auto rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-1.5">
-              <span class="material-symbols-outlined text-2xl">medical_services</span>
-            </div>
-            <span class="text-xs sm:text-sm font-bold text-slate-800 block">Doctor</span>
-            <span class="text-[10px] text-slate-400 font-medium hidden sm:block">Clinical Access</span>
-          </button>
-
-          <button type="button" onclick="selectRole('crew')" id="role-crew" class="role-btn p-3.5 sm:p-4 border-2 border-slate-200 rounded-2xl text-center transition-all bg-white hover:border-indigo-500 shadow-xs cursor-pointer">
-            <div class="w-10 h-10 mx-auto rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-1.5">
-              <span class="material-symbols-outlined text-2xl">airport_shuttle</span>
-            </div>
-            <span class="text-xs sm:text-sm font-bold text-slate-800 block">Crew</span>
-            <span class="text-[10px] text-slate-400 font-medium hidden sm:block">First Responder</span>
-          </button>
-        </div>
-
-        <!-- Signup Form -->
-        <form id="signupForm" class="space-y-6 pt-2">
-          <input type="hidden" id="role" name="role" value="patient">
-
-          <!-- Account Basics Section -->
-          <div class="border-b border-slate-100 pb-6 space-y-4">
-            <h3 class="font-display text-xs font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-base">badge</span> Account Identification
-            </h3>
-
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Full Legal Name *</label>
-              <input type="text" id="name" name="name" required placeholder="John Doe" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-xs font-medium text-slate-800">
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Email Address *</label>
-                <input type="email" id="email" name="email" required placeholder="john@example.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-xs font-medium text-slate-800">
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Phone Number</label>
-                <input type="tel" id="phone" name="phone" value="+91 " placeholder="+91 9876543210" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-xs font-medium text-slate-800">
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Gender *</label>
-              <select id="gender" name="gender" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-xs font-medium text-slate-800">
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <!-- Password Setup -->
-            <div class="grid md:grid-cols-2 gap-4 pt-2">
-              <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Password *</label>
-                <div class="relative">
-                  <input type="password" id="password" name="password" required placeholder="••••••••" class="w-full px-4 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-xs font-medium text-slate-800">
-                  <button type="button" id="togglePasswordBtn" data-target="password" data-icon="password-toggle-icon" class="password-toggle-btn absolute right-3 top-2.5 text-slate-400 hover:text-indigo-600 focus:outline-none z-10 p-1">
-                    <span id="password-toggle-icon" class="material-symbols-outlined text-xl select-none pointer-events-none">visibility</span>
-                  </button>
-                </div>
-                <div class="mt-2 text-xs" id="password-strength-container">
-                  <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                    <div id="password-strength-bar" class="bg-rose-500 h-full w-0 transition-all duration-300"></div>
-                  </div>
-                  <p id="password-strength-text" class="text-slate-500 mt-1 font-semibold text-[11px]">Strength: None</p>
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Confirm Password *</label>
-                <div class="relative">
-                  <input type="password" id="confirmPassword" required placeholder="••••••••" class="w-full px-4 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-xs font-medium text-slate-800">
-                  <button type="button" id="toggleConfirmPasswordBtn" data-target="confirmPassword" data-icon="confirm-password-toggle-icon" class="password-toggle-btn absolute right-3 top-2.5 text-slate-400 hover:text-indigo-600 focus:outline-none z-10 p-1">
-                    <span id="confirm-password-toggle-icon" class="material-symbols-outlined text-xl select-none pointer-events-none">visibility</span>
-                  </button>
-                </div>
-                <p id="password-match-text" class="text-xs mt-1.5 font-semibold hidden"></p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Patient-specific Fields -->
-          <div id="patientFields" class="space-y-4">
-            <h3 class="font-display text-xs font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1.5 pt-2">
-              <span class="material-symbols-outlined text-base">medical_information</span> Vital Medical Info
-            </h3>
-
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Age</label>
-                <input type="number" id="age" name="age" min="0" max="150" placeholder="e.g. 28" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 text-xs font-medium text-slate-800 font-tabular">
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Blood Group</label>
-                <select id="bloodGroup" name="bloodGroup" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 text-xs font-bold text-slate-800">
-                  <option value="">Select Blood Type</option>
-                  <option value="A+">A+ (A Positive)</option>
-                  <option value="A-">A- (A Negative)</option>
-                  <option value="B+">B+ (B Positive)</option>
-                  <option value="B-">B- (B Negative)</option>
-                  <option value="AB+">AB+ (AB Positive)</option>
-                  <option value="AB-">AB- (AB Negative)</option>
-                  <option value="O+">O+ (O Positive)</option>
-                  <option value="O-">O- (O Negative)</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-rose-700 mb-1">Known Drug / Food Allergies</label>
-              <textarea id="allergies" name="allergies" rows="2" placeholder="e.g., Penicillin, Peanuts, Latex" class="w-full px-4 py-2.5 bg-rose-50/40 border border-rose-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-500 text-xs font-medium text-slate-800"></textarea>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Active Medications</label>
-              <textarea id="medications" name="medications" rows="2" placeholder="List active prescriptions and dosages" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 text-xs font-medium text-slate-800"></textarea>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Chronic Health Conditions</label>
-              <textarea id="healthIssues" name="healthIssues" rows="2" placeholder="e.g., Asthma, Type-1 Diabetes, Cardiac Arrhythmia" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 text-xs font-medium text-slate-800"></textarea>
-            </div>
-            
-            <div class="pt-4 border-t border-slate-100">
-              <h4 class="font-display text-xs font-bold text-indigo-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-base">contact_phone</span> In Case of Emergency Contacts (ICE)
-              </h4>
-              <div id="emergencyContactsList" class="space-y-3">
-                <div class="p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-2xl space-y-2">
-                  <span class="font-bold text-xs text-indigo-800 block">Primary Emergency Contact #1</span>
-                  <div class="grid md:grid-cols-3 gap-2.5">
-                    <input type="text" placeholder="Contact Name" name="emergencyContactName1" class="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                    <input type="tel" placeholder="Phone" value="+91 " name="emergencyContactPhone1" class="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                    <input type="text" placeholder="Relationship (e.g. Spouse)" name="emergencyContactRelationship1" class="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                  </div>
-                </div>
-
-                <div class="p-3.5 bg-indigo-50/30 border border-indigo-100/60 rounded-2xl space-y-2">
-                  <span class="font-bold text-xs text-slate-600 block">Secondary Emergency Contact #2</span>
-                  <div class="grid md:grid-cols-3 gap-2.5">
-                    <input type="text" placeholder="Contact Name" name="emergencyContactName2" class="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                    <input type="tel" placeholder="Phone" value="+91 " name="emergencyContactPhone2" class="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                    <input type="text" placeholder="Relationship" name="emergencyContactRelationship2" class="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Doctor-specific Fields -->
-          <div id="doctorFields" class="space-y-4 hidden pt-2">
-            <h3 class="font-display text-xs font-bold text-teal-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-base">medical_services</span> Clinical Credentials
-            </h3>
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Specialization *</label>
-              <input type="text" id="specialization" name="specialization" placeholder="e.g., Emergency Medicine / Cardiology" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 text-xs font-medium">
-            </div>
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Medical License Number *</label>
-                <input type="text" id="licenseNumber" name="licenseNumber" placeholder="e.g., MCI-884920" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 text-xs font-medium">
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Hospital / Clinic *</label>
-                <input type="text" id="hospital" name="hospital" placeholder="e.g. City General Hospital" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-teal-500 text-xs font-medium">
-              </div>
-            </div>
-          </div>
-
-          <!-- Crew-specific Fields -->
-          <div id="crewFields" class="space-y-4 hidden pt-2">
-            <h3 class="font-display text-xs font-bold text-rose-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-base">airport_shuttle</span> First Responder Info
-            </h3>
-            <div>
-              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Vehicle / Ambulance Registration Number *</label>
-              <input type="text" id="vehicleNumber" name="vehicleNumber" placeholder="e.g., AMB-04-102" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-500 text-xs font-medium">
-            </div>
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Crew Service Type *</label>
-                <select id="crewType" name="crewType" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-500 text-xs font-medium">
-                  <option value="">Select Service</option>
-                  <option value="ambulance">Ambulance Paramedic</option>
-                  <option value="fire">Fire Department Rescue</option>
-                  <option value="police">Emergency Police Response</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Base Station / Region *</label>
-                <input type="text" id="station" name="station" placeholder="e.g., Central Station Sector-5" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-500 text-xs font-medium">
-              </div>
-            </div>
-          </div>
-
-          <!-- Submit Button -->
-          <div class="pt-3">
-            <button type="submit" id="submitBtn" class="btn-island btn-island-primary w-full justify-center text-sm py-3.5">
-              <span>Create Free Account</span>
-              <span class="btn-icon-bubble">
-                <span class="material-symbols-outlined text-sm">arrow_forward</span>
-              </span>
-            </button>
-          </div>
-        </form>
-
-        <p class="text-center text-[11px] text-slate-400 font-medium">
-          By registering, you agree to LifeQR Medical Privacy Policies &amp; Encrypted Security Guidelines.
-        </p>
-
-      </div>
     </div>
-  </main>
 
-  <script>
-    checkAuthPagesAccess();
+    <!-- Header Navigation -->
+    <header class="px-6 sm:px-10 py-5 rule-b bg-white sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <a href="landingpage.html" class="flex items-center gap-2 group">
+                <span class="font-black text-2xl tracking-tight text-[#111111]">LIFEQR</span>
+                <span class="w-2.5 h-2.5 rounded-full bg-[#E11D2E] group-hover:scale-125 transition-transform"></span>
+            </a>
+            
+            <div class="flex items-center gap-4 text-xs font-mono">
+                <span class="hidden sm:inline text-[#111111]/60 font-bold uppercase tracking-wider">Already registered?</span>
+                <a href="lifeqr_login.html" class="btn-secondary text-xs px-4 py-2 uppercase font-mono tracking-wider">
+                    <span>Sign In</span>
+                    <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                </a>
+            </div>
+        </div>
+    </header>
 
-    let currentRole = 'patient';
-
-    function selectRole(role) {
-      currentRole = role;
-      document.getElementById('role').value = role;
-      
-      document.querySelectorAll('.role-btn').forEach(btn => {
-        btn.classList.remove('border-indigo-500', 'bg-indigo-50/50', 'ring-2', 'ring-indigo-500/20');
-        btn.classList.add('border-slate-200');
-      });
-      
-      const activeBtn = document.getElementById(`role-${role}`);
-      if (activeBtn) {
-        activeBtn.classList.remove('border-slate-200');
-        activeBtn.classList.add('border-indigo-500', 'bg-indigo-50/50', 'ring-2', 'ring-indigo-500/20');
-      }
-      
-      document.getElementById('patientFields').classList.toggle('hidden', role !== 'patient');
-      document.getElementById('doctorFields').classList.toggle('hidden', role !== 'doctor');
-      document.getElementById('crewFields').classList.toggle('hidden', role !== 'crew');
-    }
-
-    window.togglePasswordVisibility = function(fieldId, iconId) {
-      const input = document.getElementById(fieldId);
-      const icon = document.getElementById(iconId);
-      if (!input || !icon) return;
-      if (input.type === 'password') {
-        input.type = 'text';
-        icon.textContent = 'visibility_off';
-      } else {
-        input.type = 'password';
-        icon.textContent = 'visibility';
-      }
-    };
-
-    document.querySelectorAll('.password-toggle-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const targetId = btn.getAttribute('data-target');
-        const iconId = btn.getAttribute('data-icon');
-        window.togglePasswordVisibility(targetId, iconId);
-      });
-    });
-
-    const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-    const strengthBar = document.getElementById('password-strength-bar');
-    const strengthText = document.getElementById('password-strength-text');
-    const matchText = document.getElementById('password-match-text');
-
-    function checkPasswordMatch() {
-      const p1 = passwordInput.value;
-      const p2 = confirmPasswordInput.value;
-      if (!p2) {
-        matchText.classList.add('hidden');
-        return;
-      }
-      matchText.classList.remove('hidden');
-      if (p1 === p2) {
-        matchText.textContent = '✓ Passwords match';
-        matchText.className = 'text-xs mt-1.5 font-semibold text-emerald-600';
-      } else {
-        matchText.textContent = '✕ Passwords do not match';
-        matchText.className = 'text-xs mt-1.5 font-semibold text-rose-600';
-      }
-    }
-
-    confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-
-    passwordInput.addEventListener('input', () => {
-      checkPasswordMatch();
-      const val = passwordInput.value;
-      let score = 0;
-      if (val.length >= 8) score++;
-      if (/[A-Z]/.test(val)) score++;
-      if (/[a-z]/.test(val)) score++;
-      if (/[0-9]/.test(val)) score++;
-      if (/[^A-Za-z0-9]/.test(val)) score++;
-
-      let color = 'bg-rose-500';
-      let label = 'Very Weak';
-      let width = '20%';
-
-      if (score === 2) { color = 'bg-amber-500'; label = 'Weak'; width = '40%'; }
-      else if (score === 3) { color = 'bg-yellow-500'; label = 'Medium'; width = '60%'; }
-      else if (score === 4) { color = 'bg-blue-500'; label = 'Good'; width = '80%'; }
-      else if (score >= 5) { color = 'bg-emerald-500'; label = 'Strong'; width = '100%'; }
-
-      if (val.length === 0) { width = '0%'; label = 'None'; }
-
-      strengthBar.className = `${color} h-full transition-all duration-300`;
-      strengthBar.style.width = width;
-      strengthText.textContent = `Strength: ${label}`;
-    });
-
-    document.getElementById('signupForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const submitBtn = document.getElementById('submitBtn');
-      const password = document.getElementById('password').value;
-      const confirmPassword = document.getElementById('confirmPassword').value;
-      const gender = document.getElementById('gender').value;
-      if (!gender) {
-        showToast('Please select your gender (Male, Female, or Other).', 'error');
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        showToast('Passwords do not match!', 'error');
-        return;
-      }
-
-      const score = (password.length >= 8 ? 1 : 0) +
-                    (/[A-Z]/.test(password) ? 1 : 0) +
-                    (/[a-z]/.test(password) ? 1 : 0) +
-                    (/[0-9]/.test(password) ? 1 : 0) +
-                    (/[^A-Za-z0-9]/.test(password) ? 1 : 0);
-      
-      if (score < 5) {
-        showToast('Password is too weak. Ensure it includes uppercase, lowercase, numbers, and special symbols.', 'error');
-        return;
-      }
-      
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `<span>Creating Account...</span>`;
-      
-      try {
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData.entries());
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-4xl mx-auto w-full px-6 sm:px-10 py-10 sm:py-16">
         
-        if (currentRole === 'patient') {
-          const contacts = [];
-          const name1 = e.target.emergencyContactName1.value;
-          const phone1 = e.target.emergencyContactPhone1.value;
-          const rel1 = e.target.emergencyContactRelationship1.value;
-          if (name1 && phone1) {
-            contacts.push({ name: name1, phone: phone1, relationship: rel1 });
-          }
+        <!-- Header Introduction -->
+        <div class="text-center space-y-3 mb-10">
+            <div class="num-tag">01 — CITIZEN &amp; CLINICAL REGISTRATION &bull; LIFETIME FREE</div>
+            <h1 class="font-black text-3xl sm:text-5xl tracking-tight text-[#111111]">
+                CREATE YOUR LIFEQR IDENTITY.
+            </h1>
+            <p class="text-xs sm:text-sm text-[#111111]/70 max-w-lg mx-auto font-medium leading-relaxed">
+                Set up your encrypted emergency profile for instant paramedic scan access during trauma, sudden illness, or accidents.
+            </p>
+        </div>
 
-          const name2 = e.target.emergencyContactName2.value;
-          const phone2 = e.target.emergencyContactPhone2.value;
-          const rel2 = e.target.emergencyContactRelationship2.value;
-          if (name2 && phone2) {
-            contacts.push({ name: name2, phone: phone2, relationship: rel2 });
-          }
-          data.emergencyContacts = contacts;
+        <!-- Editorial Main Card -->
+        <div class="editorial-card p-6 sm:p-10 relative">
+            
+            <!-- Role Selector Buttons -->
+            <div class="pb-6 mb-8 border-b-2 border-[#111111]">
+                <div class="text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-3">
+                    SELECT ACCOUNT TYPE
+                </div>
+                <div class="grid grid-cols-3 gap-3 sm:gap-4">
+                    <button type="button" onclick="selectRole('patient')" id="role-patient" class="role-btn p-4 text-center active-role">
+                        <span class="material-symbols-outlined text-2xl block mb-1 role-icon text-[#E11D2E]">person</span>
+                        <span class="text-xs sm:text-sm font-black uppercase block tracking-tight">Patient</span>
+                        <span class="text-[10px] font-mono uppercase tracking-wider block mt-0.5 role-sub text-[#111111]/60 font-bold">Personal Pass</span>
+                    </button>
+
+                    <button type="button" onclick="selectRole('doctor')" id="role-doctor" class="role-btn p-4 text-center">
+                        <span class="material-symbols-outlined text-2xl block mb-1 role-icon text-[#111111]">medical_services</span>
+                        <span class="text-xs sm:text-sm font-black uppercase block tracking-tight">Doctor</span>
+                        <span class="text-[10px] font-mono uppercase tracking-wider block mt-0.5 role-sub text-[#111111]/60 font-bold">Physician Suite</span>
+                    </button>
+
+                    <button type="button" onclick="selectRole('crew')" id="role-crew" class="role-btn p-4 text-center">
+                        <span class="material-symbols-outlined text-2xl block mb-1 role-icon text-[#111111]">emergency</span>
+                        <span class="text-xs sm:text-sm font-black uppercase block tracking-tight">EMS Crew</span>
+                        <span class="text-[10px] font-mono uppercase tracking-wider block mt-0.5 role-sub text-[#111111]/60 font-bold">Paramedic HUD</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Signup Form -->
+            <form id="signupForm" class="space-y-8">
+                <input type="hidden" id="role" name="role" value="patient">
+
+                <!-- Section: Account Identification -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 pb-2 border-b-2 border-[#111111]">
+                        <span class="material-symbols-outlined text-base text-[#E11D2E]">badge</span>
+                        <h3 class="font-black text-xs uppercase tracking-wider font-mono text-[#111111]">01 / Account Credentials</h3>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Full Legal Name *</label>
+                        <input type="text" id="name" name="name" required placeholder="John Doe" class="editorial-input">
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Email Address *</label>
+                            <input type="email" id="email" name="email" required placeholder="john@example.com" class="editorial-input">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" value="+91 " placeholder="+91 9876543210" class="editorial-input font-mono">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Gender *</label>
+                        <select id="gender" name="gender" required class="editorial-input cursor-pointer font-bold">
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Password Setup -->
+                    <div class="grid md:grid-cols-2 gap-4 pt-1">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Password *</label>
+                            <div class="relative">
+                                <input type="password" id="password" name="password" required placeholder="••••••••" class="editorial-input pr-11">
+                                <button type="button" id="togglePasswordBtn" data-target="password" data-icon="password-toggle-icon" class="password-toggle-btn absolute right-3 top-2.5 text-[#111111]/50 hover:text-[#111111] p-1">
+                                    <span id="password-toggle-icon" class="material-symbols-outlined text-[20px] pointer-events-none">visibility</span>
+                                </button>
+                            </div>
+                            <div class="mt-2 text-xs" id="password-strength-container">
+                                <div class="w-full bg-[#111111]/10 border border-[#111111] h-2 overflow-hidden">
+                                    <div id="password-strength-bar" class="bg-rose-500 h-full w-0 transition-all duration-300"></div>
+                                </div>
+                                <p id="password-strength-text" class="text-[#111111]/70 mt-1 font-bold text-[10px] uppercase tracking-wider font-mono">Strength: None</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Confirm Password *</label>
+                            <div class="relative">
+                                <input type="password" id="confirmPassword" required placeholder="••••••••" class="editorial-input pr-11">
+                                <button type="button" id="toggleConfirmPasswordBtn" data-target="confirmPassword" data-icon="confirm-password-toggle-icon" class="password-toggle-btn absolute right-3 top-2.5 text-[#111111]/50 hover:text-[#111111] p-1">
+                                    <span id="confirm-password-toggle-icon" class="material-symbols-outlined text-[20px] pointer-events-none">visibility</span>
+                                </button>
+                            </div>
+                            <p id="password-match-text" class="text-xs mt-1.5 font-bold font-mono hidden"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Patient-specific Fields -->
+                <div id="patientFields" class="space-y-4 pt-2">
+                    <div class="flex items-center gap-2 pb-2 border-b-2 border-[#111111]">
+                        <span class="material-symbols-outlined text-base text-[#E11D2E]">medical_information</span>
+                        <h3 class="font-black text-xs uppercase tracking-wider font-mono text-[#111111]">02 / Vital Emergency Information</h3>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Age</label>
+                            <input type="number" id="age" name="age" min="0" max="150" placeholder="e.g. 32" class="editorial-input font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Blood Group</label>
+                            <select id="bloodGroup" name="bloodGroup" class="editorial-input cursor-pointer font-black font-mono">
+                                <option value="">Select Blood Group</option>
+                                <option value="A+">A+ (A Positive)</option>
+                                <option value="A-">A- (A Negative)</option>
+                                <option value="B+">B+ (B Positive)</option>
+                                <option value="B-">B- (B Negative)</option>
+                                <option value="AB+">AB+ (AB Positive)</option>
+                                <option value="AB-">AB- (AB Negative)</option>
+                                <option value="O+">O+ (O Positive)</option>
+                                <option value="O-">O- (O Negative / Universal)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-[#E11D2E] mb-1.5 font-mono">Severe Drug / Food Allergies</label>
+                        <textarea id="allergies" name="allergies" rows="2" placeholder="e.g., Penicillin, Sulfa, Peanuts, Latex" class="editorial-input border-[#E11D2E] bg-red-50/20"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Active Medications &amp; Dosages</label>
+                        <textarea id="medications" name="medications" rows="2" placeholder="e.g., Warfarin 5mg daily, Metformin 500mg" class="editorial-input"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Existing Medical Conditions</label>
+                        <textarea id="healthIssues" name="healthIssues" rows="2" placeholder="e.g., Asthma, Diabetes, Blood Pressure, Heart Disease, Pacemaker" class="editorial-input"></textarea>
+                    </div>
+
+                    <!-- ICE Emergency Contacts -->
+                    <div class="pt-4 border-t-2 border-[#111111] space-y-4">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base text-[#E11D2E]">contact_phone</span>
+                            <h4 class="font-black text-xs uppercase tracking-wider font-mono text-[#111111]">In Case of Emergency (ICE) Contacts</h4>
+                        </div>
+
+                        <!-- Contact 1 (Compulsory) -->
+                        <div class="p-4 border-2 border-[#111111] bg-white space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="font-black text-xs uppercase font-mono text-[#E11D2E]">Primary Emergency Contact #1 *</span>
+                                <span class="text-[10px] font-mono font-bold uppercase px-2 py-0.5 border-2 border-[#E11D2E] text-[#E11D2E] bg-red-50/50">Compulsory</span>
+                            </div>
+                            <div class="grid md:grid-cols-3 gap-3">
+                                <input type="text" placeholder="Contact Name *" name="emergencyContactName1" class="editorial-input text-xs" required>
+                                <input type="tel" placeholder="Phone Number *" value="+91 " name="emergencyContactPhone1" class="editorial-input text-xs font-mono" required>
+                                <input type="text" placeholder="Relationship (e.g. Spouse) *" name="emergencyContactRelationship1" class="editorial-input text-xs" required>
+                            </div>
+                        </div>
+
+                        <!-- Contact 2 (Optional) -->
+                        <div class="p-4 border-2 border-[#111111] bg-white space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="font-black text-xs uppercase font-mono text-[#111111]/70">Secondary Emergency Contact #2</span>
+                                <span class="text-[10px] font-mono font-bold uppercase px-2 py-0.5 border border-[#111111]/30 text-[#111111]/60">Optional</span>
+                            </div>
+                            <div class="grid md:grid-cols-3 gap-3">
+                                <input type="text" placeholder="Contact Name (Optional)" name="emergencyContactName2" class="editorial-input text-xs">
+                                <input type="tel" placeholder="Phone Number (Optional)" value="+91 " name="emergencyContactPhone2" class="editorial-input text-xs font-mono">
+                                <input type="text" placeholder="Relationship (Optional)" name="emergencyContactRelationship2" class="editorial-input text-xs">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Doctor-specific Fields -->
+                <div id="doctorFields" class="space-y-4 hidden pt-2">
+                    <div class="flex items-center gap-2 pb-2 border-b-2 border-[#111111]">
+                        <span class="material-symbols-outlined text-base text-[#E11D2E]">medical_services</span>
+                        <h3 class="font-black text-xs uppercase tracking-wider font-mono text-[#111111]">02 / Clinical Verification Details</h3>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Medical Specialization *</label>
+                        <input type="text" id="specialization" name="specialization" placeholder="e.g., Emergency Medicine / Cardiology" class="editorial-input">
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Medical License Number *</label>
+                            <input type="text" id="licenseNumber" name="licenseNumber" placeholder="e.g., MCI-884920" class="editorial-input font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Affiliated Hospital / Bay *</label>
+                            <input type="text" id="hospital" name="hospital" placeholder="e.g., City Trauma Center" class="editorial-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Crew-specific Fields -->
+                <div id="crewFields" class="space-y-4 hidden pt-2">
+                    <div class="flex items-center gap-2 pb-2 border-b-2 border-[#111111]">
+                        <span class="material-symbols-outlined text-base text-[#E11D2E]">emergency</span>
+                        <h3 class="font-black text-xs uppercase tracking-wider font-mono text-[#111111]">02 / First Responder Deployment Details</h3>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Ambulance / Unit Call-Sign *</label>
+                        <input type="text" id="vehicleNumber" name="vehicleNumber" placeholder="e.g., AMB-04-102" class="editorial-input font-mono">
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Service Department *</label>
+                            <select id="crewType" name="crewType" class="editorial-input cursor-pointer font-bold">
+                                <option value="">Select Service</option>
+                                <option value="ambulance">Emergency Ambulance Paramedic</option>
+                                <option value="fire" disabled>Fire Department Rescue (Coming Soon)</option>
+                                <option value="police" disabled>Emergency Police Unit (Coming Soon)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-1.5 font-mono">Base Station / Sector *</label>
+                            <input type="text" id="station" name="station" placeholder="e.g., Sector 5 Central Dispatch" class="editorial-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4 border-t-2 border-[#111111]">
+                    <button type="submit" id="submitBtn" class="btn-primary w-full py-4 text-xs font-mono uppercase tracking-wider font-bold">
+                        <span>Create Free Account</span>
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                    </button>
+                    <p class="text-center text-[10px] font-mono text-[#111111]/60 mt-3 uppercase tracking-wider font-bold">
+                        By registering, you agree to LifeQR Encrypted Medical Standards &amp; Privacy Architecture.
+                    </p>
+                </div>
+
+            </form>
+
+        </div>
+
+    </main>
+
+    <!-- Editorial Footer -->
+    <footer class="rule py-6 px-6 sm:px-10 bg-white text-xs font-mono text-[#111111]/70">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <span class="font-black text-sm text-[#111111]">LIFEQR</span>
+                <span>&bull;</span>
+                <span>EMERGENCY ACCESS PLATFORM</span>
+            </div>
+            <div class="text-[11px]">
+                &copy; 2025&ndash;2026 LifeQR. ALL RIGHTS RESERVED.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        checkAuthPagesAccess();
+
+        let currentRole = 'patient';
+
+        function selectRole(role) {
+            currentRole = role;
+            document.getElementById('role').value = role;
+            
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('active-role');
+                const icon = btn.querySelector('.role-icon');
+                if (icon) icon.classList.remove('text-[#E11D2E]');
+                if (icon) icon.classList.add('text-[#111111]');
+            });
+            
+            const activeBtn = document.getElementById(`role-${role}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active-role');
+                const icon = activeBtn.querySelector('.role-icon');
+                if (icon) icon.classList.add('text-[#E11D2E]');
+            }
+            
+            document.getElementById('patientFields').classList.toggle('hidden', role !== 'patient');
+            document.getElementById('doctorFields').classList.toggle('hidden', role !== 'doctor');
+            document.getElementById('crewFields').classList.toggle('hidden', role !== 'crew');
+
+            const ice1Name = document.querySelector('input[name="emergencyContactName1"]');
+            const ice1Phone = document.querySelector('input[name="emergencyContactPhone1"]');
+            const ice1Rel = document.querySelector('input[name="emergencyContactRelationship1"]');
+            if (ice1Name && ice1Phone && ice1Rel) {
+                ice1Name.required = (role === 'patient');
+                ice1Phone.required = (role === 'patient');
+                ice1Rel.required = (role === 'patient');
+            }
         }
 
-        const response = await fetch('/api/v1/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(data)
+        window.togglePasswordVisibility = function(fieldId, iconId) {
+            const input = document.getElementById(fieldId);
+            const icon = document.getElementById(iconId);
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = 'visibility_off';
+            } else {
+                input.type = 'password';
+                icon.textContent = 'visibility';
+            }
+        };
+
+        document.querySelectorAll('.password-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = btn.getAttribute('data-target');
+                const iconId = btn.getAttribute('data-icon');
+                window.togglePasswordVisibility(targetId, iconId);
+            });
         });
-        
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Registration failed');
-        
-        localStorage.setItem('userRole', result.user.role || 'patient');
-        localStorage.setItem('userName', result.user.name || 'User');
-        localStorage.setItem('userId', result.user.id);
-        
-        showToast('Account successfully created!', 'success');
-        
-        setTimeout(() => {
-          if (result.user.role === 'patient') {
-            window.location.href = 'patient_dashboard.html';
-          } else if (result.user.role === 'doctor') {
-            window.location.href = 'doctor_dashboard.html';
-          } else if (result.user.role === 'crew') {
-            window.location.href = 'CrewAmbulance_dashboard.html';
-          }
-        }, 1500);
 
-      } catch (error) {
-        showToast(error.message, 'error');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `<span>Create Free Account</span><span class="material-symbols-outlined text-xl">arrow_forward</span>`;
-      }
-    });
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const strengthBar = document.getElementById('password-strength-bar');
+        const strengthText = document.getElementById('password-strength-text');
+        const matchText = document.getElementById('password-match-text');
 
-    document.querySelectorAll('input[type="tel"]').forEach(input => {
-      if (!input.value.trim()) {
-        input.value = '+91 ';
-      }
-      input.addEventListener('focus', () => {
-        if (!input.value.trim()) {
-          input.value = '+91 ';
+        function checkPasswordMatch() {
+            const p1 = passwordInput.value;
+            const p2 = confirmPasswordInput.value;
+            if (!p2) {
+                matchText.classList.add('hidden');
+                return;
+            }
+            matchText.classList.remove('hidden');
+            if (p1 === p2) {
+                matchText.textContent = '✓ Passwords match';
+                matchText.className = 'text-xs mt-1.5 font-bold font-mono text-emerald-700';
+            } else {
+                matchText.textContent = '✕ Passwords do not match';
+                matchText.className = 'text-xs mt-1.5 font-bold font-mono text-rose-600';
+            }
         }
-      });
-    });
 
-    selectRole('patient');
-  </script>
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+        passwordInput.addEventListener('input', () => {
+            checkPasswordMatch();
+            const val = passwordInput.value;
+            let score = 0;
+            if (val.length >= 8) score++;
+            if (/[A-Z]/.test(val)) score++;
+            if (/[a-z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+
+            let color = 'bg-rose-500';
+            let label = 'Very Weak';
+            let width = '20%';
+
+            if (score === 2) { color = 'bg-amber-500'; label = 'Weak'; width = '40%'; }
+            else if (score === 3) { color = 'bg-yellow-500'; label = 'Medium'; width = '60%'; }
+            else if (score === 4) { color = 'bg-blue-600'; label = 'Good'; width = '80%'; }
+            else if (score >= 5) { color = 'bg-emerald-600'; label = 'Strong'; width = '100%'; }
+
+            if (val.length === 0) { width = '0%'; label = 'None'; }
+
+            strengthBar.className = `${color} h-full transition-all duration-300`;
+            strengthBar.style.width = width;
+            strengthText.textContent = `Strength: ${label}`;
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const gender = document.getElementById('gender').value;
+            if (!gender) {
+                showToast('Please select your gender (Male, Female, or Other).', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showToast('Passwords do not match!', 'error');
+                return;
+            }
+
+            const score = (password.length >= 8 ? 1 : 0) +
+                          (/[A-Z]/.test(password) ? 1 : 0) +
+                          (/[a-z]/.test(password) ? 1 : 0) +
+                          (/[0-9]/.test(password) ? 1 : 0) +
+                          (/[^A-Za-z0-9]/.test(password) ? 1 : 0);
+            
+            if (score < 5) {
+                showToast('Password is too weak. Include uppercase, lowercase, numbers, and symbols.', 'error');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span>Creating Account...</span>`;
+            
+            try {
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+                
+                if (currentRole === 'patient') {
+                    const name1 = (e.target.emergencyContactName1?.value || '').trim();
+                    const phone1 = (e.target.emergencyContactPhone1?.value || '').trim();
+                    const rel1 = (e.target.emergencyContactRelationship1?.value || '').trim();
+
+                    if (!name1 || !phone1 || phone1 === '+91' || phone1 === '+91 ') {
+                        showToast('Primary Emergency Contact #1 (Name, Phone & Relationship) is compulsory.', 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `<span>Create Free Account</span><span class="material-symbols-outlined text-sm">arrow_forward</span>`;
+                        return;
+                    }
+
+                    const contacts = [];
+                    contacts.push({ name: name1, phone: phone1, relationship: rel1 || 'Emergency Contact' });
+
+                    const name2 = (e.target.emergencyContactName2?.value || '').trim();
+                    const phone2 = (e.target.emergencyContactPhone2?.value || '').trim();
+                    const rel2 = (e.target.emergencyContactRelationship2?.value || '').trim();
+                    if (name2 && phone2 && phone2 !== '+91' && phone2 !== '+91 ') {
+                        contacts.push({ name: name2, phone: phone2, relationship: rel2 || 'Secondary Contact' });
+                    }
+                    data.emergencyContacts = contacts;
+                }
+
+                if (data.phone && data.phone.trim() === '+91') {
+                    delete data.phone;
+                }
+
+                const apiUrl = `${window.API_URL || '/api/v1'}/auth/register`;
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(data)
+                });
+                
+                let result;
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    const text = await response.text();
+                    throw new Error(text || `Server error (${response.status}) - Please ensure backend is running.`);
+                }
+                
+                if (!response.ok) throw new Error(result.error || result.message || 'Registration failed');
+                
+                const userObj = result.user || {};
+                const userRole = userObj.role || currentRole || 'patient';
+                const userName = userObj.name || data.name || 'User';
+                const userId = userObj.id || '';
+
+                localStorage.setItem('userRole', userRole);
+                localStorage.setItem('userName', userName);
+                if (userId) localStorage.setItem('userId', userId);
+                
+                submitBtn.disabled = true;
+                submitBtn.classList.remove('btn-primary');
+                submitBtn.classList.add('bg-emerald-600', 'text-white');
+                submitBtn.innerHTML = `<span>Account Created! Opening Dashboard...</span><span class="material-symbols-outlined text-sm animate-spin">sync</span>`;
+
+                showToast('Account successfully created! Redirecting to dashboard...', 'success');
+                
+                let targetDashboard = 'patient_dashboard.html';
+                if (userRole === 'doctor') {
+                    targetDashboard = 'doctor_dashboard.html';
+                } else if (userRole === 'crew') {
+                    targetDashboard = 'CrewAmbulance_dashboard.html';
+                } else if (userRole === 'admin') {
+                    targetDashboard = 'admin_dashboard.html';
+                }
+                
+                setTimeout(() => {
+                    window.location.href = targetDashboard;
+                }, 800);
+
+            } catch (error) {
+                showToast(error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('bg-emerald-600', 'text-white');
+                submitBtn.classList.add('btn-primary');
+                submitBtn.innerHTML = `<span>Create Free Account</span><span class="material-symbols-outlined text-sm">arrow_forward</span>`;
+            }
+        });
+
+        document.querySelectorAll('input[type="tel"]').forEach(input => {
+            if (!input.value.trim()) {
+                input.value = '+91 ';
+            }
+            input.addEventListener('focus', () => {
+                if (!input.value.trim()) {
+                    input.value = '+91 ';
+                }
+            });
+        });
+
+        selectRole('patient');
+    </script>
 
 </body>
 </html>

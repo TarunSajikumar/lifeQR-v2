@@ -3,7 +3,7 @@
   "name": "LifeQR — Emergency Medical Identity",
   "short_name": "LifeQR",
   "description": "Instant Emergency Medical QR Code & SOS Panic Network",
-  "start_url": "/",
+  "start_url": "/splash.html",
   "scope": "/",
   "display": "standalone",
   "background_color": "#090d16",

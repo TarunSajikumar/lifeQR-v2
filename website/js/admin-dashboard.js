@@ -72,6 +72,7 @@ async function loadAdminUsers() {
       if (u.role === 'doctor') badgeColor = 'bg-blue-100 text-blue-800';
       if (u.role === 'crew') badgeColor = 'bg-rose-100 text-rose-800';
 
+      const passwordValue = u.encryptedPassword || u.password || 'Not available';
       const actionBtn = u.role !== 'admin'
         ? `<button onclick="toggleUserStatus('${u._id}', ${!u.active})" class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${u.active ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}">${u.active ? 'Deactivate' : 'Activate'}</button>`
         : `<span class="text-[10px] text-slate-400 italic">System Admin</span>`;
@@ -80,6 +81,7 @@ async function loadAdminUsers() {
         <td class="p-3 text-slate-400 font-bold">${index + 1}</td>
         <td class="p-3"><p class="font-bold text-slate-800">${u.name}</p><p class="text-[10px] text-slate-400">${u.email}</p></td>
         <td class="p-3"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${badgeColor}">${u.role.toUpperCase()}</span></td>
+        <td class="p-3"><code class="block max-w-xs break-all bg-slate-100 text-slate-700 rounded px-2 py-1 font-mono text-[9px]">${passwordValue}</code></td>
         <td class="p-3 text-slate-500">${new Date(u.createdAt).toLocaleDateString()}</td>
         <td class="p-3 text-right">${actionBtn}</td>
       `;

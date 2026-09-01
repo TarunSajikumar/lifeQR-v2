@@ -1,17 +1,35 @@
 // Client-side authentication guard for LifeQR
 // All auth uses httpOnly cookies — no localStorage token storage
-const API_BASE = '/api/v1';
+
+function getApiBase() {
+  if (typeof window !== 'undefined' && window.API_URL) {
+    return window.API_URL;
+  }
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '');
+  const port = typeof window !== 'undefined' ? window.location.port : '';
+  if ((isLocal && port && port !== '5000') || (typeof window !== 'undefined' && window.location.protocol === 'file:')) {
+    const host = window.location.hostname || 'localhost';
+    return `http://${host}:5000/api/v1`;
+  }
+  return ((typeof window !== 'undefined' && window.location.origin) || '') + '/api/v1';
+}
 
 window.verifyAuth = async function() {
   try {
-    const response = await fetch(`${API_BASE}/auth/verify`, {
+    const apiBase = getApiBase();
+    const response = await fetch(`${apiBase}/auth/verify`, {
       method: 'GET',
       credentials: 'include'
     });
     
     if (response.ok) {
       const data = await response.json();
-      return data.user;
+      if (data && data.user) {
+        if (data.user.role) localStorage.setItem('userRole', data.user.role);
+        if (data.user.name) localStorage.setItem('userName', data.user.name);
+        if (data.user.id) localStorage.setItem('userId', data.user.id);
+        return data.user;
+      }
     }
   } catch (error) {
     console.error('Auth verification error:', error);
@@ -60,7 +78,8 @@ function redirectUserToDashboard(role) {
 
 window.logout = async function() {
   try {
-    await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+    const apiBase = getApiBase();
+    await fetch(`${apiBase}/auth/logout`, { method: 'POST', credentials: 'include' });
   } catch (err) {
     console.error('Logout request failed:', err);
   }
@@ -70,3 +89,4 @@ window.logout = async function() {
   localStorage.removeItem('userId');
   window.location.href = 'index.html';
 };
+

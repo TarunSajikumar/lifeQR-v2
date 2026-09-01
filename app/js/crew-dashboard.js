@@ -22,7 +22,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function checkVerificationStatus() {
   try {
-    const res = await fetch('/api/v1/verification/status', { credentials: 'include' });
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/verification/status') : '/api/v1/verification/status';
+    const res = await (window.authFetch ? window.authFetch(apiUrl) : fetch(apiUrl, { credentials: 'include' }));
     if (!res.ok) return;
     const data = await res.json();
     currentUser.verificationStatus = data.verificationStatus;

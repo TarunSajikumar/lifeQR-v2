@@ -75,8 +75,28 @@ function showTab(tabId) {
 }
 
 // --- API Helpers ---
+function getPatientAppApiBase() {
+  if (typeof window !== 'undefined' && window.API_URL) {
+    return window.API_URL;
+  }
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '');
+  const port = typeof window !== 'undefined' ? window.location.port : '';
+  if ((isLocal && port && port !== '5000') || (typeof window !== 'undefined' && window.location.protocol === 'file:')) {
+    const host = window.location.hostname || 'localhost';
+    return `http://${host}:5000/api/v1`;
+  }
+  return ((typeof window !== 'undefined' && window.location.origin) || '') + '/api/v1';
+}
+
 async function apiCall(endpoint, method = 'GET', body = null) {
   try {
+    const apiBase = getPatientAppApiBase();
+    const fullUrl = endpoint.startsWith('http') 
+      ? endpoint 
+      : (endpoint.startsWith('/api/v1') 
+          ? endpoint.replace('/api/v1', apiBase) 
+          : `${apiBase}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`);
+
     const options = {
       method,
       headers: {
@@ -89,7 +109,7 @@ async function apiCall(endpoint, method = 'GET', body = null) {
       options.body = JSON.stringify(body);
     }
 
-    const res = await fetch(endpoint, options);
+    const res = await fetch(fullUrl, options);
     const data = await res.json();
     return { ok: res.ok, status: res.status, data };
   } catch (err) {

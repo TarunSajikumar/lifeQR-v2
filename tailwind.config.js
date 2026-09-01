@@ -9,8 +9,9 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
         display: ['Outfit', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
       },
       colors: {
         primary: {
@@ -24,6 +25,7 @@ module.exports = {
           700: '#4338ca',
           800: '#3730a3',
           900: '#312e81',
+          950: '#1e1b4b',
           DEFAULT: '#4f46e5',
         },
         emergency: {
@@ -37,12 +39,50 @@ module.exports = {
           700: '#be123c',
           800: '#9f1239',
           900: '#881337',
+          950: '#4c0519',
           DEFAULT: '#e11d48',
         },
-        slate: {
-          850: '#0f1729',
+        tactical: {
+          50: '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b',
+          600: '#475569',
+          700: '#334155',
+          800: '#1e293b',
+          850: '#131e36',
+          900: '#0f172a',
           925: '#090d16',
-          950: '#05070d',
+          950: '#070b14',
+          975: '#04060b',
+        },
+        clinical: {
+          50: '#ecfeff',
+          100: '#cffafe',
+          200: '#a5f3fc',
+          300: '#67e8f9',
+          400: '#22d3ee',
+          500: '#06b6d4',
+          600: '#0891b2',
+          700: '#0e7490',
+          800: '#155e75',
+          900: '#164e63',
+          DEFAULT: '#06b6d4',
+        },
+        vital: {
+          50: '#ecfdf5',
+          100: '#d1fae5',
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
+          500: '#10b981',
+          600: '#059669',
+          700: '#047857',
+          800: '#065f46',
+          900: '#064e3b',
+          DEFAULT: '#10b981',
         }
       },
       boxShadow: {
@@ -50,12 +90,45 @@ module.exports = {
         'bezel-dark': '0 0 0 1px rgba(255,255,255,0.08), 0 20px 40px -15px rgba(0,0,0,0.7)',
         'glow-primary': '0 0 30px -5px rgba(79,70,229,0.4)',
         'glow-emergency': '0 0 35px -5px rgba(225,29,72,0.45)',
+        'glow-clinical': '0 0 30px -5px rgba(6,182,212,0.35)',
+        'glow-vital': '0 0 30px -5px rgba(16,185,129,0.35)',
         'inner-highlight': 'inset 0 1px 1px 0 rgba(255,255,255,0.15)',
+        'inner-tactical': 'inset 0 1px 0 0 rgba(255,255,255,0.05), inset 0 -1px 0 0 rgba(0,0,0,0.4)',
+        'float': '0 20px 40px -15px rgba(15,23,42,0.12), 0 0 0 1px rgba(226,232,240,0.8)',
+        'float-dark': '0 25px 50px -12px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08)',
       },
       borderRadius: {
         '2.5xl': '1.25rem',
         '3.5xl': '1.75rem',
         '4xl': '2rem',
+        '5xl': '2.5rem',
+      },
+      animation: {
+        'pulse-mesh': 'pulseMesh 14s infinite alternate ease-in-out',
+        'radar-ping': 'radarRing 2s cubic-bezier(0, 0.2, 0.8, 1) infinite',
+        'laser-sweep': 'laserScan 3s infinite ease-in-out',
+        'float-slow': 'floatSlow 6s ease-in-out infinite',
+      },
+      keyframes: {
+        pulseMesh: {
+          '0%': { transform: 'scale(1) translate(0, 0)' },
+          '50%': { transform: 'scale(1.15) translate(30px, -20px)' },
+          '100%': { transform: 'scale(0.95) translate(-20px, 30px)' },
+        },
+        radarRing: {
+          '0%': { transform: 'scale(0.9)', opacity: '1' },
+          '100%': { transform: 'scale(1.6)', opacity: '0' },
+        },
+        laserScan: {
+          '0%': { top: '4%', opacity: '0' },
+          '15%': { opacity: '1' },
+          '85%': { opacity: '1' },
+          '100%': { top: '96%', opacity: '0' },
+        },
+        floatSlow: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        }
       }
     },
   },
