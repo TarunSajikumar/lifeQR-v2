@@ -880,4 +880,472 @@ window.triggerSpecialSituation = async function(protocolName) {
 // Initialize decision tree on load
 document.addEventListener('DOMContentLoaded', () => {
   initDoctorDecisionTree();
+  loadDoctorWaitingQueue();
+  setupDoctorSocketQueue();
+  setInterval(() => loadDoctorWaitingQueue(true), 12000);
 });
+
+// ==================== DOCTOR WAITING ROOM & CLINICAL CONSULTATION WORKFLOW ====================
+
+let doctorQueue = [];
+let currentConsultingToken = null;
+
+// Audio Chime Generator using Web Audio API
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc1.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+
+    osc1.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc1.start();
+    osc1.stop(ctx.currentTime + 0.6);
+  } catch (e) {
+    console.log('Audio chime not permitted without prior user gesture.');
+  }
+}
+
+async function loadDoctorWaitingQueue(silent = false) {
+  try {
+    const res = await (window.authFetch ? window.authFetch('/api/v1/doctor-access/waiting-queue') : fetch('/api/v1/doctor-access/waiting-queue', { credentials: 'include' }));
+    if (!res.ok) return;
+    const data = await res.json();
+    doctorQueue = data.queue || [];
+    renderWaitingQueue(doctorQueue, data.nowCalling);
+  } catch (e) {
+    if (!silent) console.warn('Queue fetch warning:', e);
+  }
+}
+
+function renderWaitingQueue(queue, nowCalling) {
+  const container = document.getElementById('doctorWaitingQueueContainer');
+  const badgeCount = document.getElementById('waitingQueueCountBadge');
+  if (!container) return;
+
+  const activeWaiting = queue.filter(q => q.status === 'waiting' || q.status === 'in_consultation');
+  if (badgeCount) badgeCount.textContent = `${activeWaiting.length} Waiting Outside`;
+
+  if (activeWaiting.length === 0) {
+    container.innerHTML = `
+      <div class="p-6 text-center border-2 border-dashed border-[#111111]/30 bg-[#f9fafb]">
+        <span class="material-symbols-outlined text-3xl text-[#111111]/40 mb-1">sentiment_satisfied</span>
+        <p class="font-mono text-xs font-bold text-[#111111] uppercase">No Patients Currently Waiting</p>
+        <p class="text-[11px] text-[#111111]/60 font-sans">New patients registered at clinic front desk or direct intake will appear here immediately.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = activeWaiting.map(item => {
+    const isCalling = item.status === 'in_consultation';
+    const borderCls = isCalling ? 'border-2 border-[#E11D2E] bg-red-50/40 shadow-[4px_4px_0px_#E11D2E]' : 'border-2 border-[#111111] bg-white shadow-[4px_4px_0px_#111111]';
+    const statusBadge = isCalling 
+      ? '<span class="px-2 py-0.5 border border-[#E11D2E] bg-[#E11D2E] text-white font-mono text-[10px] font-black uppercase animate-pulse">IN CONSULTATION</span>'
+      : '<span class="px-2 py-0.5 border border-[#111111] bg-amber-50 text-amber-900 font-mono text-[10px] font-bold uppercase">WAITING</span>';
+
+    return `
+      <div class="p-4 ${borderCls} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 border-2 border-[#111111] bg-[#111111] text-white flex flex-col items-center justify-center font-mono flex-shrink-0">
+            <span class="text-[9px] font-bold uppercase leading-none text-white/60">TKN</span>
+            <span class="text-base font-black leading-none">${item.tokenNumber}</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h4 class="font-black text-sm uppercase text-[#111111]">${item.patientName}</h4>
+              ${statusBadge}
+              <span class="px-1.5 py-0.2 border border-[#111111] font-mono text-[10px] font-bold text-[#E11D2E]">${item.bloodGroup}</span>
+            </div>
+            <p class="font-mono text-[11px] text-[#111111]/70 font-semibold mt-0.5">
+              ${item.qrCodeId} &bull; ${item.age}y &bull; ${item.gender}
+            </p>
+            <p class="text-xs text-[#111111] font-sans font-medium mt-1">
+              <strong class="font-mono text-[10px] uppercase text-[#E11D2E]">Complaints:</strong> ${item.chiefComplaint}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-shrink-0 font-mono">
+          <button onclick="callPatientIn(${item.tokenNumber}, '${item.qrCodeId}')" class="${isCalling ? 'btn-primary' : 'btn-secondary'} px-3.5 py-2 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">${isCalling ? 'play_arrow' : 'campaign'}</span>
+            <span>${isCalling ? 'Resume Chart' : 'Call Patient In'}</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.callPatientIn = async function(tokenNumber, qrCodeId) {
+  try {
+    const res = await (window.authFetch ? window.authFetch('/api/v1/doctor-access/call-patient', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tokenNumber, roomNumber: 'Consultation Room 102' })
+    }) : fetch('/api/v1/doctor-access/call-patient', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ tokenNumber, roomNumber: 'Consultation Room 102' })
+    }));
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    playChime();
+    showToast(`📢 Token #${tokenNumber} called into Consultation Room 102! Announcement broadcast to reception.`, 'success');
+    currentConsultingToken = tokenNumber;
+
+    // Auto-select patient and load chart
+    const input = document.getElementById('patientQrId');
+    if (input && qrCodeId) {
+      input.value = qrCodeId;
+      await searchPatient();
+    }
+
+    // Populate consultation form with initial token data
+    const item = doctorQueue.find(q => q.tokenNumber === tokenNumber);
+    if (item) {
+      if (document.getElementById('consultComplaint')) document.getElementById('consultComplaint').value = item.chiefComplaint || '';
+      if (document.getElementById('consultPulse')) document.getElementById('consultPulse').value = item.vitals?.hr || '';
+      if (document.getElementById('consultBp')) document.getElementById('consultBp').value = item.vitals?.bp || '';
+      if (document.getElementById('consultSpo2')) document.getElementById('consultSpo2').value = item.vitals?.spo2 || '';
+      if (document.getElementById('consultTemp')) document.getElementById('consultTemp').value = item.vitals?.temp || '';
+    }
+
+    await loadDoctorWaitingQueue(true);
+
+    // Scroll smoothly to Consultation Workspace
+    const consultEl = document.getElementById('clinicalConsultationSection');
+    if (consultEl) consultEl.scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};
+
+window.openNewPatientModal = function() {
+  const modal = document.getElementById('doctorNewPatientModal');
+  if (modal) modal.classList.remove('hidden');
+};
+
+window.closeNewPatientModal = function() {
+  const modal = document.getElementById('doctorNewPatientModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.handleNewPatientSubmit = async function(e) {
+  e.preventDefault();
+  const name = document.getElementById('docNewName').value;
+  const age = document.getElementById('docNewAge').value;
+  const gender = document.getElementById('docNewGender').value;
+  const phone = document.getElementById('docNewPhone').value;
+  const bloodGroup = document.getElementById('docNewBlood').value;
+  const allergies = document.getElementById('docNewAllergies').value;
+  const chiefComplaint = document.getElementById('docNewComplaint').value;
+
+  try {
+    const res = await (window.authFetch ? window.authFetch('/api/v1/doctor-access/create-patient', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, age, gender, phone, bloodGroup, allergies, chiefComplaint })
+    }) : fetch('/api/v1/doctor-access/create-patient', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ name, age, gender, phone, bloodGroup, allergies, chiefComplaint })
+    }));
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    showToast(`✅ Patient ${name} created with LifeQR ID ${data.patient.qrCodeId} and added to queue!`, 'success');
+    closeNewPatientModal();
+    document.getElementById('doctorNewPatientForm').reset();
+    await loadDoctorWaitingQueue();
+    await loadAuthorizedPatients();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};
+
+// ==================== PRESCRIPTION BUILDER & CONSULTATION SAVER ====================
+
+let rxRowCounter = 1;
+
+window.addRxRow = function(name = '', dosage = '500mg', freq = '1-0-1', duration = '5 Days', instructions = 'After Food') {
+  const tbody = document.getElementById('rxMedicationsTableBody');
+  if (!tbody) return;
+
+  const rowId = `rxRow_${rxRowCounter++}`;
+  const tr = document.createElement('tr');
+  tr.id = rowId;
+  tr.className = 'border-b border-[#111111]/10 font-sans text-xs';
+  tr.innerHTML = `
+    <td class="p-2">
+      <input type="text" class="rx-med-name w-full p-1.5 font-bold" placeholder="e.g. Amoxicillin / Paracetamol" value="${name}" required>
+    </td>
+    <td class="p-2">
+      <input type="text" class="rx-med-dosage w-full p-1.5 font-mono" placeholder="500mg" value="${dosage}">
+    </td>
+    <td class="p-2">
+      <select class="rx-med-freq w-full p-1.5 font-mono font-bold">
+        <option value="1-0-1" ${freq === '1-0-1' ? 'selected' : ''}>1-0-1 (Twice daily)</option>
+        <option value="1-1-1" ${freq === '1-1-1' ? 'selected' : ''}>1-1-1 (Thrice daily)</option>
+        <option value="1-0-0" ${freq === '1-0-0' ? 'selected' : ''}>1-0-0 (Morning only)</option>
+        <option value="0-0-1" ${freq === '0-0-1' ? 'selected' : ''}>0-0-1 (Night only)</option>
+        <option value="SOS" ${freq === 'SOS' ? 'selected' : ''}>SOS (As needed)</option>
+      </select>
+    </td>
+    <td class="p-2">
+      <input type="text" class="rx-med-duration w-full p-1.5 font-mono" placeholder="5 Days" value="${duration}">
+    </td>
+    <td class="p-2">
+      <select class="rx-med-instructions w-full p-1.5 font-sans">
+        <option value="After Food" ${instructions === 'After Food' ? 'selected' : ''}>After Food</option>
+        <option value="Before Food" ${instructions === 'Before Food' ? 'selected' : ''}>Before Food</option>
+        <option value="With Milk" ${instructions === 'With Milk' ? 'selected' : ''}>With Milk</option>
+        <option value="Bedtime" ${instructions === 'Bedtime' ? 'selected' : ''}>Bedtime</option>
+      </select>
+    </td>
+    <td class="p-2 text-right">
+      <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-rose-600 hover:text-rose-800 font-bold px-2 py-1"><span class="material-symbols-outlined text-sm">delete</span></button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+};
+
+window.saveFullConsultation = async function() {
+  if (!activePatient || !activePatient.qrCodeId) {
+    showToast('Please select or search an active patient first.', 'warning');
+    return;
+  }
+
+  const diagnosis = document.getElementById('consultDiagnosis')?.value;
+  if (!diagnosis) {
+    showToast('Please enter a clinical diagnosis.', 'warning');
+    document.getElementById('consultDiagnosis')?.focus();
+    return;
+  }
+
+  const chiefComplaint = document.getElementById('consultComplaint')?.value || '';
+  const presentHistory = document.getElementById('consultHistory')?.value || '';
+  const clinicalNotes = document.getElementById('consultNotes')?.value || '';
+  const labOrdersText = document.getElementById('consultLabOrders')?.value || '';
+  const followUpDays = document.getElementById('consultFollowUp')?.value || '7';
+
+  const vitals = {
+    hr: document.getElementById('consultPulse')?.value || 80,
+    bp: document.getElementById('consultBp')?.value || '120/80',
+    spo2: document.getElementById('consultSpo2')?.value || 99,
+    temp: document.getElementById('consultTemp')?.value || '98.6°F'
+  };
+
+  // Extract Rx Table Rows
+  const medications = [];
+  document.querySelectorAll('#rxMedicationsTableBody tr').forEach(tr => {
+    const name = tr.querySelector('.rx-med-name')?.value;
+    const dosage = tr.querySelector('.rx-med-dosage')?.value;
+    const frequency = tr.querySelector('.rx-med-freq')?.value;
+    const duration = tr.querySelector('.rx-med-duration')?.value;
+    const instructions = tr.querySelector('.rx-med-instructions')?.value;
+    if (name) {
+      medications.push({ name, dosage, frequency, duration, instructions });
+    }
+  });
+
+  const labOrders = labOrdersText ? labOrdersText.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  try {
+    const res = await (window.authFetch ? window.authFetch('/api/v1/doctor-access/consultations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        qrCodeId: activePatient.qrCodeId,
+        tokenNumber: currentConsultingToken,
+        chiefComplaint,
+        presentIllnessHistory: presentHistory,
+        vitals,
+        diagnosis,
+        clinicalNotes,
+        medications,
+        labOrders,
+        followUpDays
+      })
+    }) : fetch('/api/v1/doctor-access/consultations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        qrCodeId: activePatient.qrCodeId,
+        tokenNumber: currentConsultingToken,
+        chiefComplaint,
+        presentIllnessHistory: presentHistory,
+        vitals,
+        diagnosis,
+        clinicalNotes,
+        medications,
+        labOrders,
+        followUpDays
+      })
+    }));
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    showToast('✅ Consultation saved & Digital Rx synced to Patient LifeQR Vault!', 'success');
+    await loadPatientMedicalHistory(activePatient.qrCodeId);
+    await loadDoctorWaitingQueue();
+    currentConsultingToken = null;
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};
+
+window.printDigitalPrescription = function() {
+  if (!activePatient || !activePatient.qrCodeId) {
+    showToast('Please select a patient first.', 'warning');
+    return;
+  }
+
+  const diagnosis = document.getElementById('consultDiagnosis')?.value || 'Clinical Assessment';
+  const doctorName = currentUser?.name || 'Dr. Amit Sharma';
+  const patientName = activePatient?.name || 'Patient';
+  const qrCodeId = activePatient?.qrCodeId || 'LQR-PAT';
+  const ageGender = `${activePatient?.age || 30}y / ${activePatient?.gender || 'M'}`;
+  const bloodGroup = activePatient?.bloodGroup || 'O+';
+  const pulse = document.getElementById('consultPulse')?.value || '78';
+  const bp = document.getElementById('consultBp')?.value || '120/80';
+  const spo2 = document.getElementById('consultSpo2')?.value || '99';
+  const temp = document.getElementById('consultTemp')?.value || '98.6°F';
+  const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  let medsHtml = '';
+  document.querySelectorAll('#rxMedicationsTableBody tr').forEach(tr => {
+    const name = tr.querySelector('.rx-med-name')?.value;
+    const dosage = tr.querySelector('.rx-med-dosage')?.value;
+    const frequency = tr.querySelector('.rx-med-freq')?.value;
+    const duration = tr.querySelector('.rx-med-duration')?.value;
+    const instructions = tr.querySelector('.rx-med-instructions')?.value;
+    if (name) {
+      medsHtml += `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold;">${name}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${dosage}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd; font-weight: bold;">${frequency}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${duration}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd; color: #555;">${instructions}</td>
+        </tr>
+      `;
+    }
+  });
+
+  const printWin = window.open('', '_blank', 'width=800,height=900');
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Digital Prescription — ${patientName}</title>
+      <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #111; padding: 40px; }
+        .header { border-bottom: 3px solid #111; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .brand { font-size: 24px; font-weight: 900; letter-spacing: -1px; }
+        .doc-details { font-size: 13px; text-align: right; }
+        .pat-bar { margin-top: 20px; padding: 12px; background: #f4f4f5; border: 1px solid #111; display: flex; justify-content: space-between; font-size: 13px; }
+        .vitals-bar { margin-top: 10px; font-size: 12px; font-family: monospace; color: #333; }
+        .rx-symbol { font-size: 32px; font-weight: 900; font-family: serif; margin-top: 25px; color: #E11D2E; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th { text-align: left; padding: 8px; border-bottom: 2px solid #111; font-family: monospace; text-transform: uppercase; }
+        .footer { margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .sig-line { border-top: 1px solid #111; width: 200px; text-align: center; padding-top: 6px; font-size: 12px; font-weight: bold; }
+        @media print { body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <div class="brand">LIFEQR MEDICAL NETWORK</div>
+          <div style="font-size: 12px; font-family: monospace; color: #666;">Verified Clinical Consultation Slip</div>
+        </div>
+        <div class="doc-details">
+          <strong>Dr. ${doctorName}</strong><br>
+          Emergency Medicine &amp; Clinical Care<br>
+          Reg No: MCI-DEL-2018-84920
+        </div>
+      </div>
+
+      <div class="pat-bar">
+        <div><strong>Patient:</strong> ${patientName} (${ageGender})</div>
+        <div><strong>Blood Group:</strong> <span style="color: #E11D2E; font-weight: bold;">${bloodGroup}</span></div>
+        <div><strong>LifeQR ID:</strong> ${qrCodeId}</div>
+        <div><strong>Date:</strong> ${dateStr}</div>
+      </div>
+
+      <div class="vitals-bar">
+        <strong>VITALS:</strong> Pulse: ${pulse} bpm | BP: ${bp} mmHg | SpO2: ${spo2}% | Temp: ${temp}
+      </div>
+
+      <div style="margin-top: 18px; font-size: 14px;">
+        <strong>DIAGNOSIS:</strong> <span style="font-weight: bold; color: #111;">${diagnosis}</span>
+      </div>
+
+      <div class="rx-symbol">&#8478;</div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Medication</th>
+            <th>Dosage</th>
+            <th>Frequency</th>
+            <th>Duration</th>
+            <th>Instructions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${medsHtml || '<tr><td colspan="5" style="padding: 12px; text-align: center; color: #888;">No medications prescribed.</td></tr>'}
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <div style="font-size: 11px; font-family: monospace; color: #666;">
+          Digitally authenticated by LifeQR Zero-Knowledge Health Vault.<br>
+          Direct Emergency Pass: lifeqr.com/e/${qrCodeId}
+        </div>
+        <div class="sig-line">
+          Dr. ${doctorName}<br>
+          <span style="font-size: 10px; font-weight: normal; color: #666;">Authorized Signature</span>
+        </div>
+      </div>
+      <script>window.print();</script>
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+};
+
+function setupDoctorSocketQueue() {
+  if (typeof io !== 'undefined') {
+    try {
+      const socket = io({ withCredentials: true });
+      socket.on('patient-queued', (item) => {
+        showToast(`🔔 New patient in waiting queue: ${item.patientName} (Token #${item.tokenNumber})`, 'warning');
+        loadDoctorWaitingQueue(true);
+      });
+      socket.on('calling-patient', (data) => {
+        loadDoctorWaitingQueue(true);
+      });
+    } catch (e) {
+      console.warn('Socket setup fallback:', e);
+    }
+  }
+}
+

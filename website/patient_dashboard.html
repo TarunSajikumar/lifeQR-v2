@@ -5,18 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#ffffff">
   <link rel="manifest" href="/manifest.json">
-  <title>Patient Command Center | LifeQR</title>
+  <link rel="icon" href="LifeQR.png" type="image/png">
+  <title>Patient Command Vault | LifeQR</title>
   
   <!-- Fonts & Material Symbols -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,200..700,0..1,-50..200" rel="stylesheet">
 
-  <link rel="stylesheet" href="dist/output.css">
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css">
   
   <script src="/socket.io/socket.io.js"></script>
@@ -25,33 +26,139 @@
   <script src="js/auth-guard.js"></script>
   <script src="js/pwa-install.js"></script>
   <script src="js/patient-dashboard.js"></script>
-</head>
-<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col antialiased relative overflow-x-hidden selection:bg-indigo-500 selection:text-white">
-  
-  <!-- Ambient Specular Background -->
-  <div class="ambient-mesh"></div>
 
-  <!-- Header -->
-  <header class="sticky top-0 z-40 px-4 sm:px-8 py-3.5 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 shadow-xs no-print">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Archivo', system-ui, -apple-system, sans-serif;
+      background: #ffffff;
+      color: #111111;
+      padding-bottom: 84px;
+    }
+    @media (min-width: 768px) {
+      body {
+        padding-bottom: 0;
+      }
+    }
+    .font-black {
+      font-family: 'Archivo Black', 'Archivo', sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .rule-b {
+      border-bottom: 2px solid #111111;
+    }
+    .rule {
+      border-top: 2px solid #111111;
+    }
+    .editorial-card {
+      background: #ffffff;
+      border: 2px solid #111111;
+      box-shadow: 6px 6px 0px #111111;
+    }
+    .editorial-card-sm {
+      background: #ffffff;
+      border: 2px solid #111111;
+      box-shadow: 4px 4px 0px #111111;
+    }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #E11D2E;
+      animation: blink 1.4s ease-in-out infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0.25; }
+    }
+    .scanner-frame {
+      position: relative;
+      overflow: hidden;
+      border: 2px solid #111111;
+    }
+    .scanner-laser {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #E11D2E;
+      box-shadow: 0 0 10px 2px rgba(225, 29, 46, 0.8);
+      z-index: 10;
+      animation: scanLaser 2.5s infinite ease-in-out;
+    }
+    @keyframes scanLaser {
+      0%, 100% { top: 5%; opacity: 0.2; }
+      50% { top: 92%; opacity: 1; }
+    }
+    input[type="text"], input[type="tel"], input[type="number"], select, textarea {
+      border: 2px solid #111111 !important;
+      border-radius: 0 !important;
+      background: #ffffff !important;
+      color: #111111 !important;
+      font-family: 'Archivo', sans-serif !important;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none !important;
+      border-color: #E11D2E !important;
+      box-shadow: 3px 3px 0px #111111 !important;
+    }
+    .btn-pill, .btn-island {
+      border-radius: 0;
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      .editorial-card, .editorial-card-sm {
+        box-shadow: none !important;
+        border: 2px solid #000000 !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- Live Telemetry Status Bar -->
+  <div class="bg-[#111111] text-white py-2.5 px-6 sm:px-10 text-xs font-mono no-print">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap text-[11px]">
+      <div class="flex items-center gap-2.5">
+        <span class="live-dot"></span>
+        <span class="uppercase tracking-widest text-white font-bold">PATIENT COMMAND VAULT ACTIVE &bull; AES-256 GCM</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <span class="hidden sm:inline text-white/60">SOCKET.IO LIVE TELEMETRY STREAM</span>
+        <a href="emergency_access.html" class="text-[#E11D2E] hover:text-white font-bold uppercase tracking-wider flex items-center gap-1">
+          <span>VIEW LIVE QR SCANNER</span> &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 px-6 sm:px-10 py-4 rule-b bg-white no-print shadow-xs">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
       
       <!-- Brand -->
-      <a href="index.html" class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-800 flex items-center justify-center text-white shadow-md shadow-indigo-200">
-          <span class="material-symbols-outlined text-xl">qr_code_2</span>
-        </div>
-        <span class="font-display text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-indigo-800 bg-clip-text text-transparent">LifeQR</span>
+      <a href="landingpage.html" class="flex items-center gap-2 group">
+        <span class="font-black text-2xl tracking-tight text-[#111111]">LIFEQR</span>
+        <span class="w-2.5 h-2.5 rounded-full bg-[#E11D2E] group-hover:scale-125 transition-transform"></span>
       </a>
       
       <!-- User Profile & Action Bar -->
-      <div class="flex items-center gap-3">
-        <div class="hidden sm:flex items-center gap-2 px-3.5 py-1.5 bg-slate-100/80 border border-slate-200/60 rounded-full text-xs font-semibold text-slate-700">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>Patient: <strong id="userName" class="text-slate-900">Loading...</strong></span>
+      <div class="flex items-center gap-3 sm:gap-4 font-mono">
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 border-2 border-[#111111] bg-[#f9fafb] text-xs font-bold text-[#111111]">
+          <span class="live-dot"></span>
+          <span>PATIENT: <strong id="userName" class="text-[#E11D2E]">Loading...</strong></span>
         </div>
         
-        <button onclick="logout()" class="text-xs text-rose-600 hover:text-rose-700 font-bold px-3 py-1.5 rounded-xl hover:bg-rose-50 transition flex items-center gap-1">
-          <span class="material-symbols-outlined text-base">logout</span>
+        <button onclick="logout()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold">
+          <span class="material-symbols-outlined text-sm">logout</span>
           <span class="hidden sm:inline">Logout</span>
         </button>
       </div>
@@ -59,56 +166,52 @@
     </div>
   </header>
 
+  <!-- Main Content -->
   <main class="relative z-10 flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl mx-auto w-full print-page">
     
     <!-- Hero Banner -->
-    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
+    <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 no-print border-b-2 border-[#111111] pb-6">
       <div>
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-extrabold mb-2 shadow-xs">
-          <span class="material-symbols-outlined text-sm">shield_person</span> PATIENT COMMAND VAULT
+        <div class="inline-flex items-center gap-2 px-3 py-1 border-2 border-[#111111] bg-[#f9fafb] text-[11px] font-mono font-bold uppercase tracking-widest text-[#E11D2E] mb-2">
+          <span class="material-symbols-outlined text-sm">shield_person</span>
+          <span>PATIENT COMMAND VAULT</span>
         </div>
-        <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Patient Command Portal</h2>
-        <p class="text-xs sm:text-sm text-slate-500 font-medium">Manage your encrypted medical lifeline, active emergency contacts, and clinical records.</p>
+        <h1 class="font-black text-3xl sm:text-4xl text-[#111111] tracking-tight uppercase">Patient Command Portal</h1>
+        <p class="text-xs sm:text-sm text-[#111111]/70 font-sans font-medium mt-1">Manage encrypted medical lifeline, active emergency contacts, and clinical records.</p>
       </div>
 
       <!-- Emergency SOS Trigger Button -->
       <div class="flex items-center gap-3">
-        <button onclick="triggerEmergencySOS()" class="btn-island btn-island-emergency animate-pulse">
+        <button onclick="triggerEmergencySOS()" class="btn-danger text-xs sm:text-sm px-6 py-3 uppercase font-mono tracking-wider font-bold shadow-[4px_4px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5">
+          <span class="material-symbols-outlined text-base animate-pulse">sos</span>
           <span>Broadcast 1-Tap SOS</span>
-          <span class="btn-icon-bubble">
-            <span class="material-symbols-outlined text-base">sos</span>
-          </span>
         </button>
       </div>
     </div>
 
-    <!-- Quick Action / Alert Banner -->
-    <div class="mb-6 bezel-shell no-print">
-      <div class="bezel-core p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
-            <span class="material-symbols-outlined text-xl">vital_signs</span>
-          </div>
-          <div>
-            <p class="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600">Golden Hour Readiness</p>
-            <p class="text-xs sm:text-sm font-semibold text-slate-800">Ensure blood group, drug allergies, and active medications are up to date for emergency medics.</p>
-          </div>
+    <!-- Quick Action Banner -->
+    <div class="mb-8 editorial-card-sm p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print bg-[#f9fafb]">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 border-2 border-[#111111] bg-white flex items-center justify-center text-[#E11D2E] flex-shrink-0">
+          <span class="material-symbols-outlined text-2xl">vital_signs</span>
         </div>
-        <button onclick="document.getElementById('profileForm').scrollIntoView({behavior:'smooth'})" class="btn-island btn-island-secondary text-xs py-2 px-4 whitespace-nowrap self-start sm:self-auto">
-          <span>Edit Profile</span>
-          <span class="btn-icon-bubble w-6 h-6">
-            <span class="material-symbols-outlined text-xs">edit</span>
-          </span>
-        </button>
+        <div>
+          <p class="text-[10px] font-mono font-bold uppercase tracking-widest text-[#E11D2E]">Golden Hour Readiness</p>
+          <p class="text-xs sm:text-sm font-bold text-[#111111]">Ensure blood group, drug allergies, and active medications are up to date for emergency medics.</p>
+        </div>
       </div>
+      <button onclick="document.getElementById('profileForm').scrollIntoView({behavior:'smooth'})" class="btn-primary text-xs px-4 py-2 uppercase font-mono tracking-wider font-bold whitespace-nowrap self-start sm:self-auto">
+        <span>Edit Profile</span>
+        <span class="material-symbols-outlined text-xs">edit</span>
+      </button>
     </div>
 
     <!-- Skeletons Loader State -->
     <div class="grid lg:grid-cols-3 gap-6 dashboard-skeleton">
-      <div class="lg:col-span-1 glass-card rounded-3xl p-6 h-96 skeleton"></div>
+      <div class="lg:col-span-1 border-2 border-[#111111] bg-gray-100 p-6 h-96 animate-pulse"></div>
       <div class="lg:col-span-2 space-y-6">
-        <div class="glass-card rounded-3xl p-6 h-64 skeleton"></div>
-        <div class="glass-card rounded-3xl p-6 h-64 skeleton"></div>
+        <div class="border-2 border-[#111111] bg-gray-100 p-6 h-64 animate-pulse"></div>
+        <div class="border-2 border-[#111111] bg-gray-100 p-6 h-64 animate-pulse"></div>
       </div>
     </div>
 
@@ -119,79 +222,71 @@
       <div class="lg:col-span-4 space-y-6 no-print">
         
         <!-- Medical QR Code Showcase -->
-        <div id="medicalQrCard" class="bezel-shell">
-          <div class="bezel-core p-6 text-center space-y-4">
-            
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span class="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600">OFFICIAL MEDICAL BADGE</span>
-              <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold">LIVE</span>
-            </div>
-
-            <!-- QR Container -->
-            <div class="bg-slate-950 rounded-2xl p-5 flex flex-col items-center justify-center shadow-inner relative group scanner-frame">
-              <div class="scanner-laser"></div>
-              <div class="p-3 bg-white rounded-xl shadow-xl">
-                <img id="qrCodeImage" src="" alt="Your QR Code" class="w-44 h-44 object-contain group-hover:scale-105 transition-transform duration-300">
-              </div>
-            </div>
-
-            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-              <p class="text-[9px] uppercase font-bold tracking-wider text-slate-400">Unique QR Identifier</p>
-              <p id="qrCodeIdValue" class="text-xs font-mono font-bold text-indigo-600 break-all">Loading...</p>
-            </div>
-
-            <div class="space-y-2 pt-1">
-              <button onclick="shareLiveLocation()" class="btn-island btn-island-primary w-full justify-center text-xs py-2.5">
-                <span>Share Live Geolocation SOS</span>
-                <span class="btn-icon-bubble w-7 h-7">
-                  <span class="material-symbols-outlined text-sm">my_location</span>
-                </span>
-              </button>
-              
-              <button onclick="downloadWalletCard()" class="w-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 px-4 py-2.5 rounded-full text-xs font-bold shadow-xs flex items-center justify-center gap-2 transition-all">
-                <span class="material-symbols-outlined text-base text-indigo-600">credit_card</span>
-                <span>Download Wallet Card</span>
-              </button>
-              
-              <button onclick="downloadQR()" class="w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all">
-                <span class="material-symbols-outlined text-base">print</span>
-                <span>Print Physical Badge</span>
-              </button>
-              
-              <button onclick="regenerateQR()" class="w-full text-[10px] text-slate-400 hover:text-rose-600 font-semibold transition py-1">
-                Regenerate QR Token
-              </button>
-            </div>
-
+        <div id="medicalQrCard" class="editorial-card p-6 text-center space-y-4">
+          
+          <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-widest text-[#E11D2E]">OFFICIAL MEDICAL BADGE</span>
+            <span class="px-2 py-0.5 border border-[#111111] bg-emerald-50 text-emerald-800 text-[10px] font-mono font-bold">LIVE</span>
           </div>
+
+          <!-- QR Container -->
+          <div class="bg-white p-4 flex flex-col items-center justify-center relative group scanner-frame">
+            <div class="scanner-laser"></div>
+            <div class="p-2 bg-white border border-[#111111]">
+              <img id="qrCodeImage" src="" alt="Your QR Code" class="w-44 h-44 object-contain">
+            </div>
+          </div>
+
+          <div class="bg-[#f9fafb] p-3 border-2 border-[#111111]">
+            <p class="text-[9px] uppercase font-mono font-bold tracking-wider text-[#111111]/60">Unique QR Identifier</p>
+            <p id="qrCodeIdValue" class="text-xs font-mono font-bold text-[#E11D2E] break-all">Loading...</p>
+          </div>
+
+          <div class="space-y-2 pt-1">
+            <button onclick="shareLiveLocation()" class="btn-primary w-full justify-center text-xs py-2.5 font-mono uppercase tracking-wider font-bold">
+              <span class="material-symbols-outlined text-sm">my_location</span>
+              <span>Share Live Location SOS</span>
+            </button>
+            
+            <button onclick="downloadWalletCard()" class="btn-secondary w-full justify-center text-xs py-2 font-mono uppercase tracking-wider font-bold">
+              <span class="material-symbols-outlined text-sm text-[#E11D2E]">credit_card</span>
+              <span>Download Wallet Card</span>
+            </button>
+            
+            <button onclick="downloadQR()" class="btn-secondary w-full justify-center text-xs py-2 font-mono uppercase tracking-wider font-bold">
+              <span class="material-symbols-outlined text-sm">print</span>
+              <span>Print Physical Badge</span>
+            </button>
+            
+            <button onclick="regenerateQR()" class="w-full text-[11px] font-mono text-[#111111]/60 hover:text-[#E11D2E] font-bold transition py-1 uppercase tracking-wider">
+              Regenerate QR Token
+            </button>
+          </div>
+
         </div>
 
         <!-- Emergency Contacts Quick View -->
-        <div class="bezel-shell">
-          <div class="bezel-core p-6 space-y-4">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 class="font-display text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-rose-600 text-lg">contact_phone</span> ICE Contacts
-              </h3>
-              <span class="text-[10px] font-bold text-slate-400 uppercase">1-Tap Direct Call</span>
-            </div>
-            <div id="emergencyContactsContainer" class="space-y-2.5">
-              <!-- Rendered dynamically -->
-            </div>
+        <div class="editorial-card p-6 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+            <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[#E11D2E] text-lg">contact_phone</span> ICE Contacts
+            </h3>
+            <span class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">1-Tap Direct Call</span>
+          </div>
+          <div id="emergencyContactsContainer" class="space-y-2.5">
+            <!-- Rendered dynamically -->
           </div>
         </div>
 
         <!-- Pending Doctor Access Requests -->
-        <div class="bezel-shell">
-          <div class="bezel-core p-6 space-y-4">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 class="font-display text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-teal-600 text-lg">lock_open</span> Doctor Authorizations
-              </h3>
-            </div>
-            <div id="doctorAccessRequests" class="space-y-2.5">
-              <!-- Rendered dynamically -->
-            </div>
+        <div class="editorial-card p-6 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+            <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[#111111] text-lg">lock_open</span> Doctor Authorizations
+            </h3>
+          </div>
+          <div id="doctorAccessRequests" class="space-y-2.5">
+            <!-- Rendered dynamically -->
           </div>
         </div>
 
@@ -201,217 +296,209 @@
       <div class="lg:col-span-8 space-y-6">
         
         <!-- Profile Form Card -->
-        <div class="bezel-shell no-print">
-          <div class="bezel-core p-6 sm:p-8 space-y-6">
-            
-            <div class="flex items-center gap-4 pb-5 border-b border-slate-100">
-              <div class="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-indigo-200 bg-slate-100 flex-shrink-0 shadow-md">
-                <img id="userProfilePhoto" src="" class="w-full h-full object-cover">
-                <label for="profilePhotoInput" class="absolute bottom-0 inset-x-0 bg-slate-900/70 text-white text-[9px] font-bold text-center cursor-pointer py-0.5">Edit</label>
-                <input type="file" id="profilePhotoInput" class="hidden" accept="image/*" onchange="uploadProfilePhoto()">
+        <div class="editorial-card p-6 sm:p-8 space-y-6 no-print">
+          
+          <div class="flex items-center gap-4 pb-5 border-b-2 border-[#111111]">
+            <div class="relative w-16 h-16 border-2 border-[#111111] bg-gray-100 flex-shrink-0 shadow-[3px_3px_0px_#111111]">
+              <img id="userProfilePhoto" src="" class="w-full h-full object-cover">
+              <label for="profilePhotoInput" class="absolute bottom-0 inset-x-0 bg-[#111111] text-white text-[9px] font-mono font-bold text-center cursor-pointer py-0.5 uppercase tracking-wider hover:bg-[#E11D2E] transition">Edit</label>
+              <input type="file" id="profilePhotoInput" class="hidden" accept="image/*" onchange="uploadProfilePhoto()">
+            </div>
+            <div>
+              <h2 class="font-black text-xl sm:text-2xl text-[#111111] tracking-tight uppercase">Encrypted Health Profile</h2>
+              <p class="text-xs text-[#111111]/70 font-sans font-medium">Field-critical medical information for attending emergency crews</p>
+            </div>
+          </div>
+
+          <form id="profileForm" class="space-y-4">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">Full Legal Name</label>
+                <input type="text" id="profileName" name="name" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-bold text-[#111111]">
               </div>
               <div>
-                <h3 class="font-display text-xl font-bold text-slate-900">Encrypted Health Profile</h3>
-                <p class="text-xs text-slate-500 font-medium">Field-critical medical information for attending emergency crews</p>
+                <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">Phone Number</label>
+                <input type="tel" id="profilePhone" name="phone" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-bold text-[#111111]">
               </div>
             </div>
 
-            <form id="profileForm" class="space-y-4">
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Full Legal Name</label>
-                  <input type="text" id="profileName" name="name" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">Age</label>
+                <input type="number" id="profileAge" name="age" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-mono font-bold text-[#111111]">
+              </div>
+              <div>
+                <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">Blood Group</label>
+                <select id="profileBloodGroup" name="bloodGroup" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-bold text-[#111111]">
+                  <option value="">Select Blood Group</option>
+                  <option value="A+">A+ (A Positive)</option>
+                  <option value="A-">A- (A Negative)</option>
+                  <option value="B+">B+ (B Positive)</option>
+                  <option value="B-">B- (B Negative)</option>
+                  <option value="AB+">AB+ (AB Positive)</option>
+                  <option value="AB-">AB- (AB Negative)</option>
+                  <option value="O+">O+ (O Positive)</option>
+                  <option value="O-">O- (O Negative)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">Gender</label>
+                <select id="profileGender" name="gender" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-bold text-[#111111]">
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2.5 mt-2 sm:mt-5 bg-[#f9fafb] p-3 border-2 border-[#111111]">
+                <input type="checkbox" id="publicProfileToggle" class="w-4 h-4 text-[#111111] border-2 border-[#111111] focus:ring-0">
+                <label for="publicProfileToggle" class="text-xs font-bold text-[#111111] font-mono uppercase tracking-wider">Enable Public Emergency QR Profile</label>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">Address</label>
+                <input type="text" id="profileAddress" name="address" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-bold text-[#111111]">
+              </div>
+              <div>
+                <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">City</label>
+                <input type="text" id="profileCity" name="city" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-bold text-[#111111]">
+              </div>
+              <div>
+                <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">State</label>
+                <input type="text" id="profileState" name="state" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-bold text-[#111111]">
+              </div>
+            </div>
+
+            <div class="space-y-3 pt-2">
+              <div>
+                <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#E11D2E] mb-1 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">warning</span> Known Severe Allergies
+                </label>
+                <textarea id="profileAllergies" name="allergies" rows="2" placeholder="e.g. Penicillin, Peanuts, Latex" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-bold text-[#111111]"></textarea>
+              </div>
+              <div>
+                <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">Current Active Medications</label>
+                <textarea id="profileMedications" name="medications" rows="2" placeholder="e.g. Insulin 10 units, Aspirin 75mg daily" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-bold text-[#111111]"></textarea>
+              </div>
+              <div>
+                <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">Chronic Health Conditions</label>
+                <textarea id="profileHealthIssues" name="healthIssues" rows="2" placeholder="e.g. Type 1 Diabetes, Asthma, Cardiac Arrhythmia" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-bold text-[#111111]"></textarea>
+              </div>
+            </div>
+
+            <!-- Emergency Contacts Setup in Profile -->
+            <div class="pt-4 border-t-2 border-[#111111] space-y-3">
+              <h4 class="font-mono text-xs font-bold text-[#111111] uppercase tracking-wider flex items-center gap-1">
+                <span class="material-symbols-outlined text-base text-[#E11D2E]">contact_phone</span> Emergency Contacts Setup (ICE)
+              </h4>
+              <div class="space-y-2.5">
+                <div class="grid md:grid-cols-3 gap-2.5 p-3 border-2 border-[#111111] bg-[#f9fafb]">
+                  <input type="text" id="emergencyContactName1" placeholder="Contact 1 Name" class="px-3 py-2 text-xs font-bold">
+                  <input type="tel" id="emergencyContactPhone1" placeholder="Contact 1 Phone" class="px-3 py-2 text-xs font-mono font-bold">
+                  <input type="text" id="emergencyContactRelationship1" placeholder="Relationship" class="px-3 py-2 text-xs font-bold">
                 </div>
-                <div>
-                  <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Phone Number</label>
-                  <input type="tel" id="profilePhone" name="phone" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
+                <div class="grid md:grid-cols-3 gap-2.5 p-3 border-2 border-[#111111] bg-[#f9fafb]">
+                  <input type="text" id="emergencyContactName2" placeholder="Contact 2 Name" class="px-3 py-2 text-xs font-bold">
+                  <input type="tel" id="emergencyContactPhone2" placeholder="Contact 2 Phone" class="px-3 py-2 text-xs font-mono font-bold">
+                  <input type="text" id="emergencyContactRelationship2" placeholder="Relationship" class="px-3 py-2 text-xs font-bold">
+                </div>
+                <div class="grid md:grid-cols-3 gap-2.5 p-3 border-2 border-[#111111] bg-[#f9fafb]">
+                  <input type="text" id="emergencyContactName3" placeholder="Contact 3 Name" class="px-3 py-2 text-xs font-bold">
+                  <input type="tel" id="emergencyContactPhone3" placeholder="Contact 3 Phone" class="px-3 py-2 text-xs font-mono font-bold">
+                  <input type="text" id="emergencyContactRelationship3" placeholder="Relationship" class="px-3 py-2 text-xs font-bold">
                 </div>
               </div>
+            </div>
 
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Age</label>
-                  <input type="number" id="profileAge" name="age" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 font-tabular focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
-                </div>
-                <div>
-                  <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Blood Group</label>
-                  <select id="profileBloodGroup" name="bloodGroup" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
-                    <option value="">Select Blood Group</option>
-                    <option value="A+">A+ (A Positive)</option>
-                    <option value="A-">A- (A Negative)</option>
-                    <option value="B+">B+ (B Positive)</option>
-                    <option value="B-">B- (B Negative)</option>
-                    <option value="AB+">AB+ (AB Positive)</option>
-                    <option value="AB-">AB- (AB Negative)</option>
-                    <option value="O+">O+ (O Positive)</option>
-                    <option value="O-">O- (O Negative)</option>
-                  </select>
-                </div>
-              </div>
+            <div class="pt-2">
+              <button type="submit" id="saveProfileBtn" class="btn-primary px-6 py-3 text-xs font-mono uppercase tracking-wider font-bold">
+                <span>Save Medical Profile Changes</span>
+                <span class="material-symbols-outlined text-sm">check</span>
+              </button>
+            </div>
 
-              <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Gender</label>
-                  <select id="profileGender" name="gender" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition">
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div class="flex items-center gap-2.5 mt-2 sm:mt-5 bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100">
-                  <input type="checkbox" id="publicProfileToggle" class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
-                  <label for="publicProfileToggle" class="text-xs font-bold text-slate-700">Enable Public Emergency QR Profile</label>
-                </div>
-              </div>
-
-              <div class="grid md:grid-cols-3 gap-3">
-                <div>
-                  <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Address</label>
-                  <input type="text" id="profileAddress" name="address" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800">
-                </div>
-                <div>
-                  <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">City</label>
-                  <input type="text" id="profileCity" name="city" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800">
-                </div>
-                <div>
-                  <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">State</label>
-                  <input type="text" id="profileState" name="state" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800">
-                </div>
-              </div>
-
-              <div class="space-y-3 pt-2">
-                <div>
-                  <label class="block text-[11px] font-bold uppercase tracking-wider text-rose-700 mb-1">Known Allergies (Severe)</label>
-                  <textarea id="profileAllergies" name="allergies" rows="2" placeholder="e.g. Penicillin, Peanuts, Latex" class="w-full px-3.5 py-2.5 bg-rose-50/30 border border-rose-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-rose-500 transition"></textarea>
-                </div>
-                <div>
-                  <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Current Active Medications</label>
-                  <textarea id="profileMedications" name="medications" rows="2" placeholder="e.g. Insulin 10 units, Aspirin 75mg daily" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800"></textarea>
-                </div>
-                <div>
-                  <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">Chronic Health Conditions</label>
-                  <textarea id="profileHealthIssues" name="healthIssues" rows="2" placeholder="e.g. Type 1 Diabetes, Asthma, Cardiac Arrhythmia" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800"></textarea>
-                </div>
-              </div>
-
-              <!-- Emergency Contacts Setup in Profile -->
-              <div class="pt-4 border-t border-slate-100 space-y-3">
-                <h4 class="font-display text-xs font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
-                  <span class="material-symbols-outlined text-base">contact_phone</span> Emergency Contacts Setup (ICE)
-                </h4>
-                <div class="space-y-2.5">
-                  <div class="grid md:grid-cols-3 gap-2.5 p-3 bg-indigo-50/40 border border-indigo-100 rounded-2xl">
-                    <input type="text" id="emergencyContactName1" placeholder="Contact 1 Name" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                    <input type="tel" id="emergencyContactPhone1" placeholder="Contact 1 Phone" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                    <input type="text" id="emergencyContactRelationship1" placeholder="Relationship" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                  </div>
-                  <div class="grid md:grid-cols-3 gap-2.5 p-3 bg-indigo-50/20 border border-indigo-100 rounded-2xl">
-                    <input type="text" id="emergencyContactName2" placeholder="Contact 2 Name" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                    <input type="tel" id="emergencyContactPhone2" placeholder="Contact 2 Phone" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                    <input type="text" id="emergencyContactRelationship2" placeholder="Relationship" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                  </div>
-                  <div class="grid md:grid-cols-3 gap-2.5 p-3 bg-indigo-50/20 border border-indigo-100 rounded-2xl">
-                    <input type="text" id="emergencyContactName3" placeholder="Contact 3 Name" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                    <input type="tel" id="emergencyContactPhone3" placeholder="Contact 3 Phone" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                    <input type="text" id="emergencyContactRelationship3" placeholder="Relationship" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                  </div>
-                </div>
-              </div>
-
-              <div class="pt-2">
-                <button type="submit" id="saveProfileBtn" class="btn-island btn-island-primary">
-                  <span>Save Medical Profile Changes</span>
-                  <span class="btn-icon-bubble">
-                    <span class="material-symbols-outlined text-sm">check</span>
-                  </span>
-                </button>
-              </div>
-
-            </form>
-          </div>
+          </form>
         </div>
 
         <!-- History & Reports Dual Panel -->
         <div class="grid md:grid-cols-2 gap-6">
           
           <!-- History Timeline Card -->
-          <div class="bezel-shell">
-            <div class="bezel-core p-6 space-y-4">
-              <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 class="font-display text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <span class="material-symbols-outlined text-indigo-600">timeline</span>
-                  <span>Clinical Timeline</span>
-                </h3>
-                <span class="text-[10px] font-bold text-slate-400 uppercase">EHR Logs</span>
-              </div>
+          <div class="editorial-card p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+              <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#111111]">timeline</span>
+                <span>Clinical Timeline</span>
+              </h3>
+              <span class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">EHR Logs</span>
+            </div>
 
-              <div class="space-y-3 overflow-y-auto max-h-96 pr-1 pt-1" id="historyTimelineContainer">
-                <!-- Timeline events -->
-              </div>
-              
-              <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-slate-500 text-[11px] font-medium bg-slate-50 p-2.5 rounded-xl">
-                <span class="material-symbols-outlined text-indigo-600 text-sm flex-shrink-0">verified</span>
-                <span>Official clinical notes recorded exclusively by verified doctors.</span>
-              </div>
+            <div class="space-y-3 overflow-y-auto max-h-96 pr-1 pt-1 font-sans" id="historyTimelineContainer">
+              <!-- Timeline events -->
+            </div>
+            
+            <div class="mt-4 pt-3 border-t-2 border-[#111111] flex items-center gap-2 text-[#111111]/70 text-[11px] font-mono font-bold bg-[#f9fafb] p-2.5">
+              <span class="material-symbols-outlined text-[#E11D2E] text-sm flex-shrink-0">verified</span>
+              <span>Official clinical notes recorded exclusively by verified doctors.</span>
             </div>
           </div>
 
           <!-- Reports Panel -->
-          <div id="reportsSection" class="bezel-shell no-print">
-            <div class="bezel-core p-6 space-y-4">
-              <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 class="font-display text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <span class="material-symbols-outlined text-teal-600">folder_shared</span>
-                  <span>Clinical Reports</span>
-                </h3>
-                <span class="text-[10px] font-bold text-teal-600 uppercase">Lab Vault</span>
-              </div>
-              
-              <!-- Upload form -->
-              <form id="reportUploadForm" class="bg-teal-50/40 border border-teal-100 rounded-2xl p-3.5 space-y-2.5">
-                <h4 class="font-bold text-[11px] text-teal-900 uppercase tracking-wider">Upload Medical File (Max 5MB)</h4>
-                <div>
-                  <input type="file" id="report" name="report" required class="w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-teal-100 file:text-teal-900 hover:file:bg-teal-200">
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                  <select id="reportCategory" name="category" class="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                    <option value="General">General</option>
-                    <option value="Lab Test">Lab Test</option>
-                    <option value="Prescription">Prescription</option>
-                    <option value="Imaging">Imaging</option>
-                  </select>
-                  <input type="text" id="reportDesc" name="description" placeholder="Description" class="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                </div>
-                <button type="submit" id="uploadReportBtn" class="w-full bg-teal-600 text-white py-2 rounded-xl text-xs font-bold shadow hover:bg-teal-700 transition">
-                  Upload Document
-                </button>
-              </form>
-
-              <div id="medicalReportsList" class="space-y-2.5">
-                <!-- Rendered dynamically -->
-              </div>
-              <div id="reportsPagination" class="flex justify-between items-center mt-3 text-xs"></div>
+          <div id="reportsSection" class="editorial-card p-6 space-y-4 no-print">
+            <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+              <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#111111]">folder_shared</span>
+                <span>Clinical Reports</span>
+              </h3>
+              <span class="text-[10px] font-mono font-bold text-[#E11D2E] uppercase">Lab Vault</span>
             </div>
+            
+            <!-- Upload form -->
+            <form id="reportUploadForm" class="border-2 border-[#111111] bg-[#f9fafb] p-3.5 space-y-2.5">
+              <h4 class="font-mono font-bold text-[11px] text-[#111111] uppercase tracking-wider">Upload Medical File (Max 5MB)</h4>
+              <div>
+                <input type="file" id="report" name="report" required class="w-full text-xs text-[#111111] file:mr-2 file:py-1 file:px-2.5 file:border-2 file:border-[#111111] file:text-[11px] file:font-mono file:font-bold file:bg-[#111111] file:text-white hover:file:bg-[#E11D2E] cursor-pointer">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <select id="reportCategory" name="category" class="px-2.5 py-1.5 text-xs font-bold">
+                  <option value="General">General</option>
+                  <option value="Lab Test">Lab Test</option>
+                  <option value="Prescription">Prescription</option>
+                  <option value="Imaging">Imaging</option>
+                </select>
+                <input type="text" id="reportDesc" name="description" placeholder="Description" class="px-2.5 py-1.5 text-xs font-bold">
+              </div>
+              <button type="submit" id="uploadReportBtn" class="btn-primary w-full py-2 text-xs font-mono uppercase tracking-wider font-bold">
+                Upload Document
+              </button>
+            </form>
+
+            <div id="medicalReportsList" class="space-y-2.5 font-sans">
+              <!-- Rendered dynamically -->
+            </div>
+            <div id="reportsPagination" class="flex justify-between items-center mt-3 text-xs font-mono"></div>
           </div>
 
         </div>
 
         <!-- Security Audit Log -->
-        <div class="bezel-shell no-print">
-          <div class="bezel-core p-6 space-y-4">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 class="font-display text-sm font-bold text-slate-900 flex items-center gap-2">
-                <span class="material-symbols-outlined text-slate-600">history</span>
-                <span>Security Access Audit Log</span>
-              </h3>
-              <span class="text-[10px] font-bold text-slate-400 uppercase">Audit Trail</span>
-            </div>
-            <div id="activitiesList" class="space-y-2.5">
-              <!-- Rendered dynamically -->
-            </div>
-            <div id="activitiesPagination" class="flex justify-between items-center mt-3 text-xs"></div>
+        <div class="editorial-card p-6 space-y-4 no-print">
+          <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+            <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#111111]">history</span>
+              <span>Security Access Audit Log</span>
+            </h3>
+            <span class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">Audit Trail</span>
           </div>
+          <div id="activitiesList" class="space-y-2.5 font-mono text-xs">
+            <!-- Rendered dynamically -->
+          </div>
+          <div id="activitiesPagination" class="flex justify-between items-center mt-3 text-xs font-mono"></div>
         </div>
 
       </div>
@@ -419,28 +506,33 @@
   </main>
 
   <!-- Fixed Mobile Bottom Navigation Bar -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 z-50 px-2 py-1.5 pb-safe shadow-2xl flex items-center justify-around no-print">
-    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="mobile-bottom-nav-tab active" aria-label="Profile">
-      <span class="material-symbols-outlined text-xl">person</span>
-      <span>Profile</span>
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#111111] z-50 px-2 py-2 shadow-2xl flex items-center justify-around no-print">
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Profile">
+      <span class="material-symbols-outlined text-lg">person</span>
+      <span class="text-[10px] uppercase">Profile</span>
     </button>
-    <button onclick="document.getElementById('medicalQrCard')?.scrollIntoView({behavior: 'smooth'})" class="mobile-bottom-nav-tab" aria-label="Medical ID">
-      <span class="material-symbols-outlined text-xl">qr_code_2</span>
-      <span>Medical ID</span>
+    <button onclick="document.getElementById('medicalQrCard')?.scrollIntoView({behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Medical ID">
+      <span class="material-symbols-outlined text-lg">qr_code_2</span>
+      <span class="text-[10px] uppercase">Medical ID</span>
     </button>
-    <button onclick="triggerEmergencySOS()" class="mobile-bottom-nav-tab emergency-tab" aria-label="Emergency SOS">
-      <span class="material-symbols-outlined text-xl animate-pulse text-rose-600">sos</span>
-      <span class="font-extrabold text-rose-600">SOS</span>
+    <button onclick="triggerEmergencySOS()" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#E11D2E]" aria-label="Emergency SOS">
+      <span class="material-symbols-outlined text-lg animate-pulse">sos</span>
+      <span class="text-[10px] uppercase font-black">SOS</span>
     </button>
-    <button onclick="document.getElementById('reportsSection')?.scrollIntoView({behavior: 'smooth'})" class="mobile-bottom-nav-tab" aria-label="Medical Reports">
-      <span class="material-symbols-outlined text-xl">folder_shared</span>
-      <span>Reports</span>
+    <button onclick="document.getElementById('reportsSection')?.scrollIntoView({behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Medical Reports">
+      <span class="material-symbols-outlined text-lg">folder_shared</span>
+      <span class="text-[10px] uppercase">Reports</span>
     </button>
-    <button onclick="logout()" class="mobile-bottom-nav-tab" aria-label="Logout">
-      <span class="material-symbols-outlined text-xl">logout</span>
-      <span>Logout</span>
+    <button onclick="logout()" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Logout">
+      <span class="material-symbols-outlined text-lg">logout</span>
+      <span class="text-[10px] uppercase">Logout</span>
     </button>
   </nav>
+
+  <!-- Footer -->
+  <footer class="rule py-8 px-6 text-center text-xs font-mono text-[#111111]/60 no-print mt-12">
+    <p>&copy; 2025&ndash;2026 LifeQR &bull; SECURE PATIENT COMMAND VAULT</p>
+  </footer>
 
 </body>
 </html>

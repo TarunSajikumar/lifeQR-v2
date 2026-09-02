@@ -315,4 +315,280 @@ router.get('/patients', authenticateToken, requireVerified, async (req, res) => 
   }
 });
 
+const Consultation = require('../../models/Consultation');
+const Prescription = require('../../models/Prescription');
+const MedicalRecord = require('../../models/MedicalRecord');
+const queueService = require('../../services/queueService');
+const bcrypt = require('bcryptjs');
+
+/**
+ * GET /api/v1/doctor-access/waiting-queue
+ * Get live waiting queue for doctor
+ */
+router.get('/waiting-queue', authenticateToken, async (req, res) => {
+  try {
+    const queue = queueService.getQueue();
+    const nowCalling = queueService.getNowCalling();
+    res.json({ queue, nowCalling });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch waiting queue' });
+  }
+});
+
+/**
+ * POST /api/v1/doctor-access/call-patient
+ * Doctor calls patient into consultation room -> broadcasts to hospital reception & screen
+ */
+router.post('/call-patient', authenticateToken, async (req, res) => {
+  try {
+    const { tokenNumber, roomNumber } = req.body;
+    const doctorUser = await User.findById(req.user.userId);
+    const doctorName = doctorUser ? `Dr. ${doctorUser.name}` : 'Attending Physician';
+    const room = roomNumber || 'Consultation Room 102';
+
+    const result = queueService.callPatient(tokenNumber, doctorName, room);
+    if (!result) {
+      return res.status(404).json({ error: 'Patient token not found in waiting queue' });
+    }
+
+    // Broadcast live event over Socket.IO to hospital / clinic room & doctor room
+    const io = req.app.get('io');
+    if (io) {
+      io.to('hospital:er').emit('calling-patient', result.nowCalling);
+      io.to('doctor:all').emit('calling-patient', result.nowCalling);
+    }
+
+    logEvent('DOCTOR_CALLED_PATIENT', { tokenNumber, doctorName, room });
+
+    res.json({
+      message: `Patient ${result.item.patientName} (Token #${tokenNumber}) called into ${room}`,
+      item: result.item,
+      nowCalling: result.nowCalling
+    });
+  } catch (error) {
+    console.error('Call patient error:', error);
+    res.status(500).json({ error: 'Failed to call patient' });
+  }
+});
+
+/**
+ * POST /api/v1/doctor-access/create-patient
+ * Doctor or Clinic creates a new Patient LifeQR ID on the fly
+ */
+router.post('/create-patient', authenticateToken, async (req, res) => {
+  try {
+    const { name, phone, email, age, gender, bloodGroup, allergies, medications, healthIssues, chiefComplaint, priority } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Patient name is required' });
+    }
+
+    const cleanEmail = email && email.trim() ? email.trim().toLowerCase() : `patient_${Date.now()}@lifeqr.local`;
+    const cleanPhone = phone && phone.trim() ? phone.trim() : `+91${Math.floor(6000000000 + Math.random() * 3999999999)}`;
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const namePrefix = name.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase() || 'PAT';
+    const qrCodeId = `${namePrefix}-D${randomSuffix}`;
+
+    // Create user or link
+    let user = await User.findOne({ $or: [{ email: cleanEmail }, { phone: cleanPhone }] });
+    if (!user) {
+      const hashedPassword = await bcrypt.hash('Password@123', 10);
+      user = new User({
+        name,
+        email: cleanEmail,
+        phone: cleanPhone,
+        password: hashedPassword,
+        role: 'patient',
+        gender: gender ? gender.toLowerCase() : 'other',
+        isVerified: true
+      });
+      await user.save();
+    }
+
+    // Create or update PatientProfile
+    let profile = await PatientProfile.findOne({ userId: user._id });
+    if (!profile) {
+      profile = new PatientProfile({
+        userId: user._id,
+        qrCodeId,
+        age: parseInt(age) || 30,
+        bloodGroup: bloodGroup || '',
+        allergies: allergies || '',
+        medications: medications || '',
+        healthIssues: healthIssues || '',
+        publicProfile: true
+      });
+      await profile.save();
+    }
+
+    // Add to doctor waiting queue immediately
+    const doctorUser = await User.findById(req.user.userId);
+    const doctorName = doctorUser ? `Dr. ${doctorUser.name}` : 'Dr. Amit Sharma';
+
+    const queueItem = queueService.addToQueue({
+      patientName: name,
+      qrCodeId: profile.qrCodeId,
+      age: profile.age,
+      gender: user.gender,
+      phone: user.phone,
+      bloodGroup: profile.bloodGroup,
+      chiefComplaint: chiefComplaint || 'Clinical OPD Consultation',
+      priority: priority || 'STANDARD',
+      assignedDoctorName: doctorName,
+      roomNumber: 'Consultation Room 102'
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('hospital:er').emit('patient-queued', queueItem);
+      io.to(`doctor:${req.user.userId}`).emit('patient-queued', queueItem);
+    }
+
+    logEvent('PATIENT_ON_THE_FLY_CREATED', { qrCodeId: profile.qrCodeId, patientName: name });
+
+    res.status(201).json({
+      message: 'New patient profile and LifeQR ID successfully generated and added to waiting queue',
+      patient: {
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        qrCodeId: profile.qrCodeId,
+        bloodGroup: profile.bloodGroup,
+        age: profile.age,
+        gender: user.gender
+      },
+      queueItem
+    });
+  } catch (error) {
+    console.error('Create patient error:', error);
+    res.status(500).json({ error: error.message || 'Failed to create patient profile' });
+  }
+});
+
+/**
+ * POST /api/v1/doctor-access/consultations
+ * Save full clinical consultation with complaints, vitals, diagnosis, prescriptions, and reports
+ */
+router.post('/consultations', authenticateToken, async (req, res) => {
+  try {
+    const {
+      qrCodeId,
+      tokenNumber,
+      chiefComplaint,
+      presentIllnessHistory,
+      vitals,
+      diagnosis,
+      differentialDiagnosis,
+      clinicalNotes,
+      medications,
+      labOrders,
+      followUpDays
+    } = req.body;
+
+    if (!qrCodeId || !diagnosis) {
+      return res.status(400).json({ error: 'Patient QR Code ID and Clinical Diagnosis are required' });
+    }
+
+    const profile = await PatientProfile.findOne({ qrCodeId }).populate('userId', 'name email');
+    if (!profile) {
+      return res.status(404).json({ error: 'Patient profile not found for QR ID ' + qrCodeId });
+    }
+
+    const doctorUser = await User.findById(req.user.userId);
+    const doctorName = doctorUser ? `Dr. ${doctorUser.name}` : 'Attending Physician';
+
+    // 1. Save Consultation record
+    const followUpDate = followUpDays ? new Date(Date.now() + parseInt(followUpDays) * 24 * 60 * 60 * 1000) : null;
+    const consultation = new Consultation({
+      patientId: profile.userId._id,
+      doctorId: req.user.userId,
+      chiefComplaint: chiefComplaint || 'Clinical Consultation',
+      diagnosis,
+      clinicalNotes: `${clinicalNotes || ''}\n\n[History]: ${presentIllnessHistory || 'None'}\n[Vitals]: HR ${vitals?.hr || '-'} bpm, BP ${vitals?.bp || '-'}, SpO2 ${vitals?.spo2 || '-'}%, Temp ${vitals?.temp || '-'}`,
+      followUpDate,
+      status: 'completed'
+    });
+    await consultation.save();
+
+    // 2. Save Digital Prescription if medications provided
+    let prescription = null;
+    if (medications && Array.isArray(medications) && medications.length > 0) {
+      prescription = new Prescription({
+        patientId: profile.userId._id,
+        doctorId: req.user.userId,
+        medications: medications.map(m => ({
+          name: m.name,
+          dosage: m.dosage || 'Standard',
+          frequency: m.frequency || '1-0-1',
+          duration: m.duration || '5 Days',
+          instructions: m.instructions || 'After Food'
+        })),
+        diagnosis,
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      });
+      await prescription.save();
+    }
+
+    // 3. Save Medical Record in patient's vault
+    const medRecord = new MedicalRecord({
+      userId: profile.userId._id,
+      patientProfileId: profile._id,
+      title: `Clinical Consultation & Rx — ${diagnosis}`,
+      category: 'Clinical Note',
+      doctorOrHospital: doctorName,
+      recordDate: new Date(),
+      notes: `Diagnosis: ${diagnosis}\nComplaints: ${chiefComplaint || 'N/A'}\nPrescribed Meds: ${(medications || []).map(m => m.name + ' (' + m.dosage + ')').join(', ')}\nOrders: ${(labOrders || []).join(', ')}`,
+      tags: ['Consultation', 'Prescription', diagnosis]
+    });
+    await medRecord.save();
+
+    // 4. Update Patient Profile Activities
+    profile.activities.unshift({
+      type: 'Clinical Consultation',
+      title: `Consultation with ${doctorName}`,
+      description: `Diagnosis: ${diagnosis}. Digital prescription issued.`,
+      timestamp: new Date()
+    });
+    await profile.save();
+
+    // 5. Complete token in queue
+    if (tokenNumber) {
+      queueService.completeConsultation(tokenNumber);
+    }
+
+    logEvent('CONSULTATION_COMPLETED', { patientId: profile.userId._id, doctorName, diagnosis });
+
+    res.status(201).json({
+      message: 'Consultation successfully recorded, prescription issued, and synced to LifeQR vault',
+      consultationId: consultation._id,
+      prescriptionId: prescription ? prescription._id : null,
+      medicalRecordId: medRecord._id
+    });
+  } catch (error) {
+    console.error('Consultation save error:', error);
+    res.status(500).json({ error: error.message || 'Failed to record clinical consultation' });
+  }
+});
+
+/**
+ * GET /api/v1/doctor-access/prescriptions/:qrCodeId
+ * Get past prescriptions for patient
+ */
+router.get('/prescriptions/:qrCodeId', authenticateToken, async (req, res) => {
+  try {
+    const profile = await PatientProfile.findOne({ qrCodeId: req.params.qrCodeId });
+    if (!profile) return res.status(404).json({ error: 'Patient not found' });
+
+    const prescriptions = await Prescription.find({ patientId: profile.userId })
+      .populate('doctorId', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.json({ prescriptions });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch prescriptions' });
+  }
+});
+
 module.exports = router;
+

@@ -45,3 +45,11 @@
 - **Key Screens**: Splash $\rightarrow$ Login $\rightarrow$ Signup $\rightarrow$ OTP $\rightarrow$ Profile Setup $\rightarrow$ Home (My LifeQR, Medical Profile, Contacts, Records, Settings)
 - **Database Models**: `User.js`, `PatientProfile.js`, `EmergencyContact.js`, `QRProfile.js`, `MedicalRecord.js`
 
+### 8. Hospital & Clinic Operations Command Hub
+- **Frontend View**: [hospital_dashboard.html](file:///c:/Users/USER/Downloads/lifeqr-complete/app/hospital_dashboard.html) / [clinic_dashboard.html](file:///c:/Users/USER/Downloads/lifeqr-complete/app/clinic_dashboard.html)
+- **Controller Logic**: [hospital-dashboard.js](file:///c:/Users/USER/Downloads/lifeqr-complete/app/js/hospital-dashboard.js)
+- **Backend Route**: [hospitals.js](file:///c:/Users/USER/Downloads/lifeqr-complete/backend/routes/v1/hospitals.js) (`/api/v1/hospitals/...`)
+- **Capabilities**: Inpatient Admissions Registry, Ward & Bed Allocation Matrix (Trauma Bays, ICU, General Wards), On-Duty Specialist Roster, Emergency Blood Bank & Supplies Vault, Fast Patient Intake via LifeQR auto-fill.
+- **Database Models**: `Hospital.js`, `PatientProfile.js`, `Doctor.js`, `User.js`
+
+

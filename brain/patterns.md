@@ -43,8 +43,11 @@ Frontend common files (styles, images, scripts, Tailwind build outputs, login/si
 - **CLI Sync**: `npm run sync` runs two-way timestamp comparison and mirror copying.
 - **Watcher Mode**: `npm run sync:watch` or server startup continuously watches `website/` and `app/` using `fs.watch` to instantly replicate changes made in either directory.
 
-## 🎨 6. Landing Page Design Standard (Apple Health & Linear Tier)
-- **Cards & Surfaces**: Use razor-sharp micro-hairlines (`border: 1px solid rgba(226, 232, 240, 0.85)` / `border: 1px solid rgba(255, 255, 255, 0.08)`), subtle inset light highlights, and soft ambient drop shadows. Avoid thick, bulky double-bezel bubbles.
-- **Buttons**: Use ergonomic pill buttons (`.btn-pill`, `.btn-pill-primary`, `.btn-pill-secondary`) with smooth spring hover transitions and trailing micro-icons.
-- **Typography**: Display headings in `Outfit`, body in `Plus Jakarta Sans`, and medical telemetry in `JetBrains Mono`.
+## 🎨 6. Unified Swiss / Brutalist Editorial Design Standard (landingpage.html Standard)
+- **Palette**: Pure Onyx Black (`#111111`), Pure White (`#ffffff`), LifeQR Signal Red (`#E11D2E`), subtle contrast slate/gray accents.
+- **Typography**: Display & Brand in `Archivo Black` / `Archivo` (weights 600–900), Body in `Archivo` / system-ui, and medical telemetry/tags in `JetBrains Mono`.
+- **Cards & Surfaces**: Use crisp 2px solid borders (`border: 2px solid #111111` or `#E11D2E`) and hard offset drop shadows (`box-shadow: 6px 6px 0px #111111` or `#E11D2E`).
+- **Buttons**: Use `.btn-primary` (black with red hover and 2px border), `.btn-secondary` (white with 2px black border), and `.btn-danger` / `.btn-sos` (red #E11D2E).
+- **Telemetry Bars**: Sleek top ticker (`bg-[#111111] text-white py-2.5 px-6 font-mono text-[11px]`) with pulsing red `.live-dot`.
+
 
