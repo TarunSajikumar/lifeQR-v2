@@ -22,9 +22,20 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
     <script src="api-utils.js"></script>
+    <script src="js/theme.js"></script>
     <script src="js/toast.js"></script>
     <script src="js/auth-guard.js"></script>
     <script src="js/pwa-install.js"></script>
+
+    <script>
+      (function(){
+        try {
+          var m = localStorage.getItem('lifeqr_theme_manual');
+          var sys = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', m || sys);
+        } catch(e){}
+      })();
+    </script>
 
     <style>
         * {
@@ -181,6 +192,80 @@
         .role-btn.active-role .role-sub {
             color: #ffffff;
             opacity: 0.7;
+        }
+
+        /* Dark Mode Overrides */
+        [data-theme="dark"] body {
+            background: #0a0a0a !important;
+            color: #ffffff !important;
+        }
+        [data-theme="dark"] header {
+            background: #111111 !important;
+            border-color: #262626 !important;
+        }
+        [data-theme="dark"] .font-black {
+            color: #ffffff !important;
+        }
+        [data-theme="dark"] .rule-b {
+            border-bottom-color: #262626 !important;
+        }
+        [data-theme="dark"] .rule {
+            border-top-color: #262626 !important;
+        }
+        [data-theme="dark"] .editorial-card {
+            background: #111111 !important;
+            border: 2px solid #262626 !important;
+            box-shadow: 6px 6px 0px #000000 !important;
+            color: #ffffff !important;
+        }
+        [data-theme="dark"] .editorial-input {
+            background: #161616 !important;
+            border: 2px solid #2e2e2e !important;
+            color: #ffffff !important;
+        }
+        [data-theme="dark"] .editorial-input:focus {
+            border-color: #E11D2E !important;
+            box-shadow: 3px 3px 0px #E11D2E !important;
+        }
+        [data-theme="dark"] .role-btn {
+            border-color: #2e2e2e;
+            background: #161616;
+            color: #ffffff;
+        }
+        [data-theme="dark"] .role-btn:hover {
+            box-shadow: 4px 4px 0px #000000;
+        }
+        [data-theme="dark"] .role-btn.active-role {
+            background: #111111;
+            border-color: #E11D2E;
+            color: #ffffff;
+            box-shadow: 4px 4px 0px #E11D2E;
+        }
+        [data-theme="dark"] .btn-secondary {
+            background: #161616 !important;
+            border-color: #2e2e2e !important;
+            color: #ffffff !important;
+        }
+        [data-theme="dark"] .btn-secondary:hover {
+            background: #E11D2E !important;
+            border-color: #E11D2E !important;
+            color: #ffffff !important;
+        }
+        [data-theme="dark"] .bg-\[\#f9fafb\],
+        [data-theme="dark"] .bg-gray-50,
+        [data-theme="dark"] .bg-slate-50,
+        [data-theme="dark"] .bg-white {
+            background-color: #111111 !important;
+        }
+        [data-theme="dark"] .text-\[\#111111\] {
+            color: #ffffff !important;
+        }
+        [data-theme="dark"] .text-\[\#111111\]\/70,
+        [data-theme="dark"] .text-\[\#111111\]\/60 {
+            color: #94a3b8 !important;
+        }
+        [data-theme="dark"] .border-\[\#111111\] {
+            border-color: #262626 !important;
         }
     </style>
 </head>

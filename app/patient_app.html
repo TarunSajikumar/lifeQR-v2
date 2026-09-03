@@ -9,6 +9,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/patient-app.css">
   <link rel="icon" href="LifeQR.png" type="image/png">
+  
+  <script src="api-utils.js"></script>
+  <script src="js/theme.js"></script>
+  <script>
+    (function(){
+      try {
+        var m = localStorage.getItem('lifeqr_theme_manual');
+        var sys = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', m || sys);
+      } catch(e){}
+    })();
+  </script>
 </head>
 <body>
 

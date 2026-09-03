@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticateToken } = require('../../middleware/auth');
 const PatientProfile = require('../../models/PatientProfile');
+const { resolvePatientProfile } = require('../../utils/patientResolver');
 const User = require('../../models/User');
 const { logEvent } = require('../../services/securityLogger');
 
@@ -12,7 +13,7 @@ router.post('/patient-summary', authenticateToken, async (req, res) => {
     const { qrCodeId } = req.body;
     if (!qrCodeId) return res.status(400).json({ error: 'Patient QR Code ID is required' });
 
-    const profile = await PatientProfile.findOne({ qrCodeId }).populate('userId', 'name');
+    const profile = await resolvePatientProfile(qrCodeId, 'userId');
     if (!profile) return res.status(404).json({ error: 'Patient profile not found' });
 
     // Mocking AI Logic - In production, call OpenAI/Anthropic here
@@ -89,7 +90,7 @@ router.post('/prescription-checker', authenticateToken, async (req, res) => {
     let safetyScore = 98;
 
     if (qrCodeId) {
-      const profile = await PatientProfile.findOne({ qrCodeId });
+      const profile = await resolvePatientProfile(qrCodeId);
       if (profile && profile.allergies && prescriptionText.toLowerCase().includes(profile.allergies.toLowerCase().split(',')[0].trim())) {
         status = 'CRITICAL_WARNING';
         safetyScore = 12;

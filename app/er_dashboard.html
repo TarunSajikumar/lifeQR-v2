@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#111111">
+  <meta name="theme-color" content="#ffffff">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="LifeQR.png" type="image/png">
   <title>Hospital ER Trauma Command Center | LifeQR</title>
@@ -26,10 +26,21 @@
   
   <script src="/socket.io/socket.io.js"></script>
   <script src="api-utils.js"></script>
+  <script src="js/theme.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/auth-guard.js"></script>
   <script src="js/pwa-install.js"></script>
   <script src="js/er-dashboard.js"></script>
+
+  <script>
+    (function(){
+      try {
+        var m = localStorage.getItem('lifeqr_theme_manual');
+        var sys = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', m || sys);
+      } catch(e){}
+    })();
+  </script>
 
   <style>
     * {
@@ -40,8 +51,8 @@
     }
     body {
       font-family: 'Archivo', system-ui, -apple-system, sans-serif;
-      background: #0d0d0d;
-      color: #ffffff;
+      background: #ffffff;
+      color: #111111;
     }
     .font-black {
       font-family: 'Archivo Black', 'Archivo', sans-serif;
@@ -50,18 +61,18 @@
       font-family: 'JetBrains Mono', monospace;
     }
     .rule-b {
-      border-bottom: 2px solid #262626;
+      border-bottom: 2px solid #111111;
     }
     .rule {
-      border-top: 2px solid #262626;
+      border-top: 2px solid #111111;
     }
     .editorial-hud-card {
-      background: #161616;
-      border: 2px solid #2e2e2e;
-      box-shadow: 4px 4px 0px #000000;
+      background: #ffffff;
+      border: 2px solid #111111;
+      box-shadow: 4px 4px 0px #111111;
     }
     .editorial-hud-card-red {
-      background: #161616;
+      background: #ffffff;
       border: 2px solid #E11D2E;
       box-shadow: 4px 4px 0px #E11D2E;
     }
@@ -74,6 +85,62 @@
     }
     @keyframes blink {
       50% { opacity: 0.25; }
+    }
+
+    /* Dark Mode Overrides */
+    [data-theme="dark"] body {
+      background: #0a0a0a !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] header {
+      background: #111111 !important;
+      border-color: #262626 !important;
+    }
+    [data-theme="dark"] .font-black {
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .rule-b {
+      border-bottom-color: #262626 !important;
+    }
+    [data-theme="dark"] .rule {
+      border-top-color: #262626 !important;
+    }
+    [data-theme="dark"] .editorial-hud-card {
+      background: #111111 !important;
+      border: 2px solid #262626 !important;
+      box-shadow: 4px 4px 0px #000000 !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .editorial-hud-card-red {
+      background: #111111 !important;
+      border: 2px solid #E11D2E !important;
+      box-shadow: 4px 4px 0px #E11D2E !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .btn-secondary {
+      background: #161616 !important;
+      border-color: #2e2e2e !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .btn-secondary:hover {
+      background: #E11D2E !important;
+      border-color: #E11D2E !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .bg-\[\#f9fafb\],
+    [data-theme="dark"] .bg-gray-50,
+    [data-theme="dark"] .bg-white {
+      background-color: #111111 !important;
+    }
+    [data-theme="dark"] .text-\[\#111111\] {
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .text-\[\#111111\]\/70,
+    [data-theme="dark"] .text-\[\#111111\]\/60 {
+      color: #94a3b8 !important;
+    }
+    [data-theme="dark"] .border-\[\#111111\] {
+      border-color: #262626 !important;
     }
   </style>
 </head>
@@ -93,24 +160,29 @@
   </div>
 
   <!-- Header Navigation -->
-  <header class="sticky top-0 z-40 px-6 sm:px-10 py-4 rule-b bg-[#111111]/95 backdrop-blur-md shadow-lg">
+  <header class="sticky top-0 z-40 px-6 sm:px-10 py-4 rule-b bg-white">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
       
       <!-- Brand & Triage Level Indicator -->
       <a href="landingpage.html" class="flex items-center gap-2 group">
-        <span class="font-black text-2xl tracking-tight text-white">LIFEQR</span>
+        <span class="font-black text-2xl tracking-tight text-[#111111]">LIFEQR</span>
         <span class="w-2.5 h-2.5 rounded-full bg-[#E11D2E] group-hover:scale-125 transition-transform"></span>
-        <span class="ml-2 px-2 py-0.5 border border-[#E11D2E] bg-red-950/50 text-[#E11D2E] text-[10px] font-mono font-bold uppercase tracking-wider">ER COMMAND</span>
+        <span class="ml-2 px-2 py-0.5 border border-[#111111] bg-gray-50 text-[#111111] text-[10px] font-mono font-bold uppercase tracking-wider hidden sm:inline">ER COMMAND</span>
       </a>
       
       <!-- Telemetry Status & Actions -->
       <div class="flex items-center gap-3 sm:gap-4 font-mono">
-        <div class="flex items-center gap-2 px-3 py-1.5 border-2 border-[#2e2e2e] bg-[#161616] text-xs font-bold text-white">
+        <div class="flex items-center gap-2 px-3 py-1.5 border-2 border-[#111111] bg-[#f9fafb] text-xs font-bold text-[#111111]">
           <span class="live-dot"></span>
           <span>DESK: <strong id="userName" class="text-[#E11D2E]">Central ER Desk</strong></span>
         </div>
 
-        <button onclick="logout()" class="px-3.5 py-1.5 border-2 border-[#2e2e2e] bg-[#161616] hover:bg-[#E11D2E] text-white hover:border-[#E11D2E] text-xs font-mono font-bold uppercase tracking-wider transition flex items-center gap-1">
+        <button onclick="toggleTheme()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold" title="Toggle theme (Auto-synced with device appearance)">
+          <span class="theme-toggle-icon material-symbols-outlined text-sm">dark_mode</span>
+          <span class="theme-toggle-label hidden sm:inline">Theme</span>
+        </button>
+
+        <button onclick="logout()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold">
           <span class="material-symbols-outlined text-sm">logout</span>
           <span class="hidden sm:inline">Logout</span>
         </button>
@@ -123,19 +195,19 @@
   <main class="relative z-10 flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl mx-auto w-full space-y-6">
     
     <!-- Hero Title & Sub-header -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-[#262626] pb-6">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-[#111111] pb-6">
       <div>
-        <div class="inline-flex items-center gap-2 px-3 py-1 border-2 border-[#E11D2E] bg-red-950/40 text-[11px] font-mono font-bold uppercase tracking-widest text-[#E11D2E] mb-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 border-2 border-[#111111] bg-[#f9fafb] text-[11px] font-mono font-bold uppercase tracking-widest text-[#E11D2E] mb-2">
           <span class="material-symbols-outlined text-sm">sensors</span>
           <span>TRAUMA RESUSCITATION MATRIX</span>
         </div>
-        <h1 class="font-black text-3xl sm:text-4xl text-white tracking-tight uppercase">Hospital ER Trauma Command Center</h1>
-        <p class="text-xs sm:text-sm text-white/60 font-sans font-medium mt-1">Continuous telemetry monitoring, paramedic vitals stream, and automated Trauma Bay reservations.</p>
+        <h1 class="font-black text-3xl sm:text-4xl text-[#111111] tracking-tight uppercase">Hospital ER Trauma Command Center</h1>
+        <p class="text-xs sm:text-sm text-[#111111]/70 font-sans font-medium mt-1">Continuous telemetry monitoring, paramedic vitals stream, and automated Trauma Bay reservations.</p>
       </div>
 
       <!-- Realtime Operations Beacon -->
       <div class="flex items-center gap-3">
-        <button onclick="loadIncomingAmbulances()" class="px-4 py-2 border-2 border-[#2e2e2e] bg-[#161616] hover:bg-white hover:text-[#111111] text-white text-xs font-mono font-bold uppercase tracking-wider transition flex items-center gap-2">
+        <button onclick="loadIncomingAmbulances()" class="btn-secondary text-xs px-4 py-2 uppercase font-mono font-bold tracking-wider flex items-center gap-2">
           <span class="material-symbols-outlined text-sm text-[#E11D2E]">sync</span>
           <span>Refresh Telemetry</span>
         </button>
@@ -147,19 +219,19 @@
       
       <!-- Metric 1: Incoming Ambulances -->
       <div class="editorial-hud-card p-4 sm:p-5 flex flex-col justify-between space-y-2">
-        <div class="flex items-center justify-between text-white/60 text-xs font-bold uppercase">
+        <div class="flex items-center justify-between text-[#111111]/60 text-xs font-bold uppercase">
           <span>INCOMING AMBULANCES</span>
           <span class="material-symbols-outlined text-base text-[#E11D2E]">airport_shuttle</span>
         </div>
         <div class="flex items-baseline gap-2">
-          <div id="metricIncomingCount" class="font-black text-3xl sm:text-4xl text-white">0</div>
-          <span class="text-xs text-white/60 font-bold uppercase">En route</span>
+          <div id="metricIncomingCount" class="font-black text-3xl sm:text-4xl text-[#111111]">0</div>
+          <span class="text-xs text-[#111111]/60 font-bold uppercase">En route</span>
         </div>
-        <p class="text-[11px] text-white/50">GPS tracked live stream</p>
+        <p class="text-[11px] text-[#111111]/60">GPS tracked live stream</p>
       </div>
 
       <!-- Metric 2: Critical Red Alerts -->
-      <div class="editorial-hud-card p-4 sm:p-5 flex flex-col justify-between space-y-2 border-2 border-[#E11D2E]">
+      <div class="editorial-hud-card p-4 sm:p-5 flex flex-col justify-between space-y-2 border-2 border-[#E11D2E] shadow-[4px_4px_0px_#E11D2E]">
         <div class="flex items-center justify-between text-[#E11D2E] text-xs font-bold uppercase">
           <span>CRITICAL RED ALERTS</span>
           <span class="material-symbols-outlined text-base animate-pulse">warning</span>
@@ -173,90 +245,90 @@
 
       <!-- Metric 3: Open Trauma Bays -->
       <div class="editorial-hud-card p-4 sm:p-5 flex flex-col justify-between space-y-2">
-        <div class="flex items-center justify-between text-white/60 text-xs font-bold uppercase">
+        <div class="flex items-center justify-between text-[#111111]/60 text-xs font-bold uppercase">
           <span>OPEN TRAUMA BAYS</span>
-          <span class="material-symbols-outlined text-base text-emerald-400">king_bed</span>
+          <span class="material-symbols-outlined text-base text-emerald-600">king_bed</span>
         </div>
         <div class="flex items-baseline gap-2">
-          <div id="metricBaysOpen" class="font-black text-3xl sm:text-4xl text-emerald-400">3 / 4</div>
-          <span class="text-xs text-emerald-400 font-bold uppercase">Available</span>
+          <div id="metricBaysOpen" class="font-black text-3xl sm:text-4xl text-emerald-600">3 / 4</div>
+          <span class="text-xs text-emerald-600 font-bold uppercase">Available</span>
         </div>
-        <p class="text-[11px] text-white/50">Ready for assignment</p>
+        <p class="text-[11px] text-[#111111]/60">Ready for assignment</p>
       </div>
 
       <!-- Metric 4: Average Response ETA -->
       <div class="editorial-hud-card p-4 sm:p-5 flex flex-col justify-between space-y-2">
-        <div class="flex items-center justify-between text-white/60 text-xs font-bold uppercase">
+        <div class="flex items-center justify-between text-[#111111]/60 text-xs font-bold uppercase">
           <span>AVG FLEET ETA</span>
-          <span class="material-symbols-outlined text-base text-teal-400">timer</span>
+          <span class="material-symbols-outlined text-base text-teal-600">timer</span>
         </div>
         <div class="flex items-baseline gap-2">
-          <div id="metricAvgEta" class="font-black text-3xl sm:text-4xl text-teal-300">8 Mins</div>
-          <span class="text-xs text-teal-400 font-bold uppercase">Countdown</span>
+          <div id="metricAvgEta" class="font-black text-3xl sm:text-4xl text-teal-700">8 Mins</div>
+          <span class="text-xs text-teal-700 font-bold uppercase">Countdown</span>
         </div>
-        <p class="text-[11px] text-white/50">Realtime telemetry</p>
+        <p class="text-[11px] text-[#111111]/60">Realtime telemetry</p>
       </div>
 
     </div>
 
     <!-- Trauma Bay Quick Status Deck -->
     <div class="editorial-hud-card p-4 sm:p-5 space-y-3">
-      <div class="flex items-center justify-between pb-2 border-b-2 border-[#2e2e2e]">
-        <h3 class="font-black text-sm uppercase text-white flex items-center gap-2">
+      <div class="flex items-center justify-between pb-2 border-b-2 border-[#111111]">
+        <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
           <span class="material-symbols-outlined text-[#E11D2E] text-base">meeting_room</span>
           <span>Hospital Trauma Bay Allocation Status</span>
         </h3>
-        <span class="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest">TRAUMA WING A</span>
+        <span class="text-[10px] font-mono font-bold text-emerald-700 uppercase tracking-widest">TRAUMA WING A</span>
       </div>
       
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
         
         <!-- Bay 1 -->
-        <div class="p-3 bg-[#111111] border-2 border-[#2e2e2e] flex items-center justify-between">
+        <div class="p-3 bg-[#f9fafb] border-2 border-[#111111] flex items-center justify-between">
           <div class="space-y-0.5">
             <div class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <p class="font-bold text-white uppercase">Bay 1 - Resus</p>
+              <p class="font-black text-[#111111] uppercase">Bay 1 - Resus</p>
             </div>
-            <p class="text-[10px] text-white/50 font-sans">Adult Critical Care</p>
+            <p class="text-[10px] text-[#111111]/60 font-sans">Adult Critical Care</p>
           </div>
-          <span class="px-2 py-0.5 border border-emerald-500/40 text-emerald-400 text-[10px] font-bold">READY</span>
+          <span class="px-2 py-0.5 border border-emerald-600 bg-white text-emerald-700 text-[10px] font-bold uppercase">READY</span>
         </div>
 
         <!-- Bay 2 -->
-        <div class="p-3 bg-[#111111] border-2 border-[#2e2e2e] flex items-center justify-between">
+        <div class="p-3 bg-[#f9fafb] border-2 border-[#111111] flex items-center justify-between">
           <div class="space-y-0.5">
             <div class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <p class="font-bold text-white uppercase">Bay 2 - Alpha</p>
+              <p class="font-black text-[#111111] uppercase">Bay 2 - Alpha</p>
             </div>
-            <p class="text-[10px] text-white/50 font-sans">Surgical Triage</p>
+            <p class="text-[10px] text-[#111111]/60 font-sans">Surgical Triage</p>
           </div>
-          <span class="px-2 py-0.5 border border-emerald-500/40 text-emerald-400 text-[10px] font-bold">READY</span>
+          <span class="px-2 py-0.5 border border-emerald-600 bg-white text-emerald-700 text-[10px] font-bold uppercase">READY</span>
         </div>
 
         <!-- Bay 3 -->
-        <div class="p-3 bg-[#111111] border-2 border-amber-500 flex items-center justify-between">
+        <div class="p-3 bg-[#f9fafb] border-2 border-amber-600 flex items-center justify-between">
           <div class="space-y-0.5">
             <div class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-              <p class="font-bold text-white uppercase">Bay 3 - Cardiac</p>
+              <p class="font-black text-[#111111] uppercase">Bay 3 - Cardiac</p>
             </div>
-            <p class="text-[10px] text-white/50 font-sans">Cath Lab Standby</p>
+            <p class="text-[10px] text-[#111111]/60 font-sans">Cath Lab Standby</p>
           </div>
-          <span class="px-2 py-0.5 border border-amber-500 text-amber-300 text-[10px] font-bold">RESERVED</span>
+          <span class="px-2 py-0.5 border border-amber-600 bg-amber-50 text-amber-800 text-[10px] font-bold uppercase">RESERVED</span>
         </div>
 
         <!-- Bay 4 -->
-        <div class="p-3 bg-[#111111] border-2 border-[#2e2e2e] flex items-center justify-between">
+        <div class="p-3 bg-[#f9fafb] border-2 border-[#111111] flex items-center justify-between">
           <div class="space-y-0.5">
             <div class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <p class="font-bold text-white uppercase">Bay 4 - Fast</p>
+              <p class="font-black text-[#111111] uppercase">Bay 4 - Fast</p>
             </div>
-            <p class="text-[10px] text-white/50 font-sans">Rapid Stabilization</p>
+            <p class="text-[10px] text-[#111111]/60 font-sans">Rapid Stabilization</p>
           </div>
-          <span class="px-2 py-0.5 border border-emerald-500/40 text-emerald-400 text-[10px] font-bold">READY</span>
+          <span class="px-2 py-0.5 border border-emerald-600 bg-white text-emerald-700 text-[10px] font-bold uppercase">READY</span>
         </div>
 
       </div>
@@ -269,18 +341,18 @@
       <div class="lg:col-span-7 space-y-4">
         
         <div class="flex items-center justify-between">
-          <h2 class="font-black text-lg sm:text-xl text-white uppercase flex items-center gap-2">
+          <h2 class="font-black text-lg sm:text-xl text-[#111111] uppercase flex items-center gap-2">
             <span class="material-symbols-outlined text-[#E11D2E]">sensors</span>
             <span>Active In-Transit Ambulances</span>
           </h2>
-          <span class="text-[10px] font-mono font-bold text-white/50 uppercase tracking-widest">LIVE STREAM</span>
+          <span class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase tracking-widest">LIVE STREAM</span>
         </div>
 
         <div id="incomingContainer" class="space-y-4 font-sans">
           <div class="editorial-hud-card p-8 text-center space-y-3">
             <span class="material-symbols-outlined text-3xl text-[#E11D2E] animate-spin">sync</span>
-            <p class="text-xs font-mono text-white font-bold uppercase">Connecting to Hospital ER Telemetry Stream...</p>
-            <p class="text-[11px] font-mono text-white/50">Waiting for live paramedic distress and vital sign feeds</p>
+            <p class="text-xs font-mono text-[#111111] font-bold uppercase">Connecting to Hospital ER Telemetry Stream...</p>
+            <p class="text-[11px] font-mono text-[#111111]/60 uppercase font-bold">Waiting for live paramedic distress and vital sign feeds</p>
           </div>
         </div>
 
@@ -290,7 +362,7 @@
       <div class="lg:col-span-5 space-y-4">
         
         <div class="flex items-center justify-between">
-          <h2 class="font-black text-lg sm:text-xl text-white uppercase flex items-center gap-2">
+          <h2 class="font-black text-lg sm:text-xl text-[#111111] uppercase flex items-center gap-2">
             <span class="material-symbols-outlined text-[#E11D2E]">map</span>
             <span>Ambulance GPS Radar</span>
           </h2>
@@ -298,14 +370,14 @@
         </div>
         
         <div class="editorial-hud-card p-4 space-y-3">
-          <div id="erMap" class="w-full h-80 sm:h-96 border-2 border-[#2e2e2e] z-0"></div>
+          <div id="erMap" class="w-full h-80 sm:h-96 border-2 border-[#111111] z-0"></div>
           
-          <div class="flex items-center justify-between text-[11px] font-mono text-white/60 px-1">
+          <div class="flex items-center justify-between text-[11px] font-mono text-[#111111]/70 px-1">
             <span class="flex items-center gap-1.5">
               <span class="w-2.5 h-2.5 rounded-full bg-[#E11D2E] animate-pulse"></span>
-              <span>Hospital Trauma Bay Coordinates</span>
+              <span class="font-bold">Hospital Trauma Bay Coordinates</span>
             </span>
-            <span class="text-white/40 text-[10px]">37.7749° N, 122.4194° W</span>
+            <span class="text-[#111111]/60 text-[10px] font-bold">37.7749° N, 122.4194° W</span>
           </div>
         </div>
 
@@ -315,22 +387,22 @@
             <span class="material-symbols-outlined text-base">crisis_alert</span>
             <span>ER Trauma Escalation Protocols</span>
           </h4>
-          <div class="grid grid-cols-2 gap-2 text-[11px] font-mono text-white">
-            <div class="p-2.5 bg-[#111111] border-2 border-[#2e2e2e]">
+          <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+            <div class="p-2.5 bg-[#f9fafb] border-2 border-[#111111]">
               <span class="text-[#E11D2E] font-bold block uppercase">Code Red:</span>
-              <span class="text-white/70">Trauma Bay Resus</span>
+              <span class="text-[#111111]/70 font-sans font-medium">Trauma Bay Resus</span>
             </div>
-            <div class="p-2.5 bg-[#111111] border-2 border-[#2e2e2e]">
-              <span class="text-amber-400 font-bold block uppercase">Code STEMI:</span>
-              <span class="text-white/70">Cath Lab Transfer</span>
+            <div class="p-2.5 bg-[#f9fafb] border-2 border-[#111111]">
+              <span class="text-amber-700 font-bold block uppercase">Code STEMI:</span>
+              <span class="text-[#111111]/70 font-sans font-medium">Cath Lab Transfer</span>
             </div>
-            <div class="p-2.5 bg-[#111111] border-2 border-[#2e2e2e]">
-              <span class="text-blue-400 font-bold block uppercase">Code Stroke:</span>
-              <span class="text-white/70">CT Angio Alert</span>
+            <div class="p-2.5 bg-[#f9fafb] border-2 border-[#111111]">
+              <span class="text-blue-700 font-bold block uppercase">Code Stroke:</span>
+              <span class="text-[#111111]/70 font-sans font-medium">CT Angio Alert</span>
             </div>
-            <div class="p-2.5 bg-[#111111] border-2 border-[#2e2e2e]">
-              <span class="text-emerald-400 font-bold block uppercase">Code Sepsis:</span>
-              <span class="text-white/70">IV Protocol</span>
+            <div class="p-2.5 bg-[#f9fafb] border-2 border-[#111111]">
+              <span class="text-emerald-700 font-bold block uppercase">Code Sepsis:</span>
+              <span class="text-[#111111]/70 font-sans font-medium">IV Protocol</span>
             </div>
           </div>
         </div>
@@ -341,7 +413,7 @@
   </main>
 
   <!-- Footer -->
-  <footer class="rule py-8 px-6 text-center text-xs font-mono text-white/40 no-print mt-12">
+  <footer class="rule py-8 px-6 text-center text-xs font-mono text-[#111111]/60 no-print mt-12">
     <p>&copy; 2025&ndash;2026 LifeQR &bull; HOSPITAL ER TRAUMA BAY DISPATCH HUB</p>
   </footer>
 

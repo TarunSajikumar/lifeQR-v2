@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#111111">
+  <meta name="theme-color" content="#ffffff">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="LifeQR.png" type="image/png">
   <title>Tactical Responder Portal | LifeQR Dispatch</title>
@@ -28,10 +28,21 @@
   <script src="qr-scanner.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="api-utils.js"></script>
+  <script src="js/theme.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/auth-guard.js"></script>
   <script src="js/pwa-install.js"></script>
   <script src="js/crew-dashboard.js"></script>
+
+  <script>
+    (function(){
+      try {
+        var m = localStorage.getItem('lifeqr_theme_manual');
+        var sys = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', m || sys);
+      } catch(e){}
+    })();
+  </script>
 
   <style>
     * {
@@ -42,9 +53,10 @@
     }
     body {
       font-family: 'Archivo', system-ui, -apple-system, sans-serif;
-      background: #0d0d0d;
-      color: #ffffff;
+      background: #ffffff;
+      color: #111111;
       padding-bottom: 84px;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
     @media (min-width: 768px) {
       body {
@@ -58,18 +70,33 @@
       font-family: 'JetBrains Mono', monospace;
     }
     .rule-b {
-      border-bottom: 2px solid #262626;
+      border-bottom: 2px solid #111111;
     }
     .rule {
-      border-top: 2px solid #262626;
+      border-top: 2px solid #111111;
+    }
+    .editorial-card {
+      background: #ffffff;
+      border: 2px solid #111111;
+      box-shadow: 6px 6px 0px #111111;
+    }
+    .editorial-card-sm {
+      background: #ffffff;
+      border: 2px solid #111111;
+      box-shadow: 4px 4px 0px #111111;
+    }
+    .editorial-card-red {
+      background: #ffffff;
+      border: 2px solid #E11D2E;
+      box-shadow: 6px 6px 0px #E11D2E;
     }
     .editorial-hud-card {
-      background: #161616;
-      border: 2px solid #2e2e2e;
-      box-shadow: 4px 4px 0px #000000;
+      background: #ffffff;
+      border: 2px solid #111111;
+      box-shadow: 4px 4px 0px #111111;
     }
     .editorial-hud-card-red {
-      background: #161616;
+      background: #ffffff;
       border: 2px solid #E11D2E;
       box-shadow: 4px 4px 0px #E11D2E;
     }
@@ -84,16 +111,83 @@
       50% { opacity: 0.25; }
     }
     input[type="text"], input[type="number"], select {
-      border: 2px solid #2e2e2e !important;
+      border: 2px solid #111111 !important;
       border-radius: 0 !important;
-      background: #111111 !important;
-      color: #ffffff !important;
+      background: #ffffff !important;
+      color: #111111 !important;
       font-family: 'JetBrains Mono', monospace !important;
     }
     input:focus, select:focus {
       outline: none !important;
       border-color: #E11D2E !important;
-      box-shadow: 3px 3px 0px #E11D2E !important;
+      box-shadow: 3px 3px 0px #111111 !important;
+    }
+
+    /* Dark Mode Overrides */
+    [data-theme="dark"] body {
+      background: #0a0a0a !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] header {
+      background: #111111 !important;
+      border-color: #262626 !important;
+    }
+    [data-theme="dark"] .font-black {
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .rule-b {
+      border-bottom-color: #262626 !important;
+    }
+    [data-theme="dark"] .rule {
+      border-top-color: #262626 !important;
+    }
+    [data-theme="dark"] .editorial-card,
+    [data-theme="dark"] .editorial-card-sm,
+    [data-theme="dark"] .editorial-hud-card {
+      background: #111111 !important;
+      border: 2px solid #262626 !important;
+      box-shadow: 4px 4px 0px #000000 !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .editorial-card-red,
+    [data-theme="dark"] .editorial-hud-card-red {
+      background: #111111 !important;
+      border: 2px solid #E11D2E !important;
+      box-shadow: 4px 4px 0px #E11D2E !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .btn-secondary {
+      background: #161616 !important;
+      border-color: #2e2e2e !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .btn-secondary:hover {
+      background: #E11D2E !important;
+      border-color: #E11D2E !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] input[type="text"],
+    [data-theme="dark"] input[type="number"],
+    [data-theme="dark"] select {
+      background: #111111 !important;
+      color: #ffffff !important;
+      border-color: #262626 !important;
+    }
+    [data-theme="dark"] .bg-\[\#f9fafb\],
+    [data-theme="dark"] .bg-gray-50,
+    [data-theme="dark"] .bg-slate-50,
+    [data-theme="dark"] .bg-white {
+      background-color: #111111 !important;
+    }
+    [data-theme="dark"] .text-\[\#111111\] {
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .text-\[\#111111\]\/70,
+    [data-theme="dark"] .text-\[\#111111\]\/60 {
+      color: #94a3b8 !important;
+    }
+    [data-theme="dark"] .border-\[\#111111\] {
+      border-color: #262626 !important;
     }
   </style>
 </head>
@@ -113,24 +207,30 @@
   </div>
 
   <!-- Header Navigation -->
-  <header class="sticky top-0 z-40 px-6 sm:px-10 py-4 rule-b bg-[#111111]/95 backdrop-blur-md shadow-lg">
+  <header class="sticky top-0 z-40 px-6 sm:px-10 py-4 rule-b bg-white">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
       
       <!-- Brand -->
       <a href="landingpage.html" class="flex items-center gap-2 group">
-        <span class="font-black text-2xl tracking-tight text-white">LIFEQR</span>
+        <span class="font-black text-2xl tracking-tight text-[#111111]">LIFEQR</span>
         <span class="w-2.5 h-2.5 rounded-full bg-[#E11D2E] group-hover:scale-125 transition-transform"></span>
-        <span class="ml-2 px-2 py-0.5 border border-[#E11D2E] bg-red-950/50 text-[#E11D2E] text-[10px] font-mono font-bold uppercase tracking-wider">CREW HUD</span>
+        <span class="ml-2 px-2 py-0.5 border border-[#111111] bg-gray-50 text-[#111111] text-[10px] font-mono font-bold uppercase tracking-wider hidden sm:inline">CREW HUD</span>
       </a>
       
       <!-- Rescuer Status -->
       <div class="flex items-center gap-3 sm:gap-4 font-mono">
-        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 border-2 border-[#2e2e2e] bg-[#161616] text-xs font-bold text-white">
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 border-2 border-[#111111] bg-[#f9fafb] text-xs font-bold text-[#111111]">
           <span class="live-dot"></span>
           <span>CREW: <strong id="userName" class="text-[#E11D2E]">Active Paramedic</strong></span>
         </div>
+
+        <!-- Auto Device-Synced Theme Toggle Button -->
+        <button onclick="toggleTheme()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold" title="Toggle theme (Auto-synced with device appearance)">
+          <span class="theme-toggle-icon material-symbols-outlined text-sm">dark_mode</span>
+          <span class="theme-toggle-label hidden sm:inline">Theme</span>
+        </button>
         
-        <button onclick="logout()" class="px-3.5 py-1.5 border-2 border-[#2e2e2e] bg-[#161616] hover:bg-[#E11D2E] text-white hover:border-[#E11D2E] text-xs font-mono font-bold uppercase tracking-wider transition flex items-center gap-1">
+        <button onclick="logout()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold">
           <span class="material-symbols-outlined text-sm">logout</span>
           <span class="hidden sm:inline">Logout</span>
         </button>
@@ -143,14 +243,14 @@
   <main class="relative z-10 flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl mx-auto w-full">
     
     <!-- Page Header -->
-    <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-[#262626] pb-6">
+    <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-[#111111] pb-6">
       <div>
-        <div class="inline-flex items-center gap-2 px-3 py-1 border-2 border-[#E11D2E] bg-red-950/40 text-[11px] font-mono font-bold uppercase tracking-widest text-[#E11D2E] mb-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 border-2 border-[#111111] bg-[#f9fafb] text-[11px] font-mono font-bold uppercase tracking-widest text-[#E11D2E] mb-2">
           <span class="material-symbols-outlined text-sm">airport_shuttle</span>
           <span>FIRST RESPONDER TACTICAL HUB</span>
         </div>
-        <h1 class="font-black text-3xl sm:text-4xl text-white tracking-tight uppercase">Paramedic Crew Dashboard</h1>
-        <p class="text-xs sm:text-sm text-white/60 font-sans font-medium mt-1">Rapid QR Triage lookup, live GPS SOS distress streams, and ER telemetry broadcast.</p>
+        <h1 class="font-black text-3xl sm:text-4xl text-[#111111] tracking-tight uppercase">Paramedic Crew Dashboard</h1>
+        <p class="text-xs sm:text-sm text-[#111111]/70 font-sans font-medium mt-1">Rapid QR Triage lookup, live GPS SOS distress streams, and ER telemetry broadcast.</p>
       </div>
     </div>
 
@@ -158,32 +258,32 @@
     <div id="verificationBannerContainer"></div>
 
     <!-- Active Real-time SOS Overlay Banner (Hidden by default) -->
-    <div id="sosAlertPopup" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div class="editorial-hud-card-red max-w-md w-full p-6 sm:p-8 space-y-4">
+    <div id="sosAlertPopup" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="editorial-card-red max-w-md w-full p-6 sm:p-8 space-y-4">
         
         <div class="flex items-center gap-3 text-[#E11D2E]">
-          <div class="w-12 h-12 border-2 border-[#E11D2E] bg-red-950/80 flex items-center justify-center flex-shrink-0">
+          <div class="w-12 h-12 border-2 border-[#E11D2E] bg-red-50 flex items-center justify-center flex-shrink-0">
             <span class="material-symbols-outlined text-3xl animate-pulse text-[#E11D2E]">notifications_active</span>
           </div>
           <div>
-            <h3 class="font-black text-lg text-white uppercase tracking-tight">🚨 INCOMING SOS BEACON</h3>
-            <p class="text-xs font-mono text-[#E11D2E] font-bold">Real-time distress alert received</p>
+            <h3 class="font-black text-lg text-[#111111] uppercase tracking-tight">🚨 INCOMING SOS BEACON</h3>
+            <p class="text-xs font-mono text-[#E11D2E] font-bold uppercase">Real-time distress alert received</p>
           </div>
         </div>
         
-        <div class="space-y-2.5 text-xs font-mono border-y-2 border-[#2e2e2e] py-4 my-2">
-          <p class="flex justify-between"><strong class="text-white/60 uppercase">Patient:</strong> <span id="sosPatName" class="font-bold text-white">-</span></p>
-          <p class="flex justify-between"><strong class="text-white/60 uppercase">Blood Group:</strong> <span id="sosPatBlood" class="font-black text-[#E11D2E] text-sm">-</span></p>
-          <p class="flex justify-between"><strong class="text-white/60 uppercase">Severe Allergies:</strong> <span id="sosPatAllergies" class="font-bold text-amber-400">-</span></p>
-          <p><strong class="text-white/60 block mb-1 uppercase">Incident Notes:</strong> <span id="sosPatMessage" class="text-white block bg-[#111111] p-2 border border-[#2e2e2e]">-</span></p>
-          <p><strong class="text-white/60 block mb-1 uppercase">GPS Coordinates:</strong> <span id="sosPatLoc" class="font-mono text-[#E11D2E] font-bold block bg-[#111111] p-2 border border-[#2e2e2e] break-all">-</span></p>
+        <div class="space-y-2.5 text-xs font-mono border-y-2 border-[#111111] py-4 my-2">
+          <p class="flex justify-between"><strong class="text-[#111111]/60 uppercase">Patient:</strong> <span id="sosPatName" class="font-bold text-[#111111]">-</span></p>
+          <p class="flex justify-between"><strong class="text-[#111111]/60 uppercase">Blood Group:</strong> <span id="sosPatBlood" class="font-black text-[#E11D2E] text-sm">-</span></p>
+          <p class="flex justify-between"><strong class="text-[#111111]/60 uppercase">Severe Allergies:</strong> <span id="sosPatAllergies" class="font-bold text-amber-600">-</span></p>
+          <p><strong class="text-[#111111]/60 block mb-1 uppercase">Incident Notes:</strong> <span id="sosPatMessage" class="text-[#111111] block bg-[#f9fafb] p-2 border-2 border-[#111111]">-</span></p>
+          <p><strong class="text-[#111111]/60 block mb-1 uppercase">GPS Coordinates:</strong> <span id="sosPatLoc" class="font-mono text-[#E11D2E] font-bold block bg-[#f9fafb] p-2 border-2 border-[#111111] break-all">-</span></p>
         </div>
 
         <div class="flex gap-3 pt-2">
-          <button onclick="closeSosPopup()" class="flex-1 py-3 border-2 border-[#2e2e2e] bg-[#111111] hover:bg-[#2e2e2e] text-xs font-mono font-bold text-white uppercase tracking-wider transition">
+          <button onclick="closeSosPopup()" class="btn-secondary flex-1 py-3 text-xs uppercase font-mono tracking-wider font-bold">
             Dismiss
           </button>
-          <button id="ackSosBtn" class="flex-1 py-3 bg-[#E11D2E] hover:bg-white hover:text-[#111111] border-2 border-[#E11D2E] text-white text-xs font-mono font-bold uppercase tracking-wider transition shadow-[3px_3px_0px_#000000]">
+          <button id="ackSosBtn" class="btn-danger flex-1 py-3 text-xs uppercase font-mono tracking-wider font-bold shadow-[3px_3px_0px_#111111]">
             Acknowledge &amp; Dispatch
           </button>
         </div>
@@ -196,10 +296,10 @@
       <!-- Right Search / Scan Panel (4 Columns) -->
       <div class="lg:col-span-4 space-y-6">
         
-        <div class="editorial-hud-card p-6 space-y-4">
+        <div class="editorial-card p-6 space-y-4">
           
-          <div class="flex items-center justify-between pb-3 border-b-2 border-[#2e2e2e]">
-            <h3 class="font-black text-sm uppercase text-white flex items-center gap-2">
+          <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+            <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
               <span class="material-symbols-outlined text-[#E11D2E]">qr_code_scanner</span>
               <span>Patient Triage Access</span>
             </h3>
@@ -208,7 +308,7 @@
           
           <div class="space-y-4">
             <div>
-              <label class="block text-[10px] font-mono font-bold uppercase tracking-wider text-white/60 mb-1.5">Enter Patient QR Code ID</label>
+              <label class="block text-[10px] font-mono font-bold uppercase tracking-wider text-[#111111]/60 mb-1.5">Enter Patient QR Code ID</label>
               <div class="flex gap-2">
                 <input 
                   type="text" 
@@ -216,13 +316,13 @@
                   placeholder="e.g. TAR-A1B2C3D4"
                   class="flex-1 px-3.5 py-2.5 text-xs font-bold text-[#E11D2E]"
                 >
-                <button onclick="searchPatient()" class="px-4 py-2.5 bg-[#E11D2E] hover:bg-white hover:text-[#111111] text-white text-xs font-mono font-bold uppercase tracking-wider transition border-2 border-[#E11D2E]">
+                <button onclick="searchPatient()" class="btn-danger px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider">
                   Triage
                 </button>
               </div>
             </div>
 
-            <button onclick="startQRScanner()" class="w-full py-3 bg-[#111111] hover:bg-[#E11D2E] border-2 border-[#2e2e2e] hover:border-[#E11D2E] text-white text-xs font-mono font-bold uppercase tracking-wider transition flex items-center justify-center gap-2">
+            <button onclick="startQRScanner()" class="btn-primary w-full py-3 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2">
               <span class="material-symbols-outlined text-base">photo_camera</span>
               <span>Launch Camera Scanner</span>
             </button>
@@ -237,88 +337,88 @@
         <div id="patientDetailsPanel" class="hidden space-y-6">
           
           <!-- Skeletons state -->
-          <div id="patientSkeleton" class="editorial-hud-card h-96 animate-pulse"></div>
+          <div id="patientSkeleton" class="editorial-card h-96 animate-pulse bg-gray-100"></div>
 
           <!-- Content display -->
           <div id="patientContent" class="hidden space-y-6">
             
-            <div class="editorial-hud-card p-6 sm:p-8 space-y-6">
+            <div class="editorial-card p-6 sm:p-8 space-y-6">
               
-              <div class="flex flex-wrap justify-between items-center gap-4 pb-4 border-b-2 border-[#2e2e2e]">
+              <div class="flex flex-wrap justify-between items-center gap-4 pb-4 border-b-2 border-[#111111]">
                 <div>
-                  <h3 class="font-black text-2xl sm:text-3xl text-white uppercase tracking-tight" id="patName">Name</h3>
-                  <p class="text-xs text-white/60 font-mono mt-0.5">Patient QR Identifier: <span id="patId" class="font-bold text-[#E11D2E]">ID</span></p>
+                  <h3 class="font-black text-2xl sm:text-3xl text-[#111111] uppercase tracking-tight" id="patName">Name</h3>
+                  <p class="text-xs text-[#111111]/60 font-mono mt-0.5">Patient QR Identifier: <span id="patId" class="font-bold text-[#E11D2E]">ID</span></p>
                 </div>
                 <div class="flex items-center gap-2 font-mono">
-                  <span class="px-3 py-1 bg-red-950/60 border border-[#E11D2E] text-[#E11D2E] text-xs font-bold">Age: <span id="patAge">-</span></span>
-                  <span class="px-3 py-1 bg-[#111111] border border-[#2e2e2e] text-white text-xs font-bold">Gender: <span id="patGender">-</span></span>
+                  <span class="px-3 py-1 bg-red-50 border-2 border-[#E11D2E] text-[#E11D2E] text-xs font-bold uppercase">Age: <span id="patAge">-</span></span>
+                  <span class="px-3 py-1 bg-[#f9fafb] border-2 border-[#111111] text-[#111111] text-xs font-bold uppercase">Gender: <span id="patGender">-</span></span>
                 </div>
               </div>
 
               <!-- Emergency Profile Critical Grid -->
               <div class="grid md:grid-cols-2 gap-4 my-4">
-                <div class="p-4 bg-red-950/30 border-2 border-[#E11D2E]">
+                <div class="p-4 bg-red-50 border-2 border-[#E11D2E] shadow-[3px_3px_0px_#E11D2E]">
                   <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#E11D2E] mb-1">Blood Group Vitals</p>
-                  <p class="font-black text-3xl text-white" id="patBloodGroup">-</p>
+                  <p class="font-black text-3xl text-[#E11D2E]" id="patBloodGroup">-</p>
                 </div>
 
-                <div class="p-4 bg-[#111111] border-2 border-[#2e2e2e]">
-                  <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 mb-1">High-Risk Allergies</p>
-                  <p class="text-sm font-bold text-white" id="patAllergies">-</p>
+                <div class="p-4 bg-[#f9fafb] border-2 border-[#111111] shadow-[3px_3px_0px_#111111]">
+                  <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700 mb-1">High-Risk Allergies</p>
+                  <p class="text-sm font-bold text-[#111111]" id="patAllergies">-</p>
                 </div>
 
-                <div class="p-4 bg-[#111111] border-2 border-[#2e2e2e]">
-                  <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-white/60 mb-1">Current Prescriptions</p>
-                  <p class="text-sm font-bold text-white" id="patMedications">-</p>
+                <div class="p-4 bg-[#f9fafb] border-2 border-[#111111] shadow-[3px_3px_0px_#111111]">
+                  <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#111111]/60 mb-1">Current Prescriptions</p>
+                  <p class="text-sm font-bold text-[#111111]" id="patMedications">-</p>
                 </div>
 
-                <div class="p-4 bg-[#111111] border-2 border-[#2e2e2e]">
-                  <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-white/60 mb-1">Chronic Conditions</p>
-                  <p class="text-sm font-bold text-white" id="patHealthIssues">-</p>
+                <div class="p-4 bg-[#f9fafb] border-2 border-[#111111] shadow-[3px_3px_0px_#111111]">
+                  <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#111111]/60 mb-1">Chronic Conditions</p>
+                  <p class="text-sm font-bold text-[#111111]" id="patHealthIssues">-</p>
                 </div>
               </div>
 
               <!-- Emergency Contacts -->
               <div>
-                <h4 class="font-mono text-xs font-bold uppercase tracking-wider text-white/70 mb-3 flex items-center gap-1.5">
+                <h4 class="font-mono text-xs font-bold uppercase tracking-wider text-[#111111]/70 mb-3 flex items-center gap-1.5">
                   <span class="material-symbols-outlined text-[#E11D2E] text-base">phone_in_talk</span> Primary Emergency Contacts (ICE)
                 </h4>
                 <div id="patEmergencyContact" class="mb-4"></div>
               </div>
 
               <!-- Incident Checkpoint Logger -->
-              <div class="pt-4 border-t-2 border-[#2e2e2e] space-y-3">
-                <h4 class="font-mono text-xs font-bold uppercase tracking-wider text-white/70 flex items-center gap-1.5">
-                  <span class="material-symbols-outlined text-white text-base">checklist</span> Incident Checkpoints Log
+              <div class="pt-4 border-t-2 border-[#111111] space-y-3">
+                <h4 class="font-mono text-xs font-bold uppercase tracking-wider text-[#111111]/70 flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[#111111] text-base">checklist</span> Incident Checkpoints Log
                 </h4>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-                  <button onclick="logIncidentStage('Arrived at Location')" class="py-2.5 bg-[#111111] hover:bg-amber-600 text-white border-2 border-[#2e2e2e] text-xs font-mono font-bold uppercase transition">
+                  <button onclick="logIncidentStage('Arrived at Location')" class="btn-secondary py-2.5 text-xs font-mono font-bold uppercase tracking-wider">
                     Arrived Scene
                   </button>
-                  <button onclick="logIncidentStage('Patient Contact Established')" class="py-2.5 bg-[#111111] hover:bg-blue-600 text-white border-2 border-[#2e2e2e] text-xs font-mono font-bold uppercase transition">
+                  <button onclick="logIncidentStage('Patient Contact Established')" class="btn-secondary py-2.5 text-xs font-mono font-bold uppercase tracking-wider">
                     Contact Made
                   </button>
-                  <button onclick="logIncidentStage('Patient Boarded and Transporting')" class="py-2.5 bg-[#111111] hover:bg-purple-600 text-white border-2 border-[#2e2e2e] text-xs font-mono font-bold uppercase transition">
+                  <button onclick="logIncidentStage('Patient Boarded and Transporting')" class="btn-secondary py-2.5 text-xs font-mono font-bold uppercase tracking-wider">
                     Transporting
                   </button>
-                  <button onclick="logIncidentStage('Incident Successfully Handled & Completed')" class="py-2.5 bg-[#111111] hover:bg-emerald-600 text-white border-2 border-[#2e2e2e] text-xs font-mono font-bold uppercase transition">
+                  <button onclick="logIncidentStage('Incident Successfully Handled & Completed')" class="btn-primary py-2.5 text-xs font-mono font-bold uppercase tracking-wider">
                     Handled Complete
                   </button>
                 </div>
               </div>
 
               <!-- Stream Live Vitals to Hospital ER Reception -->
-              <div class="mt-4 p-4 border-2 border-[#E11D2E] bg-[#111111] flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div class="mt-4 p-4 border-2 border-[#E11D2E] bg-red-50 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[3px_3px_0px_#E11D2E]">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 border-2 border-[#E11D2E] bg-red-950/80 text-[#E11D2E] flex items-center justify-center flex-shrink-0">
+                  <div class="w-10 h-10 border-2 border-[#E11D2E] bg-white text-[#E11D2E] flex items-center justify-center flex-shrink-0">
                     <span class="material-symbols-outlined text-2xl animate-pulse">sensors</span>
                   </div>
                   <div>
-                    <h5 class="text-xs font-black text-white uppercase">Hospital ER In-Transit Telemetry</h5>
-                    <p class="text-[10px] font-mono text-white/60">Broadcast patient vitals and ETA to hospital triage desk live.</p>
+                    <h5 class="text-xs font-black text-[#111111] uppercase">Hospital ER In-Transit Telemetry</h5>
+                    <p class="text-[10px] font-mono text-[#111111]/70 font-bold uppercase">Broadcast patient vitals and ETA to hospital triage desk live.</p>
                   </div>
                 </div>
-                <button onclick="openERStreamModal()" class="w-full sm:w-auto px-4 py-2.5 bg-[#E11D2E] hover:bg-white hover:text-[#111111] text-white border-2 border-[#E11D2E] text-xs font-mono font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 flex-shrink-0">
+                <button onclick="openERStreamModal()" class="btn-danger w-full sm:w-auto px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 flex-shrink-0">
                   <span class="material-symbols-outlined text-base">local_hospital</span>
                   Stream Vitals to ER Desk
                 </button>
@@ -327,40 +427,40 @@
             </div>
 
             <!-- ER Telemetry Stream Modal -->
-            <div id="erStreamModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-              <div class="editorial-hud-card-red max-w-md w-full p-6 space-y-4">
-                <div class="flex items-center justify-between border-b-2 border-[#2e2e2e] pb-3">
-                  <h3 class="font-black text-sm uppercase text-white flex items-center gap-2">
+            <div id="erStreamModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div class="editorial-card-red max-w-md w-full p-6 space-y-4">
+                <div class="flex items-center justify-between border-b-2 border-[#111111] pb-3">
+                  <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
                     <span class="material-symbols-outlined text-[#E11D2E]">sensors</span> Stream Vitals to ER Reception
                   </h3>
-                  <button onclick="closeERStreamModal()" class="text-white/60 hover:text-white"><span class="material-symbols-outlined">close</span></button>
+                  <button onclick="closeERStreamModal()" class="text-[#111111]/60 hover:text-[#E11D2E]"><span class="material-symbols-outlined">close</span></button>
                 </div>
 
                 <div class="space-y-3 text-xs font-mono">
                   <div>
-                    <label class="block font-bold text-white/60 mb-1 uppercase">ETA Countdown (Minutes)</label>
+                    <label class="block font-bold text-[#111111]/60 mb-1 uppercase">ETA Countdown (Minutes)</label>
                     <input type="number" id="erEtaMinutes" placeholder="e.g. 10" min="1" max="120" class="w-full p-2.5 font-bold">
                   </div>
 
                   <div class="grid grid-cols-2 gap-2">
                     <div>
-                      <label class="block font-bold text-white/60 mb-1 uppercase">Pulse (HR bpm)</label>
+                      <label class="block font-bold text-[#111111]/60 mb-1 uppercase">Pulse (HR bpm)</label>
                       <input type="number" id="erPulse" placeholder="e.g. 100" class="w-full p-2.5 font-bold text-[#E11D2E]">
                     </div>
                     <div>
-                      <label class="block font-bold text-white/60 mb-1 uppercase">SpO2 (%)</label>
-                      <input type="number" id="erSpO2" placeholder="e.g. 98" class="w-full p-2.5 font-bold text-emerald-400">
+                      <label class="block font-bold text-[#111111]/60 mb-1 uppercase">SpO2 (%)</label>
+                      <input type="number" id="erSpO2" placeholder="e.g. 98" class="w-full p-2.5 font-bold text-emerald-600">
                     </div>
                   </div>
 
                   <div class="grid grid-cols-2 gap-2">
                     <div>
-                      <label class="block font-bold text-white/60 mb-1 uppercase">BP Systolic/Diastolic</label>
+                      <label class="block font-bold text-[#111111]/60 mb-1 uppercase">BP Systolic/Diastolic</label>
                       <input type="text" id="erBp" placeholder="e.g. 120/80" class="w-full p-2.5 font-bold">
                     </div>
                     <div>
-                      <label class="block font-bold text-white/60 mb-1 uppercase">Triage Severity</label>
-                      <select id="erTriageLevel" class="w-full p-2.5 font-bold text-amber-300">
+                      <label class="block font-bold text-[#111111]/60 mb-1 uppercase">Triage Severity</label>
+                      <select id="erTriageLevel" class="w-full p-2.5 font-bold text-[#E11D2E]">
                         <option value="CRITICAL">🔴 CRITICAL</option>
                         <option value="URGENT">🟠 URGENT</option>
                         <option value="SEMI_URGENT">🟡 SEMI_URGENT</option>
@@ -369,14 +469,14 @@
                   </div>
 
                   <div>
-                    <label class="block font-bold text-white/60 mb-1 uppercase">Chief Clinical Complaint</label>
+                    <label class="block font-bold text-[#111111]/60 mb-1 uppercase">Chief Clinical Complaint</label>
                     <input type="text" id="erComplaint" placeholder="Enter chief complaint or trauma notes..." class="w-full p-2.5">
                   </div>
                 </div>
 
                 <div class="flex gap-2 pt-2">
-                  <button onclick="closeERStreamModal()" class="flex-1 py-3 border-2 border-[#2e2e2e] bg-[#111111] hover:bg-[#2e2e2e] text-xs font-mono font-bold text-white uppercase tracking-wider transition">Cancel</button>
-                  <button onclick="sendERLiveStream()" class="flex-1 py-3 bg-[#E11D2E] hover:bg-white hover:text-[#111111] border-2 border-[#E11D2E] text-white text-xs font-mono font-bold uppercase tracking-wider transition">
+                  <button onclick="closeERStreamModal()" class="btn-secondary flex-1 py-3 text-xs uppercase font-mono tracking-wider font-bold">Cancel</button>
+                  <button onclick="sendERLiveStream()" class="btn-danger flex-1 py-3 text-xs uppercase font-mono tracking-wider font-bold">
                     Broadcast to ER
                   </button>
                 </div>
@@ -384,28 +484,28 @@
             </div>
 
             <!-- Leaflet Map Wrapper -->
-            <div id="mapWrapper" class="editorial-hud-card p-6 space-y-4">
-              <div class="flex flex-wrap justify-between items-center gap-3 pb-3 border-b-2 border-[#2e2e2e]">
-                <h3 class="font-black text-sm uppercase text-white flex items-center gap-2">
+            <div id="mapWrapper" class="editorial-card p-6 space-y-4">
+              <div class="flex flex-wrap justify-between items-center gap-3 pb-3 border-b-2 border-[#111111]">
+                <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
                   <span class="material-symbols-outlined text-[#E11D2E]">map</span>
                   <span>Patient Live Emergency GPS Location</span>
                 </h3>
-                <a id="gmapsNavBtn" href="" target="_blank" class="px-3.5 py-1.5 border-2 border-emerald-600 bg-emerald-700 hover:bg-white hover:text-emerald-900 text-white text-xs font-mono font-bold uppercase tracking-wider transition flex items-center gap-1.5">
+                <a id="gmapsNavBtn" href="" target="_blank" class="btn-primary text-xs px-3.5 py-1.5 uppercase font-mono font-bold tracking-wider flex items-center gap-1.5">
                   <span class="material-symbols-outlined text-base">navigation</span>
                   <span>Open Google Maps</span>
                 </a>
               </div>
-              <div id="leafletMapContainer" class="w-full h-80 border-2 border-[#2e2e2e] overflow-hidden" style="z-index: 10;"></div>
+              <div id="leafletMapContainer" class="w-full h-80 border-2 border-[#111111] overflow-hidden" style="z-index: 10;"></div>
             </div>
 
             <!-- Recommended Nearby Hospitals -->
-            <div id="hospitalWrapper" class="hidden editorial-hud-card p-6 space-y-4">
-              <div class="flex items-center justify-between pb-3 border-b-2 border-[#2e2e2e]">
-                <h3 class="font-black text-sm uppercase text-white flex items-center gap-2">
+            <div id="hospitalWrapper" class="hidden editorial-card p-6 space-y-4">
+              <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+                <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
                   <span class="material-symbols-outlined text-[#E11D2E]">local_hospital</span>
                   <span>Recommended Nearby Trauma Centers</span>
                 </h3>
-                <span class="px-2 py-0.5 border border-[#2e2e2e] bg-[#111111] text-white text-[10px] font-mono font-bold uppercase tracking-wider">LIVE ROUTING</span>
+                <span class="px-2 py-0.5 border border-[#111111] bg-white text-[#111111] text-[10px] font-mono font-bold uppercase tracking-wider">LIVE ROUTING</span>
               </div>
               <div id="hospitalsList" class="grid sm:grid-cols-2 gap-3">
                 <!-- Dynamically populated from /api/v1/hospitals/nearby -->
@@ -421,27 +521,27 @@
   </main>
 
   <!-- Fixed Mobile Bottom Navigation Bar -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-[#111111] border-t-2 border-[#2e2e2e] z-50 px-2 py-2 flex items-center justify-around no-print">
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#111111] z-50 px-2 py-2 flex items-center justify-around no-print shadow-[0_-4px_0px_#111111]">
     <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#E11D2E]" aria-label="SOS Dispatch Feed">
       <span class="material-symbols-outlined text-lg">emergency</span>
       <span class="text-[10px] uppercase">SOS Feed</span>
     </button>
-    <button onclick="startQRScanner()" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-white" aria-label="QR Camera Scan">
+    <button onclick="startQRScanner()" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="QR Camera Scan">
       <span class="material-symbols-outlined text-lg">qr_code_scanner</span>
       <span class="text-[10px] uppercase">QR Scan</span>
     </button>
-    <button onclick="document.getElementById('mapWrapper')?.scrollIntoView({behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-emerald-400" aria-label="GPS Location Map">
+    <button onclick="document.getElementById('mapWrapper')?.scrollIntoView({behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="GPS Location Map">
       <span class="material-symbols-outlined text-lg">map</span>
       <span class="text-[10px] uppercase">GPS Map</span>
     </button>
-    <button onclick="logout()" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-white" aria-label="Logout">
+    <button onclick="logout()" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Logout">
       <span class="material-symbols-outlined text-lg">logout</span>
       <span class="text-[10px] uppercase">Logout</span>
     </button>
   </nav>
 
   <!-- Footer -->
-  <footer class="rule py-8 px-6 text-center text-xs font-mono text-white/40 no-print mt-12">
+  <footer class="rule py-8 px-6 text-center text-xs font-mono text-[#111111]/60 no-print mt-12">
     <p>&copy; 2025&ndash;2026 LifeQR &bull; TACTICAL FIRST RESPONDER DISPATCH NETWORK</p>
   </footer>
 

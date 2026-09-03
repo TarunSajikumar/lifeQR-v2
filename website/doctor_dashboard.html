@@ -11,7 +11,7 @@
   <link rel="icon" href="LifeQR.png" type="image/png">
   <title>Physician Clinical Workstation | LifeQR</title>
   
-  <!-- Fonts & Material Symbols -->
+  <!-- Fonts & Material Symbols (Matching website/landingpage.html) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -23,10 +23,21 @@
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="qr-scanner.js"></script>
   <script src="api-utils.js"></script>
+  <script src="js/theme.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/auth-guard.js"></script>
   <script src="js/pwa-install.js"></script>
   <script src="js/doctor-dashboard.js"></script>
+
+  <script>
+    (function(){
+      try {
+        var m = localStorage.getItem('lifeqr_theme_manual');
+        var sys = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', m || sys);
+      } catch(e){}
+    })();
+  </script>
 
   <style>
     * {
@@ -39,6 +50,11 @@
       font-family: 'Archivo', system-ui, -apple-system, sans-serif;
       background: #ffffff;
       color: #111111;
+      overflow-x: hidden;
+    }
+    ::selection {
+      background: #111111;
+      color: #ffffff;
     }
     .font-black {
       font-family: 'Archivo Black', 'Archivo', sans-serif;
@@ -52,38 +68,100 @@
     .rule {
       border-top: 2px solid #111111;
     }
+    .rule-r {
+      border-right: 2px solid #111111;
+    }
+
+    /* Editorial Action Buttons */
+    .btn-primary {
+      background: #111111;
+      color: #ffffff;
+      font-weight: 700;
+      border: 2px solid #111111;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .btn-primary:hover {
+      background: #E11D2E;
+      border-color: #E11D2E;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      border: 2px solid #111111;
+      color: #111111;
+      font-weight: 700;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .btn-secondary:hover {
+      background: #111111;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+    .btn-secondary:active {
+      transform: scale(0.98);
+    }
+
+    /* Editorial Card Surface (Smooth Hover Shift matching landingpage.html) */
     .editorial-card {
       background: #ffffff;
       border: 2px solid #111111;
-      box-shadow: 6px 6px 0px #111111;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
     }
-    .editorial-card-sm {
-      background: #ffffff;
-      border: 2px solid #111111;
+    .editorial-card:hover {
+      transform: translate(-2px, -2px);
       box-shadow: 4px 4px 0px #111111;
     }
+
+    .editorial-card-red {
+      background: #ffffff;
+      border: 2px solid #E11D2E;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    }
+    .editorial-card-red:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0px #E11D2E;
+    }
+
     .live-dot {
       width: 8px;
       height: 8px;
       border-radius: 999px;
       background: #E11D2E;
       animation: blink 1.4s ease-in-out infinite;
+      display: inline-block;
     }
     @keyframes blink {
       50% { opacity: 0.25; }
     }
+
+    /* High-contrast inputs */
     input[type="text"], input[type="number"], select, textarea {
       border: 2px solid #111111 !important;
       border-radius: 0 !important;
       background: #ffffff !important;
       color: #111111 !important;
       font-family: 'Archivo', sans-serif !important;
+      transition: all 0.15s ease;
     }
     input:focus, select:focus, textarea:focus {
       outline: none !important;
       border-color: #E11D2E !important;
-      box-shadow: 3px 3px 0px #111111 !important;
+      box-shadow: 2px 2px 0px #E11D2E !important;
     }
+
     .track-tab-btn {
       border: 2px solid #111111;
       font-family: 'JetBrains Mono', monospace;
@@ -105,55 +183,64 @@
       background: #f3f4f6;
     }
 
+    /* Dark theme overrides */
     [data-theme="dark"] body {
-      background: #0a0a0a;
+      background: #0d0d0d;
       color: #ffffff;
     }
     [data-theme="dark"] header,
     [data-theme="dark"] .editorial-card,
-    [data-theme="dark"] .editorial-card-sm,
+    [data-theme="dark"] .editorial-card-red,
     [data-theme="dark"] #clinicalConsultationSection {
-      background: #111111 !important;
-      border-color: #444444 !important;
-      color: #ffffff;
-      box-shadow: 6px 6px 0 #000000;
+      background: #141414 !important;
+      border-color: #333333 !important;
+      color: #ffffff !important;
     }
-    [data-theme="dark"] .text-\[\#111111\],
-    [data-theme="dark"] .text-slate-900,
-    [data-theme="dark"] .text-slate-800,
-    [data-theme="dark"] .text-slate-700,
-    [data-theme="dark"] .text-slate-600,
-    [data-theme="dark"] .text-slate-500 {
-      color: #f5f5f5 !important;
+    [data-theme="dark"] .editorial-card:hover {
+      box-shadow: 4px 4px 0px #333333 !important;
+    }
+    [data-theme="dark"] .btn-secondary {
+      background: #1a1a1a !important;
+      border-color: #444444 !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .btn-secondary:hover {
+      background: #ffffff !important;
+      color: #111111 !important;
     }
     [data-theme="dark"] input[type="text"],
     [data-theme="dark"] input[type="number"],
     [data-theme="dark"] select,
     [data-theme="dark"] textarea {
-      background: #0a0a0a !important;
+      background: #1a1a1a !important;
       color: #ffffff !important;
-      border-color: #666666 !important;
+      border-color: #444444 !important;
     }
-    [data-theme="dark"] .bg-white,
     [data-theme="dark"] .bg-\[\#f9fafb\],
-    [data-theme="dark"] .bg-slate-50,
-    [data-theme="dark"] .bg-slate-100 {
-      background-color: #1a1a1a !important;
+    [data-theme="dark"] .bg-gray-50,
+    [data-theme="dark"] .bg-slate-50 {
+      background-color: #1c1c1c !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .text-\[\#111111\],
+    [data-theme="dark"] .text-slate-900,
+    [data-theme="dark"] .text-slate-800 {
       color: #ffffff !important;
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
 
-  <!-- Telemetry Bar -->
+  <!-- Live Telemetry Status Bar (Matching website/landingpage.html) -->
   <div class="bg-[#111111] text-white py-2.5 px-6 sm:px-10 text-xs font-mono">
     <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap text-[11px]">
       <div class="flex items-center gap-2.5">
         <span class="live-dot"></span>
-        <span class="uppercase tracking-widest text-white font-bold">PHYSICIAN CLINICAL SUITE &bull; AES-256 GCM ZERO-KNOWLEDGE</span>
+        <span class="uppercase tracking-widest text-white font-bold">PHYSICIAN CLINICAL SUITE &bull; AES-256 ZERO-KNOWLEDGE ENCRYPTED</span>
       </div>
-      <div class="flex items-center gap-4 text-white/60">
-        <span>STATION NODE: ACTIVE CLINICAL HUB</span>
+      <div class="flex items-center gap-4 text-white/70">
+        <span class="font-bold text-[#E11D2E]">NODE: ACTIVE CLINICAL HUB</span>
+        <span class="hidden md:inline">&bull; 1.8S INSTANT IDENTITY ACCESS</span>
       </div>
     </div>
   </div>
@@ -180,7 +267,7 @@
           <span class="material-symbols-outlined text-sm">logout</span>
           <span class="hidden sm:inline">Logout</span>
         </button>
-        <button onclick="toggleDoctorTheme()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold" title="Toggle dashboard theme" aria-label="Toggle dashboard theme">
+        <button onclick="toggleDoctorTheme()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold" title="Toggle theme">
           <span id="doctorThemeIcon" class="material-symbols-outlined text-sm">dark_mode</span>
           <span id="doctorThemeLabel" class="hidden sm:inline">Dark</span>
         </button>
@@ -197,20 +284,22 @@
       <div>
         <div class="inline-flex items-center gap-2 px-3 py-1 border-2 border-[#111111] bg-[#f9fafb] text-[11px] font-mono font-bold uppercase tracking-widest text-[#E11D2E] mb-2">
           <span class="material-symbols-outlined text-sm">psychology</span>
-          <span>CLINICAL DECISION SUITE</span>
+          <span>CLINICAL DECISION &amp; CONSULTATION SUITE</span>
         </div>
         <h1 class="font-black text-3xl sm:text-4xl text-[#111111] tracking-tight uppercase">Physician Clinical Workstation</h1>
-        <p class="text-xs sm:text-sm text-[#111111]/70 font-sans font-medium mt-1">Review authorized patient medical records, analyze AI clinical summaries, and record diagnostic treatment entries.</p>
+        <p class="text-xs sm:text-sm text-[#111111]/70 font-sans font-medium mt-1">Review emergency health badges, record diagnostic findings, build digital prescriptions, and run AI clinical summaries.</p>
       </div>
 
-      <!-- Quick Session Indicator -->
-      <div class="hidden lg:flex items-center gap-2 px-3 py-2 border-2 border-[#111111] bg-[#f9fafb] text-xs font-mono font-bold text-[#111111]">
-        <span class="material-symbols-outlined text-sm text-[#E11D2E]">verified</span>
-        <span>HIPAA &amp; ZERO-KNOWLEDGE AUDIT ACTIVE</span>
+      <!-- Quick Status Badges -->
+      <div class="flex items-center gap-2 font-mono text-xs">
+        <div class="px-3 py-2 border-2 border-[#111111] bg-[#f9fafb] font-bold text-[#111111] flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm text-[#E11D2E]">verified_user</span>
+          <span>HIPAA COMPLIANT</span>
+        </div>
       </div>
     </div>
 
-    <!-- Verification Status Alert Banner -->
+    <!-- Verification Status Alert Container -->
     <div id="verificationBannerContainer"></div>
 
     <!-- Live Patient Waiting Room & Queue -->
@@ -222,7 +311,7 @@
             <span>Live OPD Waiting Room &amp; Patient Queue</span>
             <span id="waitingQueueCountBadge" class="px-2 py-0.5 border border-[#111111] bg-amber-50 text-amber-900 font-mono text-[10px] font-bold uppercase">Loading...</span>
           </h3>
-          <p class="text-xs text-[#111111]/60 font-mono mt-0.5">Real-time patients waiting outside your consultation room &bull; Click 'Call Patient In' to announce and load chart</p>
+          <p class="text-xs text-[#111111]/60 font-mono mt-0.5">Real-time patients waiting for consultation &bull; Click 'Call Patient In' to load patient chart</p>
         </div>
         <div class="flex items-center gap-2 font-mono">
           <button onclick="loadDoctorWaitingQueue()" class="btn-secondary px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
@@ -256,7 +345,7 @@
             <span class="text-[10px] font-mono font-bold text-[#E11D2E] uppercase">LOOKUP</span>
           </div>
           
-          <div class="space-y-4">
+          <div class="space-y-4 font-sans">
             <div>
               <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1.5">Enter Patient QR Code ID</label>
               <div class="flex gap-2">
@@ -273,10 +362,18 @@
               </div>
             </div>
 
+            <!-- Quick Demo Patient Button -->
+            <div class="flex items-center justify-between text-[11px] font-mono">
+              <span class="text-gray-500">Demo Patient:</span>
+              <button type="button" onclick="document.getElementById('patientQrId').value='RAH-D3200470'; searchPatient();" class="text-[#E11D2E] font-bold hover:underline">
+                RAH-D3200470 (Rahul Sharma)
+              </button>
+            </div>
+
             <!-- Camera QR Scanner Button -->
             <button onclick="startQRScanner()" class="btn-secondary w-full justify-center text-xs py-2.5 font-mono uppercase tracking-wider font-bold">
-              <span class="material-symbols-outlined text-base">photo_camera</span>
-              <span>Scan Patient QR Camera</span>
+              <span class="material-symbols-outlined text-base text-[#E11D2E]">photo_camera</span>
+              <span>Scan Patient QR Camera / Upload</span>
             </button>
           </div>
         </div>
@@ -303,12 +400,12 @@
         
         <!-- Empty / Unselected State Prompt -->
         <div id="patientDetailsEmptyPrompt" class="editorial-card p-12 text-center space-y-4">
-          <div class="w-16 h-16 border-2 border-[#111111] bg-[#f9fafb] text-[#E11D2E] flex items-center justify-center mx-auto shadow-[4px_4px_0px_#111111]">
+          <div class="w-16 h-16 border-2 border-[#111111] bg-[#f9fafb] text-[#E11D2E] flex items-center justify-center mx-auto shadow-[3px_3px_0px_#111111]">
             <span class="material-symbols-outlined text-3xl">medical_information</span>
           </div>
           <div class="max-w-md mx-auto space-y-1">
             <h3 class="font-black text-lg text-[#111111] uppercase tracking-tight">No Patient Record Selected</h3>
-            <p class="text-xs text-[#111111]/70 font-sans font-medium">Click "Call Patient In" from the waiting room queue above or search with a LifeQR Code ID.</p>
+            <p class="text-xs text-[#111111]/70 font-sans font-medium">Search with a LifeQR Code ID (e.g. <strong class="font-mono text-[#E11D2E]">RAH-D3200470</strong>), scan a patient badge, or call a patient from the waiting room.</p>
           </div>
           <div class="pt-2 flex items-center justify-center gap-2 text-xs font-mono font-bold text-[#E11D2E] uppercase tracking-wider">
             <span class="material-symbols-outlined text-sm">qr_code_scanner</span>
@@ -325,23 +422,27 @@
           <div id="patientContent" class="hidden space-y-6">
             
             <!-- Patient Profile Identity Card -->
-            <div class="editorial-card p-6 sm:p-7 space-y-4">
+            <div class="editorial-card p-6 sm:p-7 space-y-5">
               
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b-2 border-[#111111]">
                 <div class="flex items-center gap-4">
-                  <div class="relative">
-                    <img id="patPhoto" src="https://www.w3schools.com/howto/img_avatar.png" class="w-16 h-16 border-2 border-[#111111] object-cover shadow-[3px_3px_0px_#111111]">
+                  <div class="relative flex-shrink-0">
+                    <img id="patPhoto" src="https://www.w3schools.com/howto/img_avatar.png" class="w-16 h-16 border-2 border-[#111111] object-cover shadow-[2px_2px_0px_#111111]">
                     <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-[#E11D2E] border border-white text-white flex items-center justify-center text-[10px] font-bold">✓</span>
                   </div>
                   <div>
                     <h2 class="font-black text-2xl sm:text-3xl text-[#111111] uppercase tracking-tight" id="patName">Patient Name</h2>
-                    <p class="text-xs text-[#111111]/70 font-mono mt-0.5">Patient QR Identifier: <strong id="patId" class="font-bold text-[#E11D2E]">ID</strong></p>
+                    <p class="text-xs text-[#111111]/70 font-mono mt-0.5">
+                      Patient QR ID: <strong id="patId" class="font-bold text-[#E11D2E]">ID</strong>
+                      <span class="mx-1">&bull;</span>
+                      <span id="patDemographics" class="font-bold text-[#111111]">Male, 32 Yrs</span>
+                    </p>
                   </div>
                 </div>
 
                 <div class="flex items-center gap-2 self-start sm:self-auto font-mono">
                   <span class="px-3 py-1 bg-emerald-50 border-2 border-[#111111] text-emerald-800 text-xs font-bold tracking-wider flex items-center gap-1.5">
-                    <span class="live-dot"></span> ACTIVE PROFILE
+                    <span class="live-dot"></span> ACTIVE IDENTITY
                   </span>
                 </div>
               </div>
@@ -349,19 +450,48 @@
               <!-- Access Permission Banner -->
               <div id="accessStatusContainer"></div>
 
-              <!-- Quick Demographics Matrix -->
-              <div class="grid grid-cols-3 gap-3 text-center bg-[#f9fafb] p-3.5 border-2 border-[#111111]">
+              <!-- High-Impact Emergency Medical Matrix (Blood Group, Allergies, Meds, ICE) -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 font-mono">
+                
+                <!-- Blood Group -->
+                <div class="p-3 bg-[#f9fafb] border-2 border-[#111111]">
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-[#111111]/60">Blood Group</p>
+                  <p class="text-base font-black text-[#E11D2E] mt-0.5" id="patBlood">O+</p>
+                </div>
+
+                <!-- Severe Allergies -->
+                <div class="p-3 bg-red-50/60 border-2 border-[#E11D2E]">
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-[#E11D2E]">Lethal Allergies</p>
+                  <p class="text-xs font-bold text-red-900 mt-0.5 truncate" id="patAllergies">Penicillin, Peanuts</p>
+                </div>
+
+                <!-- Active Medications -->
+                <div class="p-3 bg-[#f9fafb] border-2 border-[#111111]">
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-[#111111]/60">Active Meds</p>
+                  <p class="text-xs font-bold text-[#111111] mt-0.5 truncate" id="patMeds">Albuterol, Cetirizine</p>
+                </div>
+
+                <!-- Emergency Contacts -->
+                <div class="p-3 bg-[#f9fafb] border-2 border-[#111111]">
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-[#111111]/60">Emergency Contact</p>
+                  <p class="text-xs font-bold text-[#111111] mt-0.5 truncate" id="patEmergencyContact">+91 9876543211</p>
+                </div>
+
+              </div>
+
+              <!-- Demographics & Contact Strip -->
+              <div class="grid grid-cols-3 gap-3 text-center bg-[#f9fafb] p-3 border-2 border-[#111111] font-mono text-xs">
                 <div>
-                  <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#111111]/60">Gender</p>
-                  <p class="text-xs font-bold text-[#111111] mt-0.5 capitalize" id="patGender">-</p>
+                  <span class="text-[10px] text-gray-500 uppercase font-bold block">Gender / Age</span>
+                  <strong id="patGender" class="capitalize">-</strong>
                 </div>
                 <div>
-                  <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#111111]/60">Contact Phone</p>
-                  <p class="text-xs font-mono font-bold text-[#111111] mt-0.5" id="patPhone">-</p>
+                  <span class="text-[10px] text-gray-500 uppercase font-bold block">Patient Phone</span>
+                  <strong id="patPhone">-</strong>
                 </div>
                 <div>
-                  <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#111111]/60">Clearance</p>
-                  <p class="text-xs font-mono font-bold text-emerald-800 mt-0.5 uppercase">Clinical Access</p>
+                  <span class="text-[10px] text-gray-500 uppercase font-bold block">Clearance</span>
+                  <strong class="text-emerald-700 uppercase">Consultation Ready</strong>
                 </div>
               </div>
 
@@ -463,7 +593,7 @@
                     <tbody id="rxMedicationsTableBody">
                       <tr class="border-b border-[#111111]/10 font-sans text-xs" id="rxRow_0">
                         <td class="p-2">
-                          <input type="text" class="rx-med-name w-full p-1.5 font-bold" placeholder="e.g. Albuterol / Salbutamol Inhaler" value="Salbutamol Inhaler (100mcg)" required>
+                          <input type="text" class="rx-med-name w-full p-1.5 font-bold" placeholder="e.g. Salbutamol Inhaler (100mcg)" value="Salbutamol Inhaler (100mcg)" required>
                         </td>
                         <td class="p-2">
                           <input type="text" class="rx-med-dosage w-full p-1.5 font-mono" placeholder="2 Puffs" value="2 Puffs">

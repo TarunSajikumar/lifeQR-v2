@@ -23,13 +23,13 @@ window.switchTab = function(tab) {
   if (tab === 'users') {
     usersSec.classList.remove('hidden');
     verSec.classList.add('hidden');
-    usersBtn.className = 'px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm bg-indigo-600 text-white';
-    verBtn.className = 'px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm bg-white text-slate-600 border border-slate-200 hover:bg-slate-50';
+    usersBtn.className = 'px-6 py-2.5 border-2 border-[#111111] text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-[2px_2px_0px_#111111] bg-[#111111] text-white';
+    verBtn.className = 'px-6 py-2.5 border-2 border-[#111111] text-xs font-mono font-bold uppercase tracking-wider transition-all bg-white text-[#111111] hover:bg-[#f9fafb]';
   } else {
     usersSec.classList.add('hidden');
     verSec.classList.remove('hidden');
-    verBtn.className = 'px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm bg-indigo-600 text-white';
-    usersBtn.className = 'px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm bg-white text-slate-600 border border-slate-200 hover:bg-slate-50';
+    verBtn.className = 'px-6 py-2.5 border-2 border-[#111111] text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-[2px_2px_0px_#111111] bg-[#111111] text-white';
+    usersBtn.className = 'px-6 py-2.5 border-2 border-[#111111] text-xs font-mono font-bold uppercase tracking-wider transition-all bg-white text-[#111111] hover:bg-[#f9fafb]';
   }
 };
 
@@ -66,23 +66,23 @@ async function loadAdminUsers() {
 
     data.users.forEach((u, index) => {
       const tr = document.createElement('tr');
-      tr.className = 'border-b border-slate-100 hover:bg-slate-50/50 transition';
+      tr.className = 'border-b-2 border-[#111111]/10 hover:bg-[#f9fafb] transition font-sans';
       
-      let badgeColor = 'bg-purple-100 text-purple-800';
-      if (u.role === 'doctor') badgeColor = 'bg-blue-100 text-blue-800';
-      if (u.role === 'crew') badgeColor = 'bg-rose-100 text-rose-800';
+      let badgeColor = 'border border-[#111111] bg-white text-[#111111]';
+      if (u.role === 'doctor') badgeColor = 'border border-blue-600 bg-blue-50 text-blue-800';
+      if (u.role === 'crew') badgeColor = 'border border-[#E11D2E] bg-red-50 text-[#E11D2E]';
 
       const passwordValue = u.encryptedPassword || u.password || 'Not available';
       const actionBtn = u.role !== 'admin'
-        ? `<button onclick="toggleUserStatus('${u._id}', ${!u.active})" class="px-3 py-1.5 rounded-lg text-[10px] font-bold transition ${u.active ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}">${u.active ? 'Deactivate' : 'Activate'}</button>`
-        : `<span class="text-[10px] text-slate-400 italic">System Admin</span>`;
+        ? `<button onclick="toggleUserStatus('${u._id}', ${!u.active})" class="btn-secondary px-3 py-1 text-[10px] uppercase font-mono font-bold tracking-wider ${u.active ? 'text-[#E11D2E]' : 'text-emerald-700'}">${u.active ? 'Deactivate' : 'Activate'}</button>`
+        : `<span class="text-[10px] font-mono text-[#111111]/40 uppercase font-bold">System Admin</span>`;
 
       tr.innerHTML = `
-        <td class="p-3 text-slate-400 font-bold">${index + 1}</td>
-        <td class="p-3"><p class="font-bold text-slate-800">${u.name}</p><p class="text-[10px] text-slate-400">${u.email}</p></td>
-        <td class="p-3"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${badgeColor}">${u.role.toUpperCase()}</span></td>
-        <td class="p-3"><code class="block max-w-xs break-all bg-slate-100 text-slate-700 rounded px-2 py-1 font-mono text-[9px]">${passwordValue}</code></td>
-        <td class="p-3 text-slate-500">${new Date(u.createdAt).toLocaleDateString()}</td>
+        <td class="p-3 text-[#111111]/60 font-mono font-bold text-xs">${index + 1}</td>
+        <td class="p-3"><p class="font-black text-[#111111] text-xs uppercase tracking-tight">${u.name}</p><p class="text-[10px] font-mono text-[#111111]/60 font-bold">${u.email}</p></td>
+        <td class="p-3"><span class="px-2 py-0.5 font-mono font-bold text-[10px] uppercase tracking-wider ${badgeColor}">${u.role.toUpperCase()}</span></td>
+        <td class="p-3"><code class="block max-w-xs break-all bg-[#f9fafb] text-[#111111] border border-[#111111]/20 px-2 py-1 font-mono text-[9px]">${passwordValue}</code></td>
+        <td class="p-3 text-[#111111]/70 font-mono text-xs font-bold">${new Date(u.createdAt).toLocaleDateString()}</td>
         <td class="p-3 text-right">${actionBtn}</td>
       `;
       tbody.appendChild(tr);
@@ -102,22 +102,22 @@ async function loadVerifications() {
     tbody.innerHTML = '';
 
     if (data.verifications.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-center p-8 text-slate-400 italic">No pending verifications in queue.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center p-8 font-mono text-xs text-[#111111]/60 uppercase font-bold">No pending verifications in queue.</td></tr>`;
       return;
     }
 
     data.verifications.forEach(v => {
       const tr = document.createElement('tr');
-      tr.className = 'border-b border-slate-100 hover:bg-slate-50/50 transition';
+      tr.className = 'border-b-2 border-[#111111]/10 hover:bg-[#f9fafb] transition font-sans';
 
       tr.innerHTML = `
-        <td class="p-3"><p class="font-bold text-slate-800">${v.name}</p><p class="text-[10px] text-slate-400">${v.email}</p></td>
-        <td class="p-3"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] bg-slate-100 text-slate-700">${v.role.toUpperCase()}</span></td>
-        <td class="p-3 text-indigo-600 font-bold">${v.documentsCount} Files</td>
-        <td class="p-3"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] bg-amber-100 text-amber-800">${v.verificationStatus}</span></td>
+        <td class="p-3"><p class="font-black text-[#111111] text-xs uppercase tracking-tight">${v.name}</p><p class="text-[10px] font-mono text-[#111111]/60 font-bold">${v.email}</p></td>
+        <td class="p-3"><span class="px-2 py-0.5 border border-[#111111] bg-white font-mono font-bold text-[10px] uppercase tracking-wider text-[#111111]">${v.role.toUpperCase()}</span></td>
+        <td class="p-3 text-[#E11D2E] font-mono font-bold text-xs">${v.documentsCount} Files</td>
+        <td class="p-3"><span class="px-2 py-0.5 border border-amber-600 bg-amber-50 font-mono font-bold text-[10px] uppercase text-amber-800">${v.verificationStatus}</span></td>
         <td class="p-3 text-right flex items-center justify-end gap-2">
-          <button onclick="approveVerification('${v.id}')" class="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[10px] font-bold shadow-sm hover:bg-emerald-600 transition">Approve</button>
-          <button onclick="rejectVerification('${v.id}')" class="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-bold hover:bg-rose-100 transition">Reject</button>
+          <button onclick="approveVerification('${v.id}')" class="btn-primary px-3 py-1 text-[10px] uppercase font-mono font-bold tracking-wider">Approve</button>
+          <button onclick="rejectVerification('${v.id}')" class="btn-danger px-3 py-1 text-[10px] uppercase font-mono font-bold tracking-wider">Reject</button>
         </td>
       `;
       tbody.appendChild(tr);

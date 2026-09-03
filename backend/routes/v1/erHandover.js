@@ -3,6 +3,7 @@ const ERHandover = require('../../models/ERHandover');
 const PatientProfile = require('../../models/PatientProfile');
 const CrewProfile = require('../../models/CrewProfile');
 const User = require('../../models/User');
+const { resolvePatientProfile } = require('../../utils/patientResolver');
 const { authenticateToken } = require('../../middleware/auth');
 const { logEvent } = require('../../services/securityLogger');
 
@@ -33,14 +34,15 @@ router.post('/stream-vitals', authenticateToken, async (req, res) => {
     const vehicleNumber = crewProfile ? crewProfile.vehicleNumber : 'MED-UNIT-108';
 
     // Fetch patient profile details
-    const patientProfile = await PatientProfile.findOne({ qrCodeId }).populate('userId', 'name bloodGroup gender');
+    const patientProfile = await resolvePatientProfile(qrCodeId, 'userId');
     const patientName = patientProfile && patientProfile.userId ? patientProfile.userId.name : 'Emergency Patient';
     const bloodGroup = patientProfile ? patientProfile.bloodGroup : 'N/A';
     const allergies = patientProfile ? patientProfile.allergies : 'None Reported';
     const medications = patientProfile ? patientProfile.medications : 'None Reported';
+    const canonicalQrId = patientProfile ? patientProfile.qrCodeId : qrCodeId;
 
     // Create or update active handover record
-    let handover = await ERHandover.findOne({ qrCodeId, status: 'IN_TRANSIT' });
+    let handover = await ERHandover.findOne({ qrCodeId: canonicalQrId, status: 'IN_TRANSIT' });
 
     if (!handover) {
       handover = new ERHandover({

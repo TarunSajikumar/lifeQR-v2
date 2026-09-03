@@ -42,5 +42,30 @@
 - **Fix**: Updated `api-utils.js` to expose `window.getApiUrl()` and upgraded `patient-dashboard.js`, `doctor-dashboard.js`, and `crew-dashboard.js` to use `window.authFetch` across all endpoints. Added immediate pre-rendering of patient name, phone, gender, and QR badge from the authenticated user object on `DOMContentLoaded`.
 - **Status**: Resolved.
 
+## Issue 008: Doctor Dashboard Patient Search & QR Scanner Theme Discrepancy
+- **Symptom**: In Doctor Dashboard, searching patient ID (e.g., `RAH-D3200470`) remained stuck on "No Patient Record Selected" if the doctor account was pending verification; QR camera modal had unmatched purple styling and failed to populate search results; overall dashboard had harsh brutalist block shadows inconsistent with `website/landingpage.html`.
+- **Root Cause**: `backend/routes/v1/doctorAccess.js` enforced `requireVerified` on `GET /status/:qrCodeId`, blocking search lookups for pending doctors and omitting emergency medical summaries (blood group, allergies, medications). `qr-scanner.js` used mismatched purple theme and lacked callback wiring to trigger `searchPatient()`. `doctor_dashboard.html` had static 6px drop-shadows on all cards.
+- **Fix**: Removed `requireVerified` blocker from `/status/:qrCodeId`, returning full emergency triage matrix. Rebuilt `qr-scanner.js` with Swiss high-contrast editorial theme, drag-and-drop, test button, and auto-trigger callback. Modernized `doctor_dashboard.html` to match `website/landingpage.html` with high-impact medical cards and synchronized `website/` and `app/`.
+- **Status**: Resolved.
+
+## Issue 009: Crew Dashboard Patient Details & Emergency ICE Contacts Failing to Render
+- **Symptom**: In `CrewAmbulance_dashboard.html`, searching a patient QR ID (e.g., `VED-C188E7F9`) displayed the patient name, age, and allergies, but Blood Group, Current Prescriptions, Chronic Conditions showed empty `-` dashes, Emergency Contacts (ICE) remained blank, and the Patient QR Identifier displayed literal text `ID`.
+- **Root Cause**: `renderPatientDetails()` in `crew-dashboard.js` targeted mismatched element IDs (`patBlood`, `patMeds`, `patIssues`, `patContactsList`), whereas `CrewAmbulance_dashboard.html` defined IDs as `patBloodGroup`, `patMedications`, `patHealthIssues`, `patEmergencyContact`, and omitted updating `patId`. Additionally, `renderEmergencyMap()` looked for `emergencyMapContainer` and `L.map('emergencyMap')` instead of `mapWrapper` and `leafletMapContainer`, `logIncidentStage()` and `closeSosPopup()` were undefined, and backend `/api/v1/sos/acknowledge` lacked body-based resolution.
+- **Fix**: Updated `renderPatientDetails()` to support both legacy and HUD element IDs (`patBloodGroup`, `patMedications`, `patHealthIssues`, `patEmergencyContact`, `patId`), wired Leaflet map container to `leafletMapContainer` with live Google Maps navigation link, implemented `logIncidentStage()` and `closeSosPopup()`, and added fallback resolution to `backend/routes/v1/sos.js` and `backend/routes/v1/patientProfile.js`.
+- **Status**: Resolved.
+
+## Issue 010: Scanned Emergency Credential Tokens & Full QR URLs Failing Doctor/Crew Lookup
+- **Symptom**: When scanning or pasting a patient QR badge containing raw emergency credential hex tokens (e.g., `e9fdaf2e8d68178adc8d5ba06c9b44c1...`) or full emergency URLs (`/e/...`), Doctor and Crew lookups failed with `Patient not found for ID: e9fdaf...` or only loaded partial data.
+- **Root Cause**: Backend routes (`/doctor-access/status/:qrCodeId`, `/patient/profile/:qrCodeId`, `/history/:qrCodeId`, etc.) strictly performed `PatientProfile.findOne({ qrCodeId })`. When emergency QR codes encoded active credential hashes (stored in the `EmergencyCredential` model) rather than the raw `qrCodeId`, lookups returned `null`.
+- **Fix**: Implemented a unified resolver utility `backend/utils/patientResolver.js` that normalizes URLs and resolves patient profiles across `qrCodeId`, case-insensitive strings, `EmergencyCredential` SHA-256 token hashes, raw hex tokens, and ObjectIds. Connected the resolver across Doctor, Crew, History, AI Clinical, and ER Handover endpoints.
+- **Status**: Resolved.
+
+## Issue 011: Residual Legacy Gradients and Soft Rounded Containers in Dynamic JS Renderers
+- **Symptom**: After converting static HTML files to the Swiss Brutalist editorial design of `landingpage.html`, some cards, boxes, fonts, and action buttons in Patient, Crew, Doctor, ER, and Admin dashboards still rendered with old pastel gradients, soft rounded borders (`rounded-xl`, `rounded-2xl`, `rounded-3xl`), and generic purple styles when populated dynamically at runtime.
+- **Root Cause**: Client-side JavaScript modules (`patient-dashboard.js`, `crew-dashboard.js`, `doctor-dashboard.js`, `er-dashboard.js`, `admin-dashboard.js`, `pwa-install.js`) dynamically created and injected HTML template strings containing legacy Tailwind classes (`rounded-2xl`, `bg-purple-50`, `bg-teal-50`, `bg-slate-900`, `shadow-xs`).
+- **Fix**: Systematically audited and refactored all dynamic JavaScript template injectors across all dashboards to use 2px solid borders (`border-2 border-[#111111]` / `border-2 border-[#E11D2E]`), hard offset drop-shadows (`shadow-[4px_4px_0px_#111111]`, `shadow-[6px_6px_0px_#111111]`), uppercase `Archivo Black` (`font-black`) headings, `JetBrains Mono` (`font-mono`) badges/telemetry, and semantic buttons (`btn-primary`, `btn-secondary`, `btn-danger`). Re-synchronized `website/` and `app/`.
+- **Status**: Resolved.
+
+
 
 

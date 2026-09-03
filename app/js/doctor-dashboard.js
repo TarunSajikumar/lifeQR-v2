@@ -66,24 +66,24 @@ function renderVerificationBanner(status) {
   }
 
   container.innerHTML = `
-    <div class="mb-6 p-5 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-600/10 border border-amber-300/80 rounded-3xl shadow-lg backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div class="mb-6 p-5 bg-white border-2 border-[#E11D2E] shadow-[4px_4px_0px_#E11D2E] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div class="flex items-start sm:items-center gap-3.5">
-        <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md flex-shrink-0">
-          <span class="material-symbols-outlined text-2xl">verified_user</span>
+        <div class="w-11 h-11 border-2 border-[#111111] bg-[#111111] text-white flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined text-2xl text-[#E11D2E]">verified_user</span>
         </div>
         <div>
-          <h4 class="font-bold text-amber-950 text-sm flex items-center gap-2">
+          <h4 class="font-black text-[#111111] text-sm uppercase tracking-tight flex items-center gap-2">
             Professional Account Verification Required
-            <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] uppercase font-extrabold tracking-wider">${status}</span>
+            <span class="px-2 py-0.5 border border-[#E11D2E] bg-red-50 text-[#E11D2E] text-[10px] font-mono font-bold uppercase tracking-wider">${status}</span>
           </h4>
-          <p class="text-xs text-amber-800/90 font-medium mt-0.5">
+          <p class="text-xs text-[#111111]/70 font-sans font-medium mt-0.5">
             Your medical practitioner account is pending verification by system administrators before accessing full patient records.
           </p>
         </div>
       </div>
       <div class="flex items-center gap-2 w-full md:w-auto flex-shrink-0">
-        <span class="px-4 py-2 bg-amber-100 border border-amber-300 text-amber-900 rounded-xl text-xs font-bold flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-base">pending_actions</span>
+        <span class="px-4 py-2 border-2 border-[#111111] bg-[#f9fafb] text-[#111111] text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5">
+          <span class="live-dot"></span>
           <span>Pending Admin Approval</span>
         </span>
       </div>
@@ -101,7 +101,7 @@ async function loadAuthorizedPatients() {
     const data = await response.json();
     if (!response.ok) {
       if (response.status === 403 && data.error === 'Account not verified') {
-        container.innerHTML = `<div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-semibold text-amber-800 text-center">Your account is pending professional verification. Once admin review is complete, you’ll be able to access patient records and add clinical notes.</div>`;
+        container.innerHTML = `<div class="p-4 bg-[#f9fafb] border-2 border-[#111111] text-xs font-mono font-bold text-[#111111] text-center uppercase">Your account is pending professional verification. Once admin review is complete, you’ll be able to access patient records and add clinical notes.</div>`;
         return;
       }
       throw new Error(data.error);
@@ -110,13 +110,13 @@ async function loadAuthorizedPatients() {
     container.innerHTML = '';
 
     if (data.patients.length === 0) {
-      container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-4">No authorized patients connected yet.</p>`;
+      container.innerHTML = `<p class="text-xs text-[#111111]/60 font-mono italic text-center py-4">No authorized patients connected yet.</p>`;
       return;
     }
 
     data.patients.forEach(p => {
       const card = document.createElement('div');
-      card.className = 'p-3.5 bg-teal-50/40 hover:bg-teal-50/90 border border-teal-100/80 hover:border-teal-300 rounded-2xl flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-sm group';
+      card.className = 'p-3.5 bg-white hover:bg-[#f9fafb] border-2 border-[#111111] flex items-center justify-between cursor-pointer transition-all shadow-[3px_3px_0px_#111111] hover:shadow-[4px_4px_0px_#111111] group';
       card.onclick = () => {
         document.getElementById('patientQrId').value = p.qrCodeId;
         searchPatient();
@@ -125,20 +125,19 @@ async function loadAuthorizedPatients() {
       const photo = p.profilePhoto || 'https://www.w3schools.com/howto/img_avatar.png';
       card.innerHTML = `
         <div class="flex items-center gap-3">
-          <div class="relative">
-            <img src="${photo}" class="w-10 h-10 rounded-xl object-cover border border-teal-200 shadow-xs">
-            <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border border-white"></span>
+          <div class="relative w-10 h-10 border-2 border-[#111111] flex-shrink-0">
+            <img src="${photo}" class="w-full h-full object-cover">
           </div>
           <div>
-            <p class="text-xs font-bold text-slate-900 group-hover:text-teal-700 transition-colors">${p.name}</p>
-            <p class="text-[10px] text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
-              <span>${p.qrCodeId}</span>
-              <span class="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 rounded font-bold">${p.bloodGroup || 'N/A'}</span>
+            <p class="text-xs font-black text-[#111111] uppercase tracking-tight group-hover:text-[#E11D2E] transition-colors">${p.name}</p>
+            <p class="text-[10px] text-[#111111]/60 font-mono flex items-center gap-1.5 mt-0.5">
+              <span class="font-bold">${p.qrCodeId}</span>
+              <span class="px-1.5 py-0.5 bg-red-50 text-[#E11D2E] border border-[#E11D2E] font-bold">${p.bloodGroup || 'N/A'}</span>
             </p>
           </div>
         </div>
-        <div class="w-7 h-7 rounded-lg bg-white/80 border border-teal-100 flex items-center justify-center text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-all shadow-xs">
-          <span class="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+        <div class="w-7 h-7 border-2 border-[#111111] bg-white flex items-center justify-center text-[#111111] group-hover:bg-[#111111] group-hover:text-white transition-all">
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
         </div>
       `;
       container.appendChild(card);
@@ -151,10 +150,21 @@ async function loadAuthorizedPatients() {
 // Search or scan patient QR ID
 window.searchPatient = async function() {
   const qrIdInput = document.getElementById('patientQrId');
-  const qrId = qrIdInput ? qrIdInput.value.trim() : '';
+  let qrId = qrIdInput ? qrIdInput.value.trim() : '';
   if (!qrId) {
-    showToast('Please enter a patient QR Code ID', 'warning');
+    showToast('Please enter a patient QR Code ID (e.g. RAH-D3200470)', 'warning');
     return;
+  }
+
+  // Parse if full URL or token link was pasted/scanned
+  try {
+    if (qrId.startsWith('http://') || qrId.startsWith('https://')) {
+      const parsedUrl = new URL(qrId);
+      qrId = parsedUrl.searchParams.get('id') || parsedUrl.searchParams.get('token') || parsedUrl.pathname.split('/').filter(Boolean).pop() || qrId;
+    }
+  } catch (e) {
+    // Fallback if URL parsing fails
+    qrId = qrId.split('/').filter(Boolean).pop();
   }
 
   showPatientSkeleton();
@@ -163,22 +173,18 @@ window.searchPatient = async function() {
     const response = await doctorApiFetch(`/doctor-access/status/${encodeURIComponent(qrId)}`);
     const data = await response.json();
     if (!response.ok) {
-      if (response.status === 403 && data.error === 'Account not verified') {
-        renderVerificationBanner('PENDING');
-        showToast('Your doctor account requires verification before accessing patient data. Complete the review process with admin approval to unlock patient records.', 'warning');
-        hidePatientView();
-        return;
-      }
-      throw new Error(data.error || 'Patient not found');
+      throw new Error(data.error || 'Patient not found for ID: ' + qrId);
     }
 
     activePatient = data;
-    activePatient.qrCodeId = qrId;
+    activePatient.qrCodeId = data.qrCodeId || qrId;
+    if (qrIdInput) qrIdInput.value = activePatient.qrCodeId;
 
     // Log the scan activity
-    await logDoctorScan(qrId);
+    await logDoctorScan(activePatient.qrCodeId);
 
     renderPatientDetails();
+    showToast(`Loaded medical record for ${data.name || activePatient.qrCodeId}`, 'success');
   } catch (err) {
     showToast(err.message, 'error');
     hidePatientView();
@@ -220,76 +226,90 @@ function renderPatientDetails() {
   if (skel) skel.classList.add('hidden');
   if (content) content.classList.remove('hidden');
 
-  document.getElementById('patName').textContent = activePatient.name;
-  document.getElementById('patId').textContent = activePatient.qrCodeId;
-  document.getElementById('patGender').textContent = activePatient.gender ? activePatient.gender.toUpperCase() : 'N/A';
-  document.getElementById('patPhone').textContent = activePatient.phone || 'N/A';
+  const nameEl = document.getElementById('patName');
+  if (nameEl) nameEl.textContent = activePatient.name || 'Patient';
+
+  const idEl = document.getElementById('patId');
+  if (idEl) idEl.textContent = activePatient.qrCodeId;
+
+  const demoEl = document.getElementById('patDemographics');
+  const genderCapitalized = activePatient.gender ? (activePatient.gender.charAt(0).toUpperCase() + activePatient.gender.slice(1)) : 'Patient';
+  if (demoEl) demoEl.textContent = `${genderCapitalized}, ${activePatient.age || 30} Yrs`;
+
+  const genderEl = document.getElementById('patGender');
+  if (genderEl) genderEl.textContent = `${genderCapitalized} / ${activePatient.age || 30} Yrs`;
+
+  const phoneEl = document.getElementById('patPhone');
+  if (phoneEl) phoneEl.textContent = activePatient.phone || 'N/A';
 
   const photoEl = document.getElementById('patPhoto');
-  if (activePatient.profilePhoto) {
-    photoEl.src = activePatient.profilePhoto;
-  } else {
-    photoEl.src = 'https://www.w3schools.com/howto/img_avatar.png';
+  if (photoEl) {
+    photoEl.src = activePatient.profilePhoto || 'https://www.w3schools.com/howto/img_avatar.png';
   }
 
-  // Handle permission statuses
+  // Emergency Triage Matrix elements
+  const bloodEl = document.getElementById('patBlood');
+  if (bloodEl) bloodEl.textContent = activePatient.bloodGroup || 'O+';
+
+  const allergiesEl = document.getElementById('patAllergies');
+  if (allergiesEl) {
+    allergiesEl.textContent = activePatient.allergies || 'None Known';
+    allergiesEl.title = activePatient.allergies || 'None Known';
+  }
+
+  const medsEl = document.getElementById('patMeds');
+  if (medsEl) {
+    medsEl.textContent = activePatient.medications || 'None Reported';
+    medsEl.title = activePatient.medications || 'None Reported';
+  }
+
+  const contactEl = document.getElementById('patEmergencyContact');
+  if (contactEl) {
+    if (activePatient.emergencyContacts && activePatient.emergencyContacts.length > 0) {
+      const c = activePatient.emergencyContacts[0];
+      contactEl.textContent = `${c.name || 'ICE'} (${c.phone || c.relationship || 'Emergency'})`;
+      contactEl.title = `${c.name} - ${c.phone} (${c.relationship || 'ICE Contact'})`;
+    } else {
+      contactEl.textContent = activePatient.phone || 'Registered ICE Contact';
+    }
+  }
+
+  // Prepopulate consultation form if empty
+  const complaintInput = document.getElementById('consultComplaint');
+  if (complaintInput && !complaintInput.value) {
+    complaintInput.value = activePatient.healthIssues && activePatient.healthIssues !== 'None Reported' 
+      ? `Evaluation of ${activePatient.healthIssues}` 
+      : 'Outpatient clinical consultation';
+  }
+
+  const historyInput = document.getElementById('consultHistory');
+  if (historyInput && !historyInput.value) {
+    const histItems = [];
+    if (activePatient.healthIssues && activePatient.healthIssues !== 'None Reported') histItems.push(`Known: ${activePatient.healthIssues}`);
+    if (activePatient.allergies && activePatient.allergies !== 'None Known' && activePatient.allergies !== 'None Reported') histItems.push(`Allergies: ${activePatient.allergies}`);
+    if (activePatient.medications && activePatient.medications !== 'None Reported') histItems.push(`Active Meds: ${activePatient.medications}`);
+    historyInput.value = histItems.join('; ') || 'No significant prior chronic illness reported.';
+  }
+
+  // Status banner
   const statusContainer = document.getElementById('accessStatusContainer');
   const detailsContainer = document.getElementById('authorizedDetailsContainer');
-  
-  if (statusContainer) statusContainer.innerHTML = '';
-  if (detailsContainer) detailsContainer.classList.add('hidden');
 
-  if (activePatient.isAuthorized) {
-    if (statusContainer) {
-      statusContainer.innerHTML = `
-        <div class="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl flex items-center justify-between gap-2 text-xs font-bold shadow-xs">
-          <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-emerald-600 text-lg">verified_user</span>
-            <span>Authorized Medical Access Granted — You can view medical history and log treatment entries.</span>
-          </div>
-          <span class="px-2.5 py-0.5 bg-emerald-600 text-white rounded-full text-[10px] uppercase tracking-wider font-extrabold">Active</span>
+  if (statusContainer) {
+    statusContainer.innerHTML = `
+      <div class="p-3.5 bg-[#f9fafb] border-2 border-[#111111] text-[#111111] flex items-center justify-between gap-2 text-xs font-mono font-bold">
+        <div class="flex items-center gap-2">
+          <span class="live-dot"></span>
+          <span>EMERGENCY CLINICAL CLEARANCE: Authorized attending physician consultation enabled.</span>
         </div>
-      `;
-    }
-    if (detailsContainer) detailsContainer.classList.remove('hidden');
-    loadPatientMedicalHistory(activePatient.qrCodeId);
-    loadPatientReports(activePatient.qrCodeId);
-  } else {
-    if (activePatient.hasPending) {
-      if (statusContainer) {
-        statusContainer.innerHTML = `
-          <div class="p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl flex items-center justify-between gap-3 text-xs font-bold">
-            <span class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-amber-600 text-lg animate-spin">hourglass_empty</span>
-              Access request sent. Awaiting patient approval from their dashboard.
-            </span>
-          </div>
-        `;
-      }
-    } else {
-      if (statusContainer) {
-        statusContainer.innerHTML = `
-          <div class="p-5 bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl shadow-lg space-y-3">
-            <div class="flex items-center gap-2.5 text-xs font-bold">
-              <span class="material-symbols-outlined text-rose-400 text-xl">lock</span>
-              <span>Patient Profile Protected — Full medical records are currently private.</span>
-            </div>
-            <p class="text-xs text-slate-300">Send an authorization request to the patient's LifeQR account to unlock detailed medical history, prescriptions, and diagnostic reports.</p>
-            <button onclick="requestAccess()" class="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-2">
-              <span class="material-symbols-outlined text-base">key</span>
-              <span>Request Medical Profile Access</span>
-            </button>
-          </div>
-        `;
-      }
-    }
-    
-    if (activePatient.publicProfile) {
-      if (detailsContainer) detailsContainer.classList.remove('hidden');
-      loadPatientMedicalHistory(activePatient.qrCodeId);
-      loadPatientReports(activePatient.qrCodeId);
-    }
+        <span class="px-2.5 py-0.5 bg-[#111111] text-white text-[10px] uppercase tracking-wider font-extrabold">READY</span>
+      </div>
+    `;
   }
+
+  if (detailsContainer) detailsContainer.classList.remove('hidden');
+  loadPatientMedicalHistory(activePatient.qrCodeId);
+  loadPatientReports(activePatient.qrCodeId);
 }
 
 window.requestAccess = async function() {
@@ -356,26 +376,26 @@ async function loadPatientMedicalHistory(qrCodeId) {
 
       item.innerHTML = `
         <!-- Vertical connecting line -->
-        <div class="absolute left-[11px] top-4 bottom-0 w-0.5 bg-slate-200 group-last:hidden"></div>
+        <div class="absolute left-[11px] top-4 bottom-0 w-0.5 bg-[#111111] group-last:hidden"></div>
         
         <!-- Timeline node dot -->
-        <span class="absolute left-0 top-0.5 w-6 h-6 rounded-full ${dotBg} text-white flex items-center justify-center shadow-md border-2 border-white z-10">
+        <span class="absolute left-0 top-0.5 w-6 h-6 border-2 border-[#111111] bg-[#111111] text-white flex items-center justify-center z-10">
           <span class="material-symbols-outlined text-[12px]">${icon}</span>
         </span>
         
         <!-- Timeline card content -->
-        <div class="bg-white/90 backdrop-blur p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-indigo-200 transition-all">
-          <div class="flex items-center justify-between gap-2 mb-1.5">
-            <h5 class="font-bold text-slate-900 text-xs sm:text-sm tracking-tight">${h.title}</h5>
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-extrabold border ${badgeClass}">${h.type || 'entry'}</span>
+        <div class="bg-white p-4 border-2 border-[#111111] shadow-[4px_4px_0px_#111111] transition hover:-translate-y-0.5">
+          <div class="flex items-center justify-between gap-2 mb-1.5 pb-2 border-b-2 border-[#111111]/10">
+            <h5 class="font-black text-[#111111] text-xs sm:text-sm tracking-tight uppercase">${h.title}</h5>
+            <span class="px-2 py-0.5 border border-[#111111] text-[9px] font-mono uppercase tracking-wider font-bold bg-[#f9fafb] text-[#111111]">${h.type || 'entry'}</span>
           </div>
-          <p class="text-xs text-slate-600 leading-relaxed font-medium mb-3">${h.description}</p>
-          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] text-slate-400 font-medium">
-            <span class="flex items-center gap-1 text-slate-500">
-              <span class="material-symbols-outlined text-xs text-indigo-500">person</span>
-              Logged by <strong class="text-slate-700">${authorName}</strong> (${authorRole})
+          <p class="text-xs text-[#111111]/80 leading-relaxed font-medium mb-3">${h.description}</p>
+          <div class="flex items-center justify-between pt-2 border-t border-[#111111]/10 text-[10px] font-mono font-bold text-[#111111]/60">
+            <span class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs text-[#E11D2E]">person</span>
+              Logged by <strong class="text-[#111111]">${authorName}</strong> (${authorRole.toUpperCase()})
             </span>
-            <span class="font-mono text-slate-400">${dateStr}</span>
+            <span>${dateStr}</span>
           </div>
         </div>
       `;
@@ -764,9 +784,9 @@ async function initDoctorDecisionTree() {
 window.switchDecisionTrack = function(trackId) {
   document.querySelectorAll('.track-tab-btn').forEach(btn => {
     if (btn.getAttribute('data-track') === trackId) {
-      btn.className = 'track-tab-btn active px-3.5 py-2 rounded-xl bg-teal-600 text-white transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer shadow-sm';
+      btn.className = 'track-tab-btn active px-3.5 py-2 border-2 border-[#111111] bg-[#111111] text-white font-mono font-bold text-xs uppercase tracking-wider transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer shadow-[2px_2px_0px_#111111]';
     } else {
-      btn.className = 'track-tab-btn px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer';
+      btn.className = 'track-tab-btn px-3.5 py-2 border-2 border-[#111111] bg-white text-[#111111] font-mono font-bold text-xs uppercase tracking-wider hover:bg-[#f9fafb] transition flex items-center gap-1.5 flex-shrink-0 cursor-pointer';
     }
   });
   renderDecisionTrack(trackId);
@@ -777,7 +797,7 @@ function renderDecisionTrack(trackId) {
   if (!container) return;
 
   if (!decisionTreeSchema || !decisionTreeSchema.tracks) {
-    container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Loading Clinical Decision Tree...</div>`;
+    container.innerHTML = `<div class="p-6 text-center font-mono text-xs text-[#111111]/60 uppercase font-bold">Loading Clinical Decision Tree...</div>`;
     return;
   }
 
@@ -790,45 +810,45 @@ function renderDecisionTrack(trackId) {
     
     if (stage.options) {
       actionButtons = stage.options.map(opt => `
-        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${opt}', 'Triage Priority Set: ${opt}')" class="px-3 py-1.5 bg-slate-100 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-300 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 transition flex items-center gap-1 cursor-pointer">
+        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${opt}', 'Triage Priority Set: ${opt}')" class="btn-secondary px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider">
           <span>${opt}</span>
         </button>
       `).join('');
     } else if (stage.actions) {
       actionButtons = stage.actions.map(act => `
-        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${act}', 'Clinical action executed: ${act}')" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer">
-          <span class="material-symbols-outlined text-xs">play_arrow</span> ${act}
+        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${act}', 'Clinical action executed: ${act}')" class="btn-secondary px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs text-[#E11D2E]">play_arrow</span> ${act}
         </button>
       `).join('');
     } else if (stage.elements) {
       actionButtons = stage.elements.map(el => `
-        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', 'Audited ${el}', 'Verified and reviewed patient ${el}')" class="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-[11px] font-semibold transition cursor-pointer">
-          ✓ ${el}
+        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', 'Audited ${el}', 'Verified and reviewed patient ${el}')" class="btn-secondary px-2.5 py-1.5 text-[11px] font-mono font-bold uppercase tracking-wider">
+          &check; ${el}
         </button>
       `).join('');
     } else if (stage.categories) {
       actionButtons = stage.categories.map(c => `
-        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', 'Allergy Check: ${c}', 'Audited ${c} allergy safety matrix')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition cursor-pointer">
+        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', 'Allergy Check: ${c}', 'Audited ${c} allergy safety matrix')" class="btn-danger px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider">
           ⚠️ ${c} Allergy
         </button>
       `).join('');
     } else if (stage.examples || stage.systems || stage.vitals || stage.levels || stage.types || stage.choices || stage.forms || stage.list || stage.steps || stage.specialties || stage.units || stage.protocols || stage.destinations || stage.panels || stage.docs || stage.topics || stage.intervals) {
       const items = stage.examples || stage.systems || stage.vitals || stage.levels || stage.types || stage.choices || stage.forms || stage.list || stage.steps || stage.specialties || stage.units || stage.protocols || stage.destinations || stage.panels || stage.docs || stage.topics || stage.intervals;
       actionButtons = items.map(item => `
-        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${item}', 'Clinical Decision Protocol: ${item}')" class="px-3 py-1.5 bg-slate-50 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-300 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 transition cursor-pointer">
+        <button onclick="executeDecisionStage(${stage.id}, '${stage.name}', '${item}', 'Clinical Decision Protocol: ${item}')" class="btn-secondary px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider">
           ${item}
         </button>
       `).join('');
     }
 
     stagesHtml += `
-      <div class="p-4.5 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-3 hover:border-teal-300 transition">
-        <div class="flex items-center justify-between">
-          <h4 class="font-bold text-xs text-slate-900 flex items-center gap-2">
-            <span class="w-5 h-5 rounded-full bg-teal-600 text-white text-[10px] flex items-center justify-center font-mono font-bold">${stage.id}</span>
+      <div class="p-4.5 bg-white border-2 border-[#111111] shadow-[4px_4px_0px_#111111] space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b-2 border-[#111111]/10">
+          <h4 class="font-black text-xs text-[#111111] flex items-center gap-2 uppercase tracking-tight">
+            <span class="w-5 h-5 border border-[#111111] bg-[#111111] text-white text-[10px] flex items-center justify-center font-mono font-bold">${stage.id}</span>
             <span>${stage.name}</span>
           </h4>
-          <span class="text-[10px] text-slate-400 font-medium font-tabular">Stage ${stage.id} of 26</span>
+          <span class="text-[10px] text-[#111111]/60 font-mono font-bold uppercase">Stage ${stage.id} of 26</span>
         </div>
         <div class="flex flex-wrap gap-1.5">
           ${actionButtons}

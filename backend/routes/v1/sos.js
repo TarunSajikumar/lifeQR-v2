@@ -100,16 +100,28 @@ router.post('/sos', authenticateToken, async (req, res) => {
 });
 
 // Acknowledge SOS alert (by Crew/Doctor)
-router.post('/acknowledge/:qrCodeId/:sosId', authenticateToken, async (req, res) => {
+router.post(['/acknowledge', '/acknowledge/:qrCodeId/:sosId'], authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'crew' && req.user.role !== 'doctor') {
       return res.status(403).json({ error: 'Only ambulance crew or medical staff can acknowledge SOS alerts' });
     }
 
-    const { qrCodeId, sosId } = req.params;
-    const profile = await PatientProfile.findOne({ qrCodeId });
+    const qrCodeId = req.params.qrCodeId || req.body.qrCodeId;
+    const sosId = req.params.sosId || req.body.sosId;
+
+    if (!sosId) {
+      return res.status(400).json({ error: 'SOS Alert ID is required' });
+    }
+
+    let profile = null;
+    if (qrCodeId) {
+      profile = await PatientProfile.findOne({ qrCodeId });
+    } else {
+      profile = await PatientProfile.findOne({ 'sosAlerts._id': sosId });
+    }
+
     if (!profile) {
-      return res.status(404).json({ error: 'Patient profile not found' });
+      return res.status(404).json({ error: 'Patient profile or associated SOS alert not found' });
     }
 
     const alert = profile.sosAlerts.id(sosId);

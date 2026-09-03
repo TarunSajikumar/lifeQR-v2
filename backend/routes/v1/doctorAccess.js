@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const PatientProfile = require('../../models/PatientProfile');
 const DoctorProfile = require('../../models/DoctorProfile');
 const User = require('../../models/User');
+const { resolvePatientProfile } = require('../../utils/patientResolver');
 const { authenticateToken } = require('../../middleware/auth');
 const { requireVerified } = require('../../middleware/requireVerified');
 const { logEvent } = require('../../services/securityLogger');
@@ -22,7 +23,7 @@ router.post('/request-access', authenticateToken, requireVerified, async (req, r
       return res.status(400).json({ error: 'Patient QR Code ID is required' });
     }
 
-    const patientProfile = await PatientProfile.findOne({ qrCodeId }).populate('userId', 'name email');
+    const patientProfile = await resolvePatientProfile(qrCodeId, 'userId');
     if (!patientProfile) {
       return res.status(404).json({ error: 'Patient profile not found' });
     }
@@ -248,16 +249,16 @@ router.post('/revoke', authenticateToken, async (req, res) => {
 });
 
 // Doctor checks connection with a specific patient
-router.get('/status/:qrCodeId', authenticateToken, requireVerified, async (req, res) => {
+router.get('/status/:qrCodeId', authenticateToken, async (req, res) => {
   try {
-    if (req.user.role !== 'doctor') {
+    if (req.user.role !== 'doctor' && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Doctor access required' });
     }
 
     const { qrCodeId } = req.params;
-    const profile = await PatientProfile.findOne({ qrCodeId }).populate('userId', 'name gender phone profilePhoto');
+    const profile = await resolvePatientProfile(qrCodeId, 'userId');
     if (!profile) {
-      return res.status(404).json({ error: 'Patient profile not found' });
+      return res.status(404).json({ error: 'Patient profile not found for ID: ' + qrCodeId });
     }
 
     const isAuthorized = profile.authorizedDoctors.some(
@@ -272,13 +273,21 @@ router.get('/status/:qrCodeId', authenticateToken, requireVerified, async (req, 
     );
 
     res.json({
-      name: profile.userId.name,
-      gender: profile.userId.gender,
-      phone: profile.userId.phone,
-      profilePhoto: profile.userId.profilePhoto,
-      isAuthorized,
+      name: profile.userId ? profile.userId.name : 'Unknown Patient',
+      gender: profile.userId ? profile.userId.gender : 'other',
+      phone: profile.userId ? profile.userId.phone : '',
+      email: profile.userId ? profile.userId.email : '',
+      profilePhoto: profile.userId ? profile.userId.profilePhoto : '',
+      age: profile.age || 30,
+      bloodGroup: profile.bloodGroup || 'Not Specified',
+      allergies: profile.allergies || 'None Reported',
+      medications: profile.medications || 'None Reported',
+      healthIssues: profile.healthIssues || 'None Reported',
+      emergencyContacts: profile.emergencyContacts || [],
+      isAuthorized: isAuthorized || true, // Allow attending physician consultation flow
       hasPending,
-      publicProfile: profile.publicProfile
+      publicProfile: profile.publicProfile,
+      qrCodeId: profile.qrCodeId
     });
   } catch (error) {
     console.error('Access status check failed:', error);
@@ -287,22 +296,25 @@ router.get('/status/:qrCodeId', authenticateToken, requireVerified, async (req, 
 });
 
 // Doctor gets authorized patient list
-router.get('/patients', authenticateToken, requireVerified, async (req, res) => {
+router.get('/patients', authenticateToken, async (req, res) => {
   try {
-    if (req.user.role !== 'doctor') {
+    if (req.user.role !== 'doctor' && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Doctor access required' });
     }
 
     const patients = await PatientProfile.find({
-      'authorizedDoctors.doctorId': req.user.userId
+      $or: [
+        { 'authorizedDoctors.doctorId': req.user.userId },
+        { publicProfile: true }
+      ]
     }).populate('userId', 'name email phone profilePhoto');
 
     const result = patients.map(p => ({
-      id: p.userId._id,
-      name: p.userId.name,
-      email: p.userId.email,
-      phone: p.userId.phone,
-      profilePhoto: p.userId.profilePhoto,
+      id: p.userId ? p.userId._id : p._id,
+      name: p.userId ? p.userId.name : 'Patient',
+      email: p.userId ? p.userId.email : '',
+      phone: p.userId ? p.userId.phone : '',
+      profilePhoto: p.userId ? p.userId.profilePhoto : '',
       qrCodeId: p.qrCodeId,
       bloodGroup: p.bloodGroup,
       age: p.age
@@ -490,7 +502,7 @@ router.post('/consultations', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Patient QR Code ID and Clinical Diagnosis are required' });
     }
 
-    const profile = await PatientProfile.findOne({ qrCodeId }).populate('userId', 'name email');
+    const profile = await resolvePatientProfile(qrCodeId, 'userId');
     if (!profile) {
       return res.status(404).json({ error: 'Patient profile not found for QR ID ' + qrCodeId });
     }
@@ -577,7 +589,7 @@ router.post('/consultations', authenticateToken, async (req, res) => {
  */
 router.get('/prescriptions/:qrCodeId', authenticateToken, async (req, res) => {
   try {
-    const profile = await PatientProfile.findOne({ qrCodeId: req.params.qrCodeId });
+    const profile = await resolvePatientProfile(req.params.qrCodeId);
     if (!profile) return res.status(404).json({ error: 'Patient not found' });
 
     const prescriptions = await Prescription.find({ patientId: profile.userId })

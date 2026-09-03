@@ -22,10 +22,21 @@
   
   <script src="/socket.io/socket.io.js"></script>
   <script src="api-utils.js"></script>
+  <script src="js/theme.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/auth-guard.js"></script>
   <script src="js/pwa-install.js"></script>
   <script src="js/patient-dashboard.js"></script>
+
+  <script>
+    (function(){
+      try {
+        var m = localStorage.getItem('lifeqr_theme_manual');
+        var sys = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', m || sys);
+      } catch(e){}
+    })();
+  </script>
 
   <style>
     * {
@@ -77,24 +88,9 @@
     @keyframes blink {
       50% { opacity: 0.25; }
     }
-    .scanner-frame {
-      position: relative;
-      overflow: hidden;
+    .qr-badge-frame {
       border: 2px solid #111111;
-    }
-    .scanner-laser {
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: #E11D2E;
-      box-shadow: 0 0 10px 2px rgba(225, 29, 46, 0.8);
-      z-index: 10;
-      animation: scanLaser 2.5s infinite ease-in-out;
-    }
-    @keyframes scanLaser {
-      0%, 100% { top: 5%; opacity: 0.2; }
-      50% { top: 92%; opacity: 1; }
+      background: #ffffff;
     }
     input[type="text"], input[type="tel"], input[type="number"], select, textarea {
       border: 2px solid #111111 !important;
@@ -111,6 +107,70 @@
     .btn-pill, .btn-island {
       border-radius: 0;
     }
+
+    /* Dark Mode Overrides */
+    [data-theme="dark"] body {
+      background: #0a0a0a !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] header {
+      background: #111111 !important;
+      border-color: #262626 !important;
+    }
+    [data-theme="dark"] .font-black {
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .rule-b {
+      border-bottom-color: #262626 !important;
+    }
+    [data-theme="dark"] .rule {
+      border-top-color: #262626 !important;
+    }
+    [data-theme="dark"] .editorial-card,
+    [data-theme="dark"] .editorial-card-sm {
+      background: #111111 !important;
+      border: 2px solid #262626 !important;
+      box-shadow: 4px 4px 0px #000000 !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .editorial-card:hover {
+      box-shadow: 6px 6px 0px #000000 !important;
+    }
+    [data-theme="dark"] .btn-secondary {
+      background: #161616 !important;
+      border-color: #2e2e2e !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .btn-secondary:hover {
+      background: #E11D2E !important;
+      border-color: #E11D2E !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] input[type="text"],
+    [data-theme="dark"] input[type="tel"],
+    [data-theme="dark"] input[type="number"],
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
+      background: #111111 !important;
+      color: #ffffff !important;
+      border-color: #262626 !important;
+    }
+    [data-theme="dark"] .bg-\[\#f9fafb\],
+    [data-theme="dark"] .bg-gray-50,
+    [data-theme="dark"] .bg-white {
+      background-color: #111111 !important;
+    }
+    [data-theme="dark"] .text-\[\#111111\] {
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .text-\[\#111111\]\/70,
+    [data-theme="dark"] .text-\[\#111111\]\/60 {
+      color: #94a3b8 !important;
+    }
+    [data-theme="dark"] .border-\[\#111111\] {
+      border-color: #262626 !important;
+    }
+
     @media print {
       .no-print {
         display: none !important;
@@ -157,6 +217,12 @@
           <span>PATIENT: <strong id="userName" class="text-[#E11D2E]">Loading...</strong></span>
         </div>
         
+        <!-- Auto Device-Synced Theme Toggle Button -->
+        <button onclick="toggleTheme()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold" title="Toggle theme (Auto-synced with device appearance)">
+          <span id="patientThemeIcon" class="material-symbols-outlined text-sm">dark_mode</span>
+          <span id="patientThemeLabel" class="hidden sm:inline">Theme</span>
+        </button>
+
         <button onclick="logout()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold">
           <span class="material-symbols-outlined text-sm">logout</span>
           <span class="hidden sm:inline">Logout</span>
@@ -230,8 +296,7 @@
           </div>
 
           <!-- QR Container -->
-          <div class="bg-white p-4 flex flex-col items-center justify-center relative group scanner-frame">
-            <div class="scanner-laser"></div>
+          <div class="bg-white p-4 flex flex-col items-center justify-center qr-badge-frame">
             <div class="p-2 bg-white border border-[#111111]">
               <img id="qrCodeImage" src="" alt="Your QR Code" class="w-44 h-44 object-contain">
             </div>

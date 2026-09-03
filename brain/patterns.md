@@ -50,4 +50,9 @@ Frontend common files (styles, images, scripts, Tailwind build outputs, login/si
 - **Buttons**: Use `.btn-primary` (black with red hover and 2px border), `.btn-secondary` (white with 2px black border), and `.btn-danger` / `.btn-sos` (red #E11D2E).
 - **Telemetry Bars**: Sleek top ticker (`bg-[#111111] text-white py-2.5 px-6 font-mono text-[11px]`) with pulsing red `.live-dot`.
 
+## 🌓 7. Universal Device Appearance / System Theme Synchronization
+- **Device Theme Listener**: The application dynamically listens to OS / browser preference changes via `window.matchMedia('(prefers-color-scheme: dark)')` in `js/theme.js` & `api-utils.js`.
+- **Zero-FOUC Head Bootstrapper**: Every HTML page runs an inline `<script>` in `<head>` to immediately set `<html data-theme="...">` matching either the user's manual choice or device appearance before first paint.
+- **Dynamic Adaptability**: When the device switches between Dark and Light mode, the dashboard automatically updates its root `data-theme`, meta theme-color, toggle button state, and UI surfaces across all patient, crew, doctor, ER, and admin portals.
+
 

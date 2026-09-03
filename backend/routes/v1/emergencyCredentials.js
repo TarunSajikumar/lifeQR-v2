@@ -266,24 +266,27 @@ router.get('/:token', emergencyLookupLimiter, async (req, res) => {
     }
 
     const tokenHash = hashToken(token);
-    const credential = await EmergencyCredential.findOne({ tokenHash, status: 'ACTIVE' });
-    if (!credential) {
-      return res.status(404).json({ error: 'Emergency credential not found or inactive' });
-    }
+    let credential = await EmergencyCredential.findOne({ tokenHash, status: 'ACTIVE' });
+    let profile = null;
 
-    if (credential.expiresAt && new Date(credential.expiresAt) < new Date()) {
-      credential.status = 'EXPIRED';
+    if (credential) {
+      if (credential.expiresAt && new Date(credential.expiresAt) < new Date()) {
+        credential.status = 'EXPIRED';
+        await credential.save();
+        return res.status(410).json({ error: 'Emergency credential has expired' });
+      }
+
+      profile = await getPatientProfileWithUser(credential.patientId);
+      credential.lastUsedAt = new Date();
       await credential.save();
-      return res.status(410).json({ error: 'Emergency credential has expired' });
+    } else {
+      // Fallback: check if token is a direct PatientProfile qrCodeId
+      profile = await PatientProfile.findOne({ qrCodeId: token }).populate('userId', 'name gender phone address city state profilePhoto email');
     }
 
-    const profile = await getPatientProfileWithUser(credential.patientId);
     if (!profile || !profile.userId) {
-      return res.status(404).json({ error: 'Patient profile not found' });
+      return res.status(404).json({ error: 'Patient profile not found or emergency credential inactive' });
     }
-
-    credential.lastUsedAt = new Date();
-    await credential.save();
 
     const dto = buildEmergencyProfileDTO(profile, profile.userId);
     logEvent('EMERGENCY_CREDENTIAL_ACCESS', {

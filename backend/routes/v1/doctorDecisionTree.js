@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticateToken } = require('../../middleware/auth');
 const PatientProfile = require('../../models/PatientProfile');
+const { resolvePatientProfile } = require('../../utils/patientResolver');
 const MedicalHistory = require('../../models/MedicalRecord'); // Or a specific history model if exists
 const User = require('../../models/User');
 
@@ -37,7 +38,7 @@ router.post('/execute-stage', authenticateToken, async (req, res) => {
   try {
     const { qrCodeId, stageId, stageName, decisionTitle, details } = req.body;
 
-    const profile = await PatientProfile.findOne({ qrCodeId });
+    const profile = await resolvePatientProfile(qrCodeId);
     if (!profile) return res.status(404).json({ error: 'Patient not found' });
 
     const doctor = await User.findById(req.user.userId);

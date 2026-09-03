@@ -169,17 +169,22 @@ function renderProfileDetails() {
     contactsList.innerHTML = '';
     const contacts = currentProfile?.emergencyContacts || [];
     if (contacts.length === 0) {
-      contactsList.innerHTML = `<p class="text-sm text-gray-500 italic">No emergency contacts configured.</p>`;
+      contactsList.innerHTML = `<p class="text-xs text-[#111111]/60 font-mono italic">No emergency contacts configured.</p>`;
     } else {
       contacts.forEach((c) => {
         const contactRow = document.createElement('div');
-        contactRow.className = 'flex justify-between items-center p-3 bg-purple-50 rounded-xl border border-purple-100';
+        contactRow.className = 'flex justify-between items-center p-3.5 bg-[#f9fafb] border-2 border-[#111111]';
         contactRow.innerHTML = `
           <div>
-            <p class="font-bold text-gray-800 text-sm">${c.name} (${c.relationship || 'Emergency'})</p>
-            <p class="text-xs text-gray-600">${c.phone}</p>
+            <p class="font-black text-[#111111] text-xs uppercase tracking-tight">${c.name} <span class="text-[#E11D2E] font-mono font-bold">(${c.relationship || 'ICE'})</span></p>
+            <p class="text-xs font-mono font-bold text-[#111111]/70 mt-0.5">${c.phone}</p>
           </div>
-          <span class="px-2 py-1 bg-purple-100 text-[#6818f4] text-xs font-bold rounded-lg">Priority ${c.priority || 1}</span>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 border border-[#111111] bg-white text-[#111111] text-[10px] font-mono font-bold uppercase">Priority ${c.priority || 1}</span>
+            <a href="tel:${c.phone}" class="p-1.5 bg-[#111111] text-white hover:bg-[#E11D2E] transition flex items-center justify-center">
+              <span class="material-symbols-outlined text-sm">call</span>
+            </a>
+          </div>
         `;
         contactsList.appendChild(contactRow);
       });
@@ -234,9 +239,9 @@ async function loadReports() {
 
     if (!data.reports || data.reports.length === 0) {
       container.innerHTML = `
-        <div class="text-center p-8 bg-gray-50 rounded-2xl border border-gray-100">
-          <span class="material-symbols-outlined text-4xl text-gray-400">description</span>
-          <p class="text-gray-500 mt-2 text-sm">No medical reports uploaded yet.</p>
+        <div class="text-center p-8 bg-[#f9fafb] border-2 border-[#111111]">
+          <span class="material-symbols-outlined text-4xl text-[#111111]/40">description</span>
+          <p class="text-xs font-mono font-bold text-[#111111]/60 mt-2 uppercase tracking-wider">No medical reports uploaded yet.</p>
         </div>
       `;
       const pagEl = document.getElementById('reportsPagination');
@@ -246,15 +251,15 @@ async function loadReports() {
 
     data.reports.forEach(r => {
       const card = document.createElement('div');
-      card.className = 'p-4 bg-white border border-gray-100 rounded-2xl flex justify-between items-center hover:border-purple-200 transition';
+      card.className = 'p-4 bg-white border-2 border-[#111111] shadow-[4px_4px_0px_#111111] flex justify-between items-center transition hover:-translate-y-0.5';
       card.innerHTML = `
         <div style="flex-1; min-width: 0;">
-          <h4 class="font-bold text-gray-800 text-sm truncate">${r.originalName}</h4>
-          <p class="text-xs text-gray-500 mt-1">${r.category} • ${new Date(r.uploadedAt).toLocaleDateString()}</p>
-          <p class="text-xs text-gray-600 truncate mt-1 italic">${r.description || 'No description'}</p>
+          <h4 class="font-black text-[#111111] text-xs sm:text-sm uppercase tracking-tight truncate">${r.originalName}</h4>
+          <p class="text-[10px] font-mono font-bold text-[#E11D2E] uppercase mt-0.5">${r.category} &bull; ${new Date(r.uploadedAt).toLocaleDateString()}</p>
+          <p class="text-xs text-[#111111]/70 truncate mt-1 font-medium italic">${r.description || 'No description'}</p>
         </div>
-        <a href="${r.url}" target="_blank" class="p-2 text-[#6818f4] hover:bg-purple-50 rounded-full transition flex items-center justify-center">
-          <span class="material-symbols-outlined">visibility</span>
+        <a href="${r.url}" target="_blank" class="p-2 border-2 border-[#111111] bg-white hover:bg-[#111111] hover:text-white transition flex items-center justify-center">
+          <span class="material-symbols-outlined text-sm">visibility</span>
         </a>
       `;
       container.appendChild(card);
@@ -286,8 +291,8 @@ async function loadActivities() {
 
     if (paginated.length === 0) {
       container.innerHTML = `
-        <div class="text-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
-          <p class="text-gray-500 text-sm">No activity recorded yet.</p>
+        <div class="text-center p-6 bg-[#f9fafb] border-2 border-[#111111]">
+          <p class="text-xs font-mono font-bold text-[#111111]/60 uppercase tracking-wider">No activity recorded yet.</p>
         </div>
       `;
       const pagEl = document.getElementById('activitiesPagination');
@@ -297,15 +302,15 @@ async function loadActivities() {
 
     paginated.forEach(a => {
       const row = document.createElement('div');
-      row.className = 'flex gap-3 items-start border-b border-gray-100 pb-3 last:border-b-0 last:pb-0';
+      row.className = 'flex gap-3 items-start border-b-2 border-[#111111]/10 pb-3 last:border-b-0 last:pb-0';
       row.innerHTML = `
-        <div class="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-[#6818f4] flex-shrink-0">
+        <div class="w-8 h-8 border-2 border-[#111111] bg-white flex items-center justify-center text-[#E11D2E] flex-shrink-0">
           <span class="material-symbols-outlined text-sm">history</span>
         </div>
         <div style="flex-1;">
-          <p class="text-xs font-bold text-gray-800">${a.title}</p>
-          <p class="text-[11px] text-gray-600 mt-0.5">${a.description}</p>
-          <span class="text-[10px] text-gray-400 block mt-1">${new Date(a.timestamp).toLocaleString()}</span>
+          <p class="text-xs font-black text-[#111111] uppercase tracking-tight">${a.title}</p>
+          <p class="text-xs text-[#111111]/70 mt-0.5 font-medium">${a.description}</p>
+          <span class="text-[10px] font-mono text-[#111111]/50 block mt-1 uppercase font-bold">${new Date(a.timestamp).toLocaleString()}</span>
         </div>
       `;
       container.appendChild(row);
@@ -336,24 +341,24 @@ async function loadAccessRequests() {
     container.innerHTML = '';
 
     if (!data.requests || data.requests.length === 0) {
-      container.innerHTML = `<p class="text-xs text-gray-500 italic">No pending doctor requests.</p>`;
+      container.innerHTML = `<p class="text-xs text-[#111111]/60 font-mono italic">No pending doctor requests.</p>`;
       return;
     }
 
     data.requests.forEach(r => {
       const row = document.createElement('div');
-      row.className = 'p-3 bg-purple-50/50 border border-purple-100 rounded-xl space-y-2';
+      row.className = 'p-3.5 bg-[#f9fafb] border-2 border-[#111111] space-y-3';
       row.innerHTML = `
         <div class="flex justify-between items-start">
           <div>
-            <p class="text-xs font-bold text-gray-800">Dr. ${r.metadata?.doctorName || 'Doctor'}</p>
-            <p class="text-[10px] text-gray-500">${r.metadata?.specialization || ''} • ${r.metadata?.hospital || ''}</p>
+            <p class="text-xs font-black text-[#111111] uppercase tracking-tight">Dr. ${r.metadata?.doctorName || 'Doctor'}</p>
+            <p class="text-[10px] font-mono font-bold text-[#111111]/60 mt-0.5 uppercase">${r.metadata?.specialization || ''} &bull; ${r.metadata?.hospital || ''}</p>
           </div>
-          <span class="text-[9px] text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full font-bold">Pending</span>
+          <span class="px-2 py-0.5 border border-[#111111] bg-amber-100 text-amber-900 text-[9px] font-mono font-bold uppercase tracking-wider">Pending</span>
         </div>
-        <div class="flex gap-2 justify-end">
-          <button onclick="respondToRequest('${r.metadata?.requestId}', false)" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold">Decline</button>
-          <button onclick="respondToRequest('${r.metadata?.requestId}', true)" class="px-3 py-1 bg-[#6818f4] text-white rounded-lg text-xs font-semibold">Approve</button>
+        <div class="flex gap-2 justify-end pt-1 border-t border-[#111111]/10">
+          <button onclick="respondToRequest('${r.metadata?.requestId}', false)" class="btn-secondary text-xs px-3 py-1 uppercase font-mono tracking-wider font-bold">Decline</button>
+          <button onclick="respondToRequest('${r.metadata?.requestId}', true)" class="btn-primary text-xs px-3 py-1 uppercase font-mono tracking-wider font-bold">Approve</button>
         </div>
       `;
       container.appendChild(row);
@@ -401,12 +406,12 @@ async function loadMedicalHistory() {
 
     if (!data.history || data.history.length === 0) {
       container.innerHTML = `
-        <div class="text-center p-8 bg-slate-50/80 rounded-3xl border border-dashed border-slate-200/80">
-          <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-2">
+        <div class="text-center p-8 bg-[#f9fafb] border-2 border-[#111111]">
+          <div class="w-12 h-12 border-2 border-[#111111] bg-white text-[#E11D2E] flex items-center justify-center mx-auto mb-2">
             <span class="material-symbols-outlined text-2xl">timeline</span>
           </div>
-          <p class="text-xs font-bold text-slate-700">No medical history logged yet</p>
-          <p class="text-[11px] text-slate-400 mt-0.5">Use the form below to record symptoms or vital measurements.</p>
+          <p class="text-xs font-black text-[#111111] uppercase tracking-tight">No medical history logged yet</p>
+          <p class="text-[11px] font-mono font-bold text-[#111111]/60 mt-0.5 uppercase">Use the form below to record symptoms or vital measurements.</p>
         </div>
       `;
       return;
@@ -417,21 +422,21 @@ async function loadMedicalHistory() {
       item.className = 'relative pl-7 pb-5 last:pb-0 group';
       
       let icon = 'medical_services';
-      let badgeClass = 'bg-indigo-100 text-indigo-700 border-indigo-200';
-      let dotBg = 'bg-indigo-600';
+      let badgeClass = 'border border-[#111111] bg-white text-[#111111]';
+      let dotBg = 'bg-[#111111]';
       
       if (h.type === 'vital') {
         icon = 'favorite';
-        badgeClass = 'bg-emerald-100 text-emerald-700 border-emerald-200';
-        dotBg = 'bg-emerald-600';
+        badgeClass = 'border border-[#E11D2E] bg-red-50 text-[#E11D2E]';
+        dotBg = 'bg-[#E11D2E]';
       } else if (h.type === 'symptom') {
         icon = 'thermostat';
-        badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
-        dotBg = 'bg-amber-500';
+        badgeClass = 'border border-amber-600 bg-amber-50 text-amber-800';
+        dotBg = 'bg-amber-600';
       } else if (h.type === 'treatment') {
         icon = 'medication';
-        badgeClass = 'bg-purple-100 text-purple-700 border-purple-200';
-        dotBg = 'bg-purple-600';
+        badgeClass = 'border border-blue-600 bg-blue-50 text-blue-800';
+        dotBg = 'bg-blue-600';
       }
 
       const authorRole = h.author ? h.author.role : 'patient';
@@ -440,26 +445,26 @@ async function loadMedicalHistory() {
 
       item.innerHTML = `
         <!-- Vertical connecting line -->
-        <div class="absolute left-[11px] top-4 bottom-0 w-0.5 bg-slate-200 group-last:hidden"></div>
+        <div class="absolute left-[11px] top-4 bottom-0 w-0.5 bg-[#111111] group-last:hidden"></div>
         
         <!-- Timeline node dot -->
-        <span class="absolute left-0 top-0.5 w-6 h-6 rounded-full ${dotBg} text-white flex items-center justify-center shadow-md border-2 border-white z-10">
+        <span class="absolute left-0 top-0.5 w-6 h-6 border-2 border-[#111111] ${dotBg} text-white flex items-center justify-center z-10">
           <span class="material-symbols-outlined text-[12px]">${icon}</span>
         </span>
         
         <!-- Timeline card content -->
-        <div class="bg-white/90 backdrop-blur p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-indigo-200 transition-all">
-          <div class="flex items-center justify-between gap-2 mb-1.5">
-            <h5 class="font-bold text-slate-900 text-xs sm:text-sm tracking-tight">${h.title}</h5>
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-extrabold border ${badgeClass}">${h.type || 'entry'}</span>
+        <div class="bg-white p-4 border-2 border-[#111111] shadow-[4px_4px_0px_#111111] transition hover:-translate-y-0.5">
+          <div class="flex items-center justify-between gap-2 mb-1.5 pb-2 border-b-2 border-[#111111]/10">
+            <h5 class="font-black text-[#111111] text-xs sm:text-sm tracking-tight uppercase">${h.title}</h5>
+            <span class="px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider font-bold ${badgeClass}">${h.type || 'entry'}</span>
           </div>
-          <p class="text-xs text-slate-600 leading-relaxed font-medium mb-3">${h.description}</p>
-          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] text-slate-400 font-medium">
-            <span class="flex items-center gap-1 text-slate-500">
-              <span class="material-symbols-outlined text-xs text-indigo-500">person</span>
-              Logged by <strong class="text-slate-700">${authorName}</strong> (${authorRole})
+          <p class="text-xs text-[#111111]/80 leading-relaxed font-medium mb-3">${h.description}</p>
+          <div class="flex items-center justify-between pt-2 border-t border-[#111111]/10 text-[10px] font-mono font-bold text-[#111111]/60">
+            <span class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs text-[#E11D2E]">person</span>
+              LOGGED BY <strong class="text-[#111111]">${authorName}</strong> (${authorRole.toUpperCase()})
             </span>
-            <span class="font-mono text-slate-400">${dateStr}</span>
+            <span>${dateStr}</span>
           </div>
         </div>
       `;
@@ -478,7 +483,7 @@ function renderPagination(containerId, pagination, pageVarName, callback) {
   if (!pagination || pagination.totalPages <= 1) return;
 
   const btnPrev = document.createElement('button');
-  btnPrev.className = `px-3 py-1 text-xs border rounded-lg ${pagination.hasPrevPage ? 'hover:bg-gray-50' : 'opacity-40 cursor-not-allowed'}`;
+  btnPrev.className = `btn-secondary text-xs px-3 py-1.5 uppercase font-mono font-bold tracking-wider ${pagination.hasPrevPage ? '' : 'opacity-40 cursor-not-allowed pointer-events-none'}`;
   btnPrev.textContent = 'Prev';
   btnPrev.disabled = !pagination.hasPrevPage;
   btnPrev.onclick = () => {
@@ -488,11 +493,11 @@ function renderPagination(containerId, pagination, pageVarName, callback) {
   };
 
   const pageNum = document.createElement('span');
-  pageNum.className = 'text-xs font-semibold text-gray-600 px-3 flex items-center';
-  pageNum.textContent = `Page ${pagination.currentPage || 1} of ${pagination.totalPages || 1}`;
+  pageNum.className = 'text-xs font-mono font-bold text-[#111111] px-3 flex items-center uppercase';
+  pageNum.textContent = `Page ${pagination.currentPage || 1} / ${pagination.totalPages || 1}`;
 
   const btnNext = document.createElement('button');
-  btnNext.className = `px-3 py-1 text-xs border rounded-lg ${pagination.hasNextPage ? 'hover:bg-gray-50' : 'opacity-40 cursor-not-allowed'}`;
+  btnNext.className = `btn-secondary text-xs px-3 py-1.5 uppercase font-mono font-bold tracking-wider ${pagination.hasNextPage ? '' : 'opacity-40 cursor-not-allowed'}`;
   btnNext.textContent = 'Next';
   btnNext.disabled = !pagination.hasNextPage;
   btnNext.onclick = () => {

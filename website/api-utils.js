@@ -1,4 +1,4 @@
-// API utilities for frontend pages
+// API utilities & Theme Controller for frontend pages
 (function() {
   const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '');
   const port = typeof window !== 'undefined' ? window.location.port : '';
@@ -9,6 +9,79 @@
   } else {
     window.API_URL = ((typeof window !== 'undefined' && window.location.origin) || '') + '/api/v1';
   }
+
+  // Universal Device Appearance / Theme Synchronization
+  function getSystemTheme() {
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+
+  function getEffectiveTheme() {
+    const manual = localStorage.getItem('lifeqr_theme_manual');
+    if (manual === 'dark' || manual === 'light') {
+      return manual;
+    }
+    return getSystemTheme();
+  }
+
+  function applyTheme(theme) {
+    if (typeof document === 'undefined') return;
+    document.documentElement.setAttribute('data-theme', theme);
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute('content', theme === 'dark' ? '#0a0a0a' : '#ffffff');
+    }
+    const icons = document.querySelectorAll('#doctorThemeIcon, #patientThemeIcon, #crewThemeIcon, .theme-toggle-icon');
+    icons.forEach(icon => {
+      icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+    });
+    const labels = document.querySelectorAll('#doctorThemeLabel, #patientThemeLabel, #crewThemeLabel, .theme-toggle-label');
+    labels.forEach(label => {
+      label.textContent = theme === 'dark' ? 'Light' : 'Dark';
+    });
+  }
+
+  // Initial application
+  applyTheme(getEffectiveTheme());
+
+  // Listen to OS / Browser device appearance mode changes in real-time
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e) => {
+      if (!localStorage.getItem('lifeqr_theme_manual')) {
+        applyTheme(e.matches ? 'dark' : 'light');
+      }
+    };
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handler);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(handler);
+    }
+  }
+
+  window.toggleTheme = function() {
+    const current = document.documentElement.getAttribute('data-theme') || getSystemTheme();
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('lifeqr_theme_manual', next);
+    localStorage.setItem('lifeqr_theme', next);
+    applyTheme(next);
+    if (typeof showToast === 'function') {
+      showToast(`Switched to ${next} mode`, 'info');
+    }
+  };
+
+  window.resetToSystemTheme = function() {
+    localStorage.removeItem('lifeqr_theme_manual');
+    localStorage.removeItem('lifeqr_theme');
+    applyTheme(getSystemTheme());
+    if (typeof showToast === 'function') {
+      showToast('Theme reset to match device appearance mode', 'info');
+    }
+  };
+
+  window.toggleDoctorTheme = window.toggleTheme;
+  window.togglePatientTheme = window.toggleTheme;
+  window.applyDoctorTheme = applyTheme;
+  window.applyPatientTheme = applyTheme;
 })();
 
 window.getApiUrl = function(endpoint) {

@@ -22,10 +22,21 @@
   
   <script src="/socket.io/socket.io.js"></script>
   <script src="api-utils.js"></script>
+  <script src="js/theme.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/auth-guard.js"></script>
   <script src="js/pwa-install.js"></script>
   <script src="js/hospital-dashboard.js"></script>
+
+  <script>
+    (function(){
+      try {
+        var m = localStorage.getItem('lifeqr_theme_manual');
+        var sys = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', m || sys);
+      } catch(e){}
+    })();
+  </script>
 
   <style>
     * {
@@ -97,6 +108,80 @@
       color: #ffffff;
       box-shadow: 3px 3px 0px #111111;
     }
+
+    /* Dark Mode Overrides */
+    [data-theme="dark"] body {
+      background: #0a0a0a !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] header {
+      background: #111111 !important;
+      border-color: #262626 !important;
+    }
+    [data-theme="dark"] .font-black {
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .rule-b {
+      border-bottom-color: #262626 !important;
+    }
+    [data-theme="dark"] .rule {
+      border-top-color: #262626 !important;
+    }
+    [data-theme="dark"] .editorial-card,
+    [data-theme="dark"] .editorial-stat-card {
+      background: #111111 !important;
+      border: 2px solid #262626 !important;
+      box-shadow: 4px 4px 0px #000000 !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .editorial-card:hover {
+      box-shadow: 6px 6px 0px #000000 !important;
+    }
+    [data-theme="dark"] .btn-secondary {
+      background: #161616 !important;
+      border-color: #2e2e2e !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .btn-secondary:hover {
+      background: #E11D2E !important;
+      border-color: #E11D2E !important;
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] input[type="text"],
+    [data-theme="dark"] input[type="number"],
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
+      background: #111111 !important;
+      color: #ffffff !important;
+      border-color: #262626 !important;
+    }
+    [data-theme="dark"] .bg-\[\#f9fafb\],
+    [data-theme="dark"] .bg-gray-50,
+    [data-theme="dark"] .bg-slate-50,
+    [data-theme="dark"] .bg-white {
+      background-color: #111111 !important;
+    }
+    [data-theme="dark"] .text-\[\#111111\] {
+      color: #ffffff !important;
+    }
+    [data-theme="dark"] .text-\[\#111111\]\/70,
+    [data-theme="dark"] .text-\[\#111111\]\/60 {
+      color: #94a3b8 !important;
+    }
+    [data-theme="dark"] .border-\[\#111111\] {
+      border-color: #262626 !important;
+    }
+    [data-theme="dark"] .hospital-tab-btn {
+      border-color: #262626;
+      background: #161616;
+      color: #ffffff;
+    }
+    [data-theme="dark"] .hospital-tab-btn.active {
+      background: #E11D2E;
+      border-color: #E11D2E;
+      color: #ffffff;
+      box-shadow: 3px 3px 0px #000000;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
@@ -108,8 +193,7 @@
         <span class="live-dot"></span>
         <span class="uppercase tracking-widest text-white font-bold">HOSPITAL &amp; CLINIC COMMAND ACTIVE &bull; LEVEL 1 TRAUMA CERTIFIED</span>
       </div>
-      <div class="flex items-center gap-6">
-        <span class="hidden sm:inline text-white/60">SOCKET.IO IN-TRANSIT TELEMETRY SYNC</span>
+      <div class="flex items-center gap-4">
         <a href="er_dashboard.html" class="text-[#E11D2E] hover:text-white font-bold uppercase tracking-wider flex items-center gap-1">
           <span>TRAUMA BAY DISPATCH LIVE</span> &rarr;
         </a>
@@ -133,6 +217,12 @@
         <button onclick="openAdmitModal()" class="btn-primary px-3.5 py-1.5 text-xs uppercase font-mono font-bold tracking-wider">
           <span class="material-symbols-outlined text-sm">person_add</span>
           <span class="hidden sm:inline">Admit Patient</span>
+        </button>
+
+        <!-- Theme Toggle Button -->
+        <button onclick="toggleTheme()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold" title="Toggle theme (Auto-synced with device appearance)">
+          <span class="theme-toggle-icon material-symbols-outlined text-sm">dark_mode</span>
+          <span class="theme-toggle-label hidden sm:inline">Theme</span>
         </button>
 
         <div class="hidden md:flex items-center gap-2 px-3 py-1.5 border-2 border-[#111111] bg-[#f9fafb] text-xs font-bold text-[#111111]">

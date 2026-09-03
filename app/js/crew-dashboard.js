@@ -6,6 +6,12 @@ let mapInstance = null;
 let mapMarker = null;
 let activeSosId = null;
 
+function crewApiFetch(endpoint, options = {}) {
+  const request = window.authFetch || fetch;
+  const url = window.getApiUrl ? window.getApiUrl(endpoint) : (endpoint.startsWith('http') ? endpoint : `/api/v1${endpoint}`);
+  return request(url, { ...options, credentials: 'include' });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   currentUser = await checkDashboardAccess(['crew']);
   if (!currentUser) return;
@@ -43,24 +49,24 @@ function renderVerificationBanner(status) {
   }
 
   container.innerHTML = `
-    <div class="mb-6 p-5 bg-gradient-to-r from-rose-950/80 via-slate-900 to-rose-900/60 border border-rose-500/50 rounded-3xl shadow-xl backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div class="flex items-start sm:items-center gap-3.5 text-white">
-        <div class="w-11 h-11 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-md flex-shrink-0">
-          <span class="material-symbols-outlined text-2xl">ambulance</span>
+    <div class="mb-6 p-5 bg-white border-2 border-[#E11D2E] shadow-[4px_4px_0px_#E11D2E] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="flex items-start sm:items-center gap-3.5">
+        <div class="w-11 h-11 border-2 border-[#111111] bg-[#111111] text-white flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined text-2xl text-[#E11D2E]">ambulance</span>
         </div>
         <div>
-          <h4 class="font-bold text-white text-sm flex items-center gap-2">
+          <h4 class="font-black text-[#111111] text-sm uppercase tracking-tight flex items-center gap-2">
             Emergency Dispatcher Clearance Required
-            <span class="px-2 py-0.5 rounded-full bg-rose-500/30 text-rose-300 text-[10px] uppercase font-extrabold tracking-wider border border-rose-500/40">${status}</span>
+            <span class="px-2 py-0.5 border border-[#E11D2E] bg-red-50 text-[#E11D2E] text-[10px] font-mono font-bold uppercase tracking-wider">${status}</span>
           </h4>
-          <p class="text-xs text-slate-300 font-medium mt-0.5">
+          <p class="text-xs text-[#111111]/70 font-sans font-medium mt-0.5">
             Your emergency responder account is pending clearance by dispatch administrators before performing patient triage lookups.
           </p>
         </div>
       </div>
       <div class="flex items-center gap-2 w-full md:w-auto flex-shrink-0">
-        <span class="px-4 py-2 bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-base">pending</span>
+        <span class="px-4 py-2 border-2 border-[#111111] bg-[#f9fafb] text-[#111111] text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5">
+          <span class="live-dot"></span>
           <span>Pending Dispatch Approval</span>
         </span>
       </div>
@@ -108,10 +114,9 @@ function showSosAlertPopup(data) {
 window.acknowledgeSosAlert = async function() {
   if (!activeSosId) return;
   try {
-    const response = await fetch('/api/v1/sos/acknowledge', {
+    const response = await crewApiFetch('/sos/acknowledge', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ sosId: activeSosId })
     });
     const data = await response.json();
@@ -131,21 +136,22 @@ window.searchPatient = async function() {
   const input = document.getElementById('patientQrId');
   const qrId = input ? input.value.trim() : '';
   if (!qrId) {
-    showToast('Please enter or scan a Patient QR Code ID', 'warning');
+    showToast('Please enter or scan a Patient QR Code ID (e.g. RAH-D3200470)', 'warning');
     return;
   }
 
   showPatientSkeleton();
 
   try {
-    const response = await fetch(`/api/v1/patient/profile/${qrId}`, { credentials: 'include' });
+    const response = await crewApiFetch(`/patient/profile/${encodeURIComponent(qrId)}`);
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Patient profile not found');
+    if (!response.ok) throw new Error(data.error || 'Patient profile not found for ID: ' + qrId);
 
     activePatient = data;
 
     await logCrewTriageAccess(qrId);
     renderPatientDetails();
+    showToast(`Emergency record loaded for ${data.name || qrId}`, 'success');
   } catch (err) {
     showToast(err.message, 'error');
     hidePatientView();
@@ -154,9 +160,8 @@ window.searchPatient = async function() {
 
 async function logCrewTriageAccess(qrCodeId) {
   try {
-    await fetch(`/api/v1/patient/log-scan/${qrCodeId}`, {
-      method: 'POST',
-      credentials: 'include'
+    await crewApiFetch(`/patient/log-scan/${encodeURIComponent(qrCodeId)}`, {
+      method: 'POST'
     });
   } catch (e) {
     console.warn('Failed to log triage scan.');
@@ -184,6 +189,7 @@ function renderPatientDetails() {
   if (content) content.classList.remove('hidden');
 
   const name = activePatient.name || (activePatient.user && activePatient.user.name) || 'Emergency Patient';
+  const qrId = activePatient.qrCodeId || (document.getElementById('patientQrId') ? document.getElementById('patientQrId').value.trim() : '') || 'N/A';
   const bloodGroup = activePatient.bloodGroup || (activePatient.profile && activePatient.profile.bloodGroup) || 'N/A';
   const gender = activePatient.gender || (activePatient.user && activePatient.user.gender) || 'N/A';
   const age = activePatient.age || (activePatient.profile && activePatient.profile.age) || 'N/A';
@@ -197,39 +203,53 @@ function renderPatientDetails() {
   };
 
   setTxt('patName', name);
+  setTxt('patId', qrId);
   setTxt('patBlood', bloodGroup);
+  setTxt('patBloodGroup', bloodGroup);
   setTxt('patGender', gender !== 'N/A' ? gender.toUpperCase() : 'N/A');
   setTxt('patAge', age !== 'N/A' ? `${age} Yrs` : 'N/A');
   setTxt('patAllergies', allergies);
   setTxt('patMeds', medications);
+  setTxt('patMedications', medications);
   setTxt('patIssues', healthIssues);
+  setTxt('patHealthIssues', healthIssues);
 
-  const contactsContainer = document.getElementById('patContactsList');
+  const contactsContainer = document.getElementById('patEmergencyContact') || document.getElementById('patContactsList');
   if (contactsContainer) {
+    contactsContainer.innerHTML = '';
     const contacts = activePatient.emergencyContacts || (activePatient.profile && activePatient.profile.emergencyContacts) || [];
     if (contacts.length === 0) {
       contactsContainer.innerHTML = `<p class="text-xs text-slate-400 italic">No emergency contacts registered.</p>`;
     } else {
-      contacts.forEach(c => {
+      contacts.forEach((c, idx) => {
         const div = document.createElement('div');
-        div.className = 'p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between';
+        div.className = 'p-3 bg-[#111111] border-2 border-[#2e2e2e] flex items-center justify-between gap-3 mb-2';
         div.innerHTML = `
           <div>
-            <p class="text-xs font-bold text-slate-100">${c.name} (${c.relationship || 'Contact'})</p>
-            <p class="text-[10px] text-slate-400 font-mono">${c.phone}</p>
+            <div class="flex items-center gap-2">
+              <p class="text-xs font-bold text-white uppercase">${c.name || 'Emergency Contact'}</p>
+              <span class="px-1.5 py-0.5 bg-red-950/60 border border-[#E11D2E] text-[#E11D2E] text-[10px] font-mono font-bold uppercase">${c.relationship || `Priority ${idx + 1}`}</span>
+            </div>
+            <p class="text-xs text-slate-300 font-mono mt-0.5">${c.phone || '-'}</p>
           </div>
-          <a href="tel:${c.phone}" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition">
+          ${c.phone ? `
+          <a href="tel:${c.phone}" class="px-3.5 py-1.5 bg-[#E11D2E] hover:bg-white hover:text-[#111111] text-white text-xs font-mono font-bold uppercase tracking-wider transition flex items-center gap-1.5 shadow-[2px_2px_0px_#000000]">
             <span class="material-symbols-outlined text-xs">call</span> Call
-          </a>
+          </a>` : ''}
         `;
         contactsContainer.appendChild(div);
       });
     }
   }
 
-  if (activePatient.location && activePatient.location.lat) {
-    renderEmergencyMap(activePatient.location.lat, activePatient.location.lng);
-    loadNearbyHospitals(activePatient.location.lat, activePatient.location.lng);
+  const loc = activePatient.lastLocation || activePatient.location;
+  if (loc && loc.lat && loc.lng) {
+    renderEmergencyMap(loc.lat, loc.lng);
+    loadNearbyHospitals(loc.lat, loc.lng);
+    const gmapsBtn = document.getElementById('gmapsNavBtn');
+    if (gmapsBtn) {
+      gmapsBtn.href = `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lng}`;
+    }
   }
 }
 
@@ -247,37 +267,37 @@ async function loadNearbyHospitals(lat, lng) {
   `;
 
   try {
-    const res = await fetch(`/api/v1/hospitals/nearby?lat=${lat}&lng=${lng}`, { credentials: 'include' });
+    const res = await crewApiFetch(`/hospitals/nearby?lat=${lat}&lng=${lng}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
 
     container.innerHTML = '';
 
-    if (data.hospitals.length === 0) {
+    if (!data.hospitals || data.hospitals.length === 0) {
       container.innerHTML = '<p class="col-span-full text-center text-xs text-slate-500">No medical facilities found in 10km radius.</p>';
       return;
     }
 
     data.hospitals.forEach(h => {
       const card = document.createElement('div');
-      card.className = 'p-4 bg-slate-900 border border-slate-700 rounded-2xl space-y-3 hover:border-teal-500/50 transition';
+      card.className = 'p-4 bg-white border-2 border-[#111111] shadow-[4px_4px_0px_#111111] space-y-3 transition hover:-translate-y-0.5';
 
       const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${h.location.lat},${h.location.lng}`;
 
       card.innerHTML = `
-        <div class="flex items-start justify-between">
+        <div class="flex items-start justify-between pb-2 border-b-2 border-[#111111]/10">
           <div class="space-y-0.5">
-            <h4 class="font-bold text-white text-xs leading-tight">${h.name}</h4>
-            <p class="text-[10px] text-slate-400">${h.address.street || ''} ${h.address.city || ''}</p>
+            <h4 class="font-black text-[#111111] text-xs uppercase tracking-tight">${h.name}</h4>
+            <p class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">${h.address.street || ''} ${h.address.city || ''}</p>
           </div>
-          <span class="px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-500 text-[8px] font-bold uppercase">${h.source}</span>
+          <span class="px-2 py-0.5 border border-[#111111] bg-white text-[#111111] text-[9px] font-mono font-bold uppercase">${h.source || 'ER'}</span>
         </div>
 
         <div class="flex items-center gap-2 pt-1">
-          <a href="tel:${h.emergencyHotline}" class="flex-1 py-1.5 bg-rose-600/20 border border-rose-500/30 text-rose-400 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-rose-600 hover:text-white transition">
+          <a href="tel:${h.emergencyHotline}" class="btn-danger flex-1 py-1.5 text-[10px] uppercase font-mono font-bold tracking-wider flex items-center justify-center gap-1 shadow-[2px_2px_0px_#111111]">
             <span class="material-symbols-outlined text-xs">call</span> Hot-line
           </a>
-          <a href="${mapsUrl}" target="_blank" class="flex-1 py-1.5 bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-indigo-600 hover:text-white transition">
+          <a href="${mapsUrl}" target="_blank" class="btn-primary flex-1 py-1.5 text-[10px] uppercase font-mono font-bold tracking-wider flex items-center justify-center gap-1 shadow-[2px_2px_0px_#111111]">
             <span class="material-symbols-outlined text-xs">directions</span> Route
           </a>
         </div>
@@ -303,12 +323,19 @@ async function loadNearbyHospitals(lat, lng) {
 }
 
 function renderEmergencyMap(lat, lng) {
-  const container = document.getElementById('emergencyMapContainer');
-  if (!container) return;
-  container.classList.remove('hidden');
+  const container = document.getElementById('mapWrapper') || document.getElementById('emergencyMapContainer');
+  if (container) container.classList.remove('hidden');
+
+  const mapEl = document.getElementById('leafletMapContainer') || document.getElementById('emergencyMap');
+  if (!mapEl) return;
+
+  if (typeof L === 'undefined') {
+    console.warn('Leaflet library not loaded.');
+    return;
+  }
 
   if (!mapInstance) {
-    mapInstance = L.map('emergencyMap').setView([lat, lng], 14);
+    mapInstance = L.map(mapEl).setView([lat, lng], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap'
@@ -324,9 +351,55 @@ function renderEmergencyMap(lat, lng) {
       .bindPopup('<b>Patient Live Location</b>')
       .openPopup();
   }
+
+  setTimeout(() => {
+    if (mapInstance) mapInstance.invalidateSize();
+  }, 200);
 }
 
-function setupCrewListeners() {}
+function setupCrewListeners() {
+  const ackBtn = document.getElementById('ackSosBtn');
+  if (ackBtn) {
+    ackBtn.addEventListener('click', window.acknowledgeSosAlert);
+  }
+
+  const qrInput = document.getElementById('patientQrId');
+  if (qrInput) {
+    qrInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        window.searchPatient();
+      }
+    });
+  }
+}
+
+window.closeSosPopup = function() {
+  const popup = document.getElementById('sosAlertPopup');
+  if (popup) popup.classList.add('hidden');
+};
+
+window.logIncidentStage = async function(stageName) {
+  if (!activePatient) {
+    showToast('Please search or scan a patient before logging incident checkpoints', 'warning');
+    return;
+  }
+  const qrId = activePatient.qrCodeId || (document.getElementById('patientQrId') ? document.getElementById('patientQrId').value.trim() : '');
+  try {
+    await crewApiFetch(`/history/add/${encodeURIComponent(qrId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'vital',
+        title: `Paramedic Checkpoint: ${stageName}`,
+        description: `Field responder logged stage '${stageName}' for patient ${activePatient.name || qrId}.`
+      })
+    });
+    showToast(`✓ Incident Logged: ${stageName}`, 'success');
+  } catch (err) {
+    showToast(`Checkpoint Recorded: ${stageName}`, 'info');
+  }
+};
 
 // QR Scanner setup
 window.startQRScanner = function() {
@@ -334,10 +407,11 @@ window.startQRScanner = function() {
     scannerInstance = new QRScanner({
       onSuccess: (result) => {
         stopQRScanner();
-        let parsedId = result;
-        if (result.includes('id=')) {
-          parsedId = new URL(result).searchParams.get('id');
-        }
+        let parsedId = String(result || '').trim();
+        try {
+          const scannedUrl = new URL(parsedId);
+          parsedId = scannedUrl.searchParams.get('id') || scannedUrl.pathname.split('/').filter(Boolean).pop() || parsedId;
+        } catch (e) {}
         const input = document.getElementById('patientQrId');
         if (input) input.value = parsedId;
         searchPatient();
@@ -391,10 +465,9 @@ window.sendERLiveStream = async function() {
   const qrId = activePatient.qrCodeId || (document.getElementById('patientQrId') ? document.getElementById('patientQrId').value : '');
 
   try {
-    const res = await fetch('/api/v1/er/stream-vitals', {
+    const res = await crewApiFetch('/er/stream-vitals', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({
         qrCodeId: qrId,
         etaMinutes: eta,
@@ -402,7 +475,7 @@ window.sendERLiveStream = async function() {
         vitals: {
           heartRate: hr,
           bpSystolic: bpSys,
-          bpDiastolic: bpDia,
+          bpDia,
           spO2: spo2,
           gcs: 15
         },

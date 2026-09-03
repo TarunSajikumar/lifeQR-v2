@@ -1,6 +1,7 @@
 const express = require('express');
 const PatientProfile = require('../../models/PatientProfile');
 const User = require('../../models/User');
+const { resolvePatientProfile } = require('../../utils/patientResolver');
 const { authenticateToken } = require('../../middleware/auth');
 const { requireVerified } = require('../../middleware/requireVerified');
 const { logEvent } = require('../../services/securityLogger');
@@ -20,7 +21,7 @@ router.get('/:qrCodeId?', authenticateToken, async (req, res) => {
       if (!queryQrCodeId) {
         return res.status(400).json({ error: 'Patient QR Code ID is required for doctors' });
       }
-      profile = await PatientProfile.findOne({ qrCodeId: queryQrCodeId });
+      profile = await resolvePatientProfile(queryQrCodeId);
       if (!profile) {
         return res.status(404).json({ error: 'Patient profile not found' });
       }
@@ -90,7 +91,7 @@ router.post('/add/:qrCodeId?', authenticateToken, requireVerified, async (req, r
       if (!queryQrCodeId) {
         return res.status(400).json({ error: 'Patient QR Code ID is required for doctors' });
       }
-      profile = await PatientProfile.findOne({ qrCodeId: queryQrCodeId });
+      profile = await resolvePatientProfile(queryQrCodeId);
       if (!profile) {
         return res.status(404).json({ error: 'Patient profile not found' });
       }

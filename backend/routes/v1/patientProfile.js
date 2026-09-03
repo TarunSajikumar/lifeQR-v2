@@ -9,6 +9,7 @@ const PatientProfile = require('../../models/PatientProfile');
 const DoctorProfile = require('../../models/DoctorProfile');
 const EmergencyCredential = require('../../models/EmergencyCredential');
 const CrewProfile = require('../../models/CrewProfile');
+const { resolvePatientProfile } = require('../../utils/patientResolver');
 const { authenticateToken } = require('../../middleware/auth');
 const { getFrontendUrl } = require('../../utils/frontendUrl');
 const { logEvent } = require('../../services/securityLogger');
@@ -108,7 +109,7 @@ router.get('/profile/:qrCodeId', async (req, res) => {
     const { qrCodeId } = req.params;
     
     // Find patient profile and populate base user fields
-    const patientProfile = await PatientProfile.findOne({ qrCodeId }).populate('userId', 'name gender phone address city state profilePhoto email');
+    const patientProfile = await resolvePatientProfile(qrCodeId, 'userId');
     
     if (!patientProfile) {
       return res.status(404).json({ error: 'Patient profile not found' });
@@ -120,7 +121,7 @@ router.get('/profile/:qrCodeId', async (req, res) => {
     }
 
     // Log anonymous scan event
-    logEvent('EMERGENCY_QR_SCANNED', { qrCodeId, patientId: patient._id });
+    logEvent('EMERGENCY_QR_SCANNED', { qrCodeId: patientProfile.qrCodeId, patientId: patient._id });
 
     // Record activity in patient history
     patientProfile.activities.unshift({
@@ -177,6 +178,20 @@ router.get('/profile/:qrCodeId', async (req, res) => {
   } catch (error) {
     console.error('Error fetching emergency patient profile:', error);
     res.status(500).json({ error: 'Failed to fetch emergency profile data' });
+  }
+});
+
+// Log scan event from triage search
+router.post('/log-scan/:qrCodeId', async (req, res) => {
+  try {
+    const { qrCodeId } = req.params;
+    const profile = await resolvePatientProfile(qrCodeId);
+    if (profile) {
+      logEvent('PATIENT_QR_LOGGED_SCAN', { qrCodeId: profile.qrCodeId, patientId: profile.userId });
+    }
+    res.json({ message: 'Scan logged successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to log scan event' });
   }
 });
 

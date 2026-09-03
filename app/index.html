@@ -14,9 +14,6 @@
     <meta name="description" content="LifeQR is a free, zero-login emergency medical identity system. In sudden trauma or accidents, first responders access blood type, lethal allergies, active medications, and family contacts in under 1.8 seconds.">
     <meta property="og:type" content="website">
     <meta property="og:title" content="LifeQR | Universal Emergency Medical Identity & Live SOS Dispatch">
-    <meta property="og:description" content="When you cannot speak, your LifeQR badge saves your life. Instant zero-login emergency medical identity for patients, first responders, and trauma bays.">
-    <meta property="og:image" content="/LifeQR.png">
-
     <!-- Google Fonts & Material Symbols -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,6 +21,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,200..700,0..1,-50..200" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="api-utils.js"></script>
+    <script src="js/theme.js"></script>
+
+    <script>
+      (function(){
+        try {
+          var m = localStorage.getItem('lifeqr_theme_manual');
+          var sys = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', m || sys);
+        } catch(e){}
+      })();
+    </script>
 
     <style>
         * {
@@ -43,7 +51,7 @@
             background: #ffffff;
             color: #111111;
             overflow-x: hidden;
-            padding-bottom: 84px;
+            padding-bottom: 84px; /* Space for mobile floating bottom bar */
         }
         @media (min-width: 768px) {
             body {
@@ -821,6 +829,7 @@
                     <li><a href="patient_dashboard.html" class="hover:text-[#E11D2E] transition">Patient Command Hub</a></li>
                     <li><a href="CrewAmbulance_dashboard.html" class="hover:text-[#E11D2E] transition">Ambulance Crew HUD</a></li>
                     <li><a href="doctor_dashboard.html" class="hover:text-[#E11D2E] transition">Physician Clinical Suite</a></li>
+                    <li><a href="hospital_dashboard.html" class="hover:text-[#E11D2E] transition">Hospital &amp; Clinic Command</a></li>
                     <li><a href="er_dashboard.html" class="hover:text-[#E11D2E] transition">Hospital ER Live Bay</a></li>
                     <li><a href="emergency_access.html" class="hover:text-[#E11D2E] transition">Zero-Login Emergency Scanner</a></li>
                 </ul>
