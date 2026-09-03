@@ -218,6 +218,10 @@
         <span class="material-symbols-outlined text-sm">bloodtype</span>
         <span>4. Blood Bank &amp; Supplies</span>
       </button>
+      <button onclick="switchHospitalTab('queue')" id="tabBtn-queue" class="hospital-tab-btn px-4 py-2.5 flex items-center gap-1.5 flex-shrink-0">
+        <span class="material-symbols-outlined text-sm">campaign</span>
+        <span>5. OPD Token &amp; Live Lobby Board</span>
+      </button>
     </div>
 
     <!-- ==================== PANEL 1: ADMISSIONS ==================== -->
@@ -361,6 +365,164 @@
         </div>
 
       </div>
+    </div>
+
+    <!-- ==================== PANEL 5: OPD TOKEN & LIVE LOBBY BOARD ==================== -->
+    <div id="panel-queue" class="tab-content-panel hidden space-y-6">
+      
+      <!-- Live Token Announcement Banner ("Now Calling") -->
+      <div id="lobbyCallingBanner" class="editorial-card p-6 bg-[#111111] text-white border-2 border-[#E11D2E] shadow-[6px_6px_0px_#E11D2E] flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 border-2 border-[#E11D2E] bg-red-950 text-[#E11D2E] flex items-center justify-center font-mono font-black text-xl flex-shrink-0 animate-pulse">
+            <span class="material-symbols-outlined text-3xl">campaign</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 border border-[#E11D2E] bg-[#E11D2E] text-white font-mono text-[10px] font-black uppercase tracking-widest animate-pulse">NOW CALLING</span>
+              <span id="lobbyCallingToken" class="font-mono font-black text-lg text-white">TOKEN #1</span>
+            </div>
+            <h3 id="lobbyCallingPatient" class="font-black text-xl sm:text-2xl text-white uppercase tracking-tight mt-0.5">Rahul Sharma</h3>
+            <p class="font-mono text-xs text-white/70">
+              Please proceed to: <strong id="lobbyCallingRoom" class="text-white font-bold">Consultation Room 102</strong> &bull; Attending: <strong id="lobbyCallingDoctor" class="text-[#E11D2E]">Dr. Amit Sharma</strong>
+            </p>
+          </div>
+        </div>
+        <div class="font-mono text-xs text-right">
+          <span class="px-3 py-1.5 border border-white/30 bg-white/10 text-white uppercase font-bold tracking-wider">
+            LOBBY PUBLIC SCREEN SYNC
+          </span>
+        </div>
+      </div>
+
+      <!-- Front Desk Token Registration Card & Live Queue Table -->
+      <div class="grid lg:grid-cols-12 gap-6">
+        
+        <!-- Front Desk Token Registration Form (5 Columns) -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="editorial-card p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+              <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#E11D2E]">confirmation_number</span>
+                <span>Front Desk Token Generator</span>
+              </h3>
+              <span class="text-[10px] font-mono font-bold text-[#E11D2E] uppercase">INTAKE</span>
+            </div>
+
+            <!-- LifeQR Auto-fill Row -->
+            <div class="p-3 border-2 border-[#111111] bg-[#f9fafb] space-y-2 font-mono">
+              <label class="block text-[10px] font-bold uppercase text-[#111111]">Quick Auto-fill with Patient LifeQR</label>
+              <div class="flex gap-2">
+                <input type="text" id="fdQrCodeId" placeholder="e.g. RAH-D3200470" class="flex-1 px-3 py-1.5 text-xs font-bold uppercase">
+                <button type="button" onclick="lookupQrForFrontDesk()" class="btn-secondary px-3 py-1.5 text-xs font-bold uppercase">
+                  Fetch
+                </button>
+              </div>
+            </div>
+
+            <form id="frontDeskQueueForm" onsubmit="handleFrontDeskQueueSubmit(event)" class="space-y-3 font-sans text-xs">
+              <div>
+                <label class="block font-mono text-[10px] font-bold uppercase mb-1">Patient Full Name *</label>
+                <input type="text" id="fdPatientName" required class="w-full p-2 font-bold" placeholder="e.g. Sumanth Rao">
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Age</label>
+                  <input type="number" id="fdAge" class="w-full p-2 font-bold" placeholder="30">
+                </div>
+                <div>
+                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Gender</label>
+                  <select id="fdGender" class="w-full p-2 font-bold">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Blood</label>
+                  <select id="fdBlood" class="w-full p-2 font-bold">
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-mono text-[10px] font-bold uppercase mb-1">Phone Number</label>
+                <input type="text" id="fdPhone" class="w-full p-2 font-mono font-bold" placeholder="+91 9876543210">
+              </div>
+
+              <div>
+                <label class="block font-mono text-[10px] font-bold uppercase mb-1">Chief Complaint / Primary Issue *</label>
+                <textarea id="fdComplaint" required rows="2" class="w-full p-2 font-medium" placeholder="e.g. Severe headache, persistent cough for 3 days"></textarea>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Assign Doctor *</label>
+                  <select id="fdDoctor" class="w-full p-2 font-bold">
+                    <option value="Dr. Amit Sharma">Dr. Amit Sharma (Trauma)</option>
+                    <option value="Dr. Rajesh Nair">Dr. Rajesh Nair (Critical Care)</option>
+                    <option value="Dr. Sneha Verma">Dr. Sneha Verma (Cardiology)</option>
+                    <option value="Dr. Ananya Roy">Dr. Ananya Roy (Pediatrics)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Room Number</label>
+                  <input type="text" id="fdRoom" class="w-full p-2 font-mono font-bold" value="Consultation Room 102">
+                </div>
+              </div>
+
+              <button type="submit" class="btn-primary w-full py-2.5 font-mono uppercase font-bold text-xs mt-2">
+                Issue Token &amp; Push to Doctor
+              </button>
+            </form>
+
+          </div>
+        </div>
+
+        <!-- Live Clinic Queue Table (7 Columns) -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="editorial-card p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+              <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#111111]">view_list</span>
+                <span>Central Clinic Token Queue</span>
+              </h3>
+              <button onclick="loadClinicQueue()" class="btn-secondary px-3 py-1 font-mono text-xs font-bold uppercase">
+                Refresh
+              </button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse font-sans text-xs">
+                <thead>
+                  <tr class="border-b-2 border-[#111111] text-[#111111] text-[10px] uppercase font-bold tracking-wider font-mono">
+                    <th class="p-3">Token</th>
+                    <th class="p-3">Patient Details</th>
+                    <th class="p-3">Blood</th>
+                    <th class="p-3">Chief Issue</th>
+                    <th class="p-3">Assigned Room</th>
+                    <th class="p-3 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="clinicQueueTableBody" class="divide-y border-b border-[#111111]/20">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
     </div>
 
   </main>

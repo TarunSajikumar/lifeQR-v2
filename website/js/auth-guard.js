@@ -87,6 +87,7 @@ window.logout = async function() {
   localStorage.removeItem('userRole');
   localStorage.removeItem('userName');
   localStorage.removeItem('userId');
-  window.location.href = 'index.html';
+  window.location.href = 'lifeqr_login.html';
 };
+
 

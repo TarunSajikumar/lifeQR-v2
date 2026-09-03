@@ -456,4 +456,163 @@ function switchHospitalTab(tabId) {
     activeBtn.classList.remove('bg-white');
     activeBtn.classList.remove('text-[#111111]');
   }
+
+  if (tabId === 'queue') {
+    loadClinicQueue();
+  }
 }
+
+// ==================== CLINIC TOKEN QUEUE & LOBBY ANNOUNCEMENT ====================
+
+let clinicQueue = [];
+
+async function loadClinicQueue(silent = false) {
+  try {
+    const res = await window.authFetch('/api/v1/hospitals/queue');
+    if (!res.ok) return;
+    const data = await res.json();
+    clinicQueue = data.queue || [];
+    renderClinicQueueTable(clinicQueue);
+    if (data.nowCalling && data.nowCalling.tokenNumber) {
+      announceCalledPatient(data.nowCalling);
+    }
+  } catch (e) {
+    if (!silent) console.warn('Clinic queue error:', e);
+  }
+}
+
+function announceCalledPatient(data) {
+  const banner = document.getElementById('lobbyCallingBanner');
+  const textToken = document.getElementById('lobbyCallingToken');
+  const textPatient = document.getElementById('lobbyCallingPatient');
+  const textDoctor = document.getElementById('lobbyCallingDoctor');
+  const textRoom = document.getElementById('lobbyCallingRoom');
+
+  if (banner && data && data.tokenNumber) {
+    banner.classList.remove('hidden');
+    if (textToken) textToken.textContent = `TOKEN #${data.tokenNumber}`;
+    if (textPatient) textPatient.textContent = data.patientName;
+    if (textDoctor) textDoctor.textContent = data.doctorName;
+    if (textRoom) textRoom.textContent = data.roomNumber;
+  }
+}
+
+function renderClinicQueueTable(queue) {
+  const tbody = document.getElementById('clinicQueueTableBody');
+  if (!tbody) return;
+
+  if (queue.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="p-6 text-center font-mono text-xs text-[#111111]/50 italic">
+          No patients currently waiting in clinic queue.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = queue.map(item => {
+    const isCalling = item.status === 'in_consultation';
+    const isDone = item.status === 'completed';
+    let badge = '<span class="px-2 py-0.5 border border-[#111111] bg-amber-50 text-amber-900 font-mono text-[10px] font-bold uppercase">WAITING</span>';
+    if (isCalling) {
+      badge = '<span class="px-2 py-0.5 border border-[#E11D2E] bg-[#E11D2E] text-white font-mono text-[10px] font-black uppercase animate-pulse">NOW CALLING / IN ROOM</span>';
+    } else if (isDone) {
+      badge = '<span class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 font-mono text-[10px] font-bold uppercase">COMPLETED</span>';
+    }
+
+    return `
+      <tr class="hover:bg-[#f9fafb] transition-colors border-b border-[#111111]/10 ${isCalling ? 'bg-red-50/30' : ''}">
+        <td class="p-3.5 font-mono font-black text-sm text-[#111111]">
+          #${item.tokenNumber}
+        </td>
+        <td class="p-3.5">
+          <div class="font-bold text-xs text-[#111111] uppercase">${item.patientName}</div>
+          <div class="font-mono text-[10px] text-[#111111]/60 font-semibold">${item.qrCodeId} &bull; ${item.age}y &bull; ${item.gender}</div>
+        </td>
+        <td class="p-3.5 font-black text-xs text-[#E11D2E]">
+          ${item.bloodGroup}
+        </td>
+        <td class="p-3.5 font-sans text-xs text-[#111111]">
+          ${item.chiefComplaint}
+        </td>
+        <td class="p-3.5 font-mono text-xs">
+          <div class="font-bold text-[#111111]">${item.assignedDoctorName}</div>
+          <div class="text-[10px] text-[#111111]/60">${item.roomNumber}</div>
+        </td>
+        <td class="p-3.5 text-right font-mono">
+          ${badge}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+window.handleFrontDeskQueueSubmit = async function(e) {
+  e.preventDefault();
+  const name = document.getElementById('fdPatientName').value;
+  const qrId = document.getElementById('fdQrCodeId').value;
+  const age = document.getElementById('fdAge').value;
+  const gender = document.getElementById('fdGender').value;
+  const phone = document.getElementById('fdPhone').value;
+  const blood = document.getElementById('fdBlood').value;
+  const complaint = document.getElementById('fdComplaint').value;
+  const doctor = document.getElementById('fdDoctor').value;
+  const room = document.getElementById('fdRoom').value;
+
+  try {
+    const res = await window.authFetch('/api/v1/hospitals/queue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        patientName: name,
+        qrCodeId: qrId,
+        age,
+        gender,
+        phone,
+        bloodGroup: blood,
+        chiefComplaint: complaint,
+        assignedDoctorName: doctor,
+        roomNumber: room
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    showToast(`✅ ${data.message}! Added to ${doctor}'s queue.`, 'success');
+    document.getElementById('frontDeskQueueForm').reset();
+    await loadClinicQueue();
+    await loadHospitalMetrics();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};
+
+window.lookupQrForFrontDesk = async function() {
+  const input = document.getElementById('fdQrCodeId');
+  const code = (input?.value || '').trim();
+  if (!code) {
+    showToast('Please enter a QR Code ID first', 'warning');
+    return;
+  }
+
+  try {
+    const res = await window.authFetch(`/api/v1/patient/profile/${code}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Patient QR not found');
+
+    const pat = data.patient || data;
+    if (document.getElementById('fdPatientName')) document.getElementById('fdPatientName').value = pat.name || (pat.user && pat.user.name) || '';
+    if (document.getElementById('fdBlood')) document.getElementById('fdBlood').value = pat.bloodGroup || (pat.profile && pat.profile.bloodGroup) || 'O+';
+    if (document.getElementById('fdAge')) document.getElementById('fdAge').value = pat.age || (pat.profile && pat.profile.age) || '30';
+    if (document.getElementById('fdGender')) document.getElementById('fdGender').value = pat.gender || (pat.profile && pat.profile.gender) || 'male';
+    if (document.getElementById('fdPhone')) document.getElementById('fdPhone').value = pat.phone || (pat.user && pat.user.phone) || '';
+
+    showToast('LifeQR data loaded successfully!', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};
+

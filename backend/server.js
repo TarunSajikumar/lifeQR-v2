@@ -80,11 +80,26 @@ try {
   console.warn("[Frontend Sync Warning]", syncErr.message);
 }
 
-// Serve static files from app and website directories
-app.use('/website', express.static(path.join(__dirname, '../website')));
-app.use('/app', express.static(path.join(__dirname, '../app')));
-app.use(express.static(path.join(__dirname, '../app')));
-app.use(express.static(path.join(__dirname, '../website')));
+// Serve static files with no-cache for HTML to prevent stale browser caches
+const staticOptions = {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html') || filePath.endsWith('sw.js')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+};
+
+app.get(['/', '/index.html', '/landingpage.html'], (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(path.join(__dirname, '../website/index.html'));
+});
+
+app.use('/website', express.static(path.join(__dirname, '../website'), staticOptions));
+app.use('/app', express.static(path.join(__dirname, '../app'), staticOptions));
+app.use(express.static(path.join(__dirname, '../website'), staticOptions));
+app.use(express.static(path.join(__dirname, '../app'), staticOptions));
 app.use('/uploads/photos', (req, res) => {
   res.status(404).json({ error: 'Photo access is restricted and not publicly available' });
 });

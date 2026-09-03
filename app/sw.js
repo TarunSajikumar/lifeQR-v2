@@ -1,20 +1,11 @@
-const CACHE_NAME = 'lifeqr-cache-v2';
+const CACHE_NAME = 'lifeqr-swiss-v4';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/app/patient_dashboard.html',
-  '/app/CrewAmbulance_dashboard.html',
-  '/app/emergency_access.html',
-  '/app/er_dashboard.html',
-  '/app/lifeqr_login.html',
-  '/app/lifeqr_signup.html',
   '/styles.css',
   '/LifeQR.png',
   '/lifeqr_transparent.png',
-  '/app/api-utils.js',
-  '/app/js/toast.js',
-  '/app/js/auth-guard.js',
-  'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap'
+  '/api-utils.js',
+  '/js/toast.js',
+  '/js/auth-guard.js'
 ];
 
 // Simple helper to store SOS requests in IndexedDB for Background Sync
@@ -74,6 +65,7 @@ async function processSOSQueue() {
 }
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
@@ -83,15 +75,18 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    Promise.all([
+      self.clients.claim(),
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+    ])
   );
 });
 
@@ -102,7 +97,6 @@ self.addEventListener('fetch', (event) => {
   if (requestUrl.pathname === '/api/v1/sos/sos' && event.request.method === 'POST') {
     event.respondWith(
       fetch(event.request.clone()).catch((error) => {
-        // If offline, save to IndexedDB and register sync
         return enqueueSOSRequest(event.request.clone()).then(() => {
           return new Response(JSON.stringify({
             message: 'You are currently offline. SOS will be sent automatically once connection is restored.',
@@ -116,15 +110,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Special handling for Patient Profile API to enable offline Medical ID viewing
-  if (requestUrl.pathname === '/api/v1/patient-app/profile') {
+  // Network-First for all HTML navigation requests to prevent stale landing page / dashboard caches
+  if (event.request.mode === 'navigate' || event.request.destination === 'document' || requestUrl.pathname.endsWith('.html') || requestUrl.pathname === '/') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const clonedResponse = response.clone();
-          caches.open('lifeqr-data-cache').then((cache) => {
-            cache.put(event.request, clonedResponse);
-          });
           return response;
         })
         .catch(() => {
@@ -134,12 +124,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Exclude other API requests from general asset caching to preserve security integrity
+  // Exclude all API requests from general caching
   if (requestUrl.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
+  // Static assets: cache-first with network fallback
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {

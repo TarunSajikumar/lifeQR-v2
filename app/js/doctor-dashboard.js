@@ -3,7 +3,28 @@ let currentUser = null;
 let activePatient = null;
 let scannerInstance = null;
 
+function doctorApiFetch(endpoint, options = {}) {
+  const request = window.authFetch || fetch;
+  const url = window.getApiUrl ? window.getApiUrl(endpoint) : endpoint;
+  return request(url, { ...options, credentials: 'include' });
+}
+
+function applyDoctorTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('doctorTheme', theme);
+  const icon = document.getElementById('doctorThemeIcon');
+  const label = document.getElementById('doctorThemeLabel');
+  if (icon) icon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+  if (label) label.textContent = theme === 'dark' ? 'Light' : 'Dark';
+}
+
+window.toggleDoctorTheme = function() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  applyDoctorTheme(current === 'dark' ? 'light' : 'dark');
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
+  applyDoctorTheme(localStorage.getItem('doctorTheme') || 'light');
   currentUser = await checkDashboardAccess(['doctor']);
   if (!currentUser) return;
 
@@ -139,9 +160,7 @@ window.searchPatient = async function() {
   showPatientSkeleton();
 
   try {
-    const response = await fetch(`/api/v1/doctor-access/status/${qrId}`, {
-      credentials: 'include'
-    });
+    const response = await doctorApiFetch(`/doctor-access/status/${encodeURIComponent(qrId)}`);
     const data = await response.json();
     if (!response.ok) {
       if (response.status === 403 && data.error === 'Account not verified') {
@@ -168,7 +187,7 @@ window.searchPatient = async function() {
 
 async function logDoctorScan(qrCodeId) {
   try {
-    await fetch(`/api/v1/patient/log-scan/${qrCodeId}`, {
+    await doctorApiFetch(`/patient/log-scan/${encodeURIComponent(qrCodeId)}`, {
       method: 'POST',
       credentials: 'include'
     });
@@ -275,7 +294,7 @@ function renderPatientDetails() {
 
 window.requestAccess = async function() {
   try {
-    const response = await fetch('/api/v1/doctor-access/request-access', {
+    const response = await doctorApiFetch('/doctor-access/request-access', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -296,9 +315,7 @@ window.requestAccess = async function() {
 
 async function loadPatientMedicalHistory(qrCodeId) {
   try {
-    const response = await fetch(`/api/v1/history/${qrCodeId}`, {
-      credentials: 'include'
-    });
+    const response = await doctorApiFetch(`/history/${encodeURIComponent(qrCodeId)}`);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
 
@@ -395,7 +412,7 @@ function setupDoctorListeners() {
       const title = document.getElementById('treatmentTitle').value;
       const description = document.getElementById('treatmentDesc').value;
 
-      const response = await fetch(`/api/v1/history/add/${activePatient.qrCodeId}`, {
+      const response = await doctorApiFetch(`/history/add/${encodeURIComponent(activePatient.qrCodeId)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -426,9 +443,17 @@ window.startQRScanner = function() {
     scannerInstance = new QRScanner({
       onSuccess: (result) => {
         stopQRScanner();
-        let parsedId = result;
-        if (result.includes('id=')) {
-          parsedId = new URL(result).searchParams.get('id');
+        const rawResult = String(result || '').trim();
+        let parsedId = rawResult;
+        try {
+          const scannedUrl = new URL(rawResult);
+          parsedId = scannedUrl.searchParams.get('id') || scannedUrl.pathname.split('/').filter(Boolean).pop() || rawResult;
+        } catch (e) {
+          parsedId = rawResult;
+        }
+        if (!parsedId) {
+          showToast('The QR code did not contain a patient ID.', 'error');
+          return;
         }
         const input = document.getElementById('patientQrId');
         if (input) input.value = parsedId;
