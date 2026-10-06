@@ -257,7 +257,13 @@
       </a>
       
       <!-- Attending Doctor Status & Actions -->
-      <div class="flex items-center gap-3 sm:gap-4 font-mono">
+      <div class="flex items-center gap-2 sm:gap-3 font-mono flex-wrap">
+        <button onclick="openHelpModal()" class="btn-secondary text-xs px-3 py-1.5 uppercase font-mono tracking-wider font-bold text-[#E11D2E] hover:text-white flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]" title="Request Administrator Assistance">
+          <span class="material-symbols-outlined text-sm">support_agent</span>
+          <span>Help</span>
+          <span id="helpPendingDot" class="hidden w-2 h-2 rounded-full bg-[#E11D2E] animate-pulse"></span>
+        </button>
+
         <div class="flex items-center gap-2 px-3 py-1.5 border-2 border-[#111111] bg-[#f9fafb] text-xs font-bold text-[#111111]">
           <span class="live-dot"></span>
           <span>ATTENDING: <strong id="userName" class="text-[#E11D2E]">Dr. Staff</strong></span>
@@ -291,7 +297,11 @@
       </div>
 
       <!-- Quick Status Badges -->
-      <div class="flex items-center gap-2 font-mono text-xs">
+      <div class="flex items-center gap-2 font-mono text-xs flex-wrap">
+        <button onclick="openHelpModal()" class="px-3 py-2 border-2 border-[#111111] bg-white hover:bg-[#111111] hover:text-white transition font-bold text-[#111111] flex items-center gap-1.5 cursor-pointer shadow-[2px_2px_0px_#111111]">
+          <span class="material-symbols-outlined text-sm text-[#E11D2E]">support_agent</span>
+          <span>Request Admin Help</span>
+        </button>
         <div class="px-3 py-2 border-2 border-[#111111] bg-[#f9fafb] font-bold text-[#111111] flex items-center gap-1.5">
           <span class="material-symbols-outlined text-sm text-[#E11D2E]">verified_user</span>
           <span>HIPAA COMPLIANT</span>
@@ -440,8 +450,12 @@
                   </div>
                 </div>
 
-                <div class="flex items-center gap-2 self-start sm:self-auto font-mono">
-                  <span class="px-3 py-1 bg-emerald-50 border-2 border-[#111111] text-emerald-800 text-xs font-bold tracking-wider flex items-center gap-1.5">
+                <div class="flex items-center gap-2 self-start sm:self-auto font-mono flex-wrap">
+                  <button type="button" onclick="runAiPatientSummary()" class="btn-primary px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+                    <span class="material-symbols-outlined text-sm text-[#E11D2E]">psychology</span>
+                    <span>Analyze Patient with AI</span>
+                  </button>
+                  <span class="px-3 py-1.5 bg-emerald-50 border-2 border-[#111111] text-emerald-800 text-xs font-bold tracking-wider flex items-center gap-1.5">
                     <span class="live-dot"></span> ACTIVE IDENTITY
                   </span>
                 </div>
@@ -497,6 +511,58 @@
 
             </div>
 
+            <!-- ==================== AI CLINICAL INTELLIGENCE & PATIENT ANALYSIS SUITE ==================== -->
+            <div id="aiClinicalSuite" class="editorial-card p-6 sm:p-7 space-y-5 bg-white border-2 border-[#111111]">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#111111]">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 bg-[#111111] text-[#E11D2E] flex items-center justify-center flex-shrink-0 border-2 border-[#111111]">
+                    <span class="material-symbols-outlined text-xl">psychology</span>
+                  </div>
+                  <div>
+                    <h3 class="font-black text-base uppercase tracking-tight text-[#111111] flex items-center gap-2 flex-wrap">
+                      <span>AI Clinical Patient Analysis &amp; Diagnostic Copilot</span>
+                      <span class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[9px] font-mono font-bold uppercase tracking-wider">Neural Clinical Mesh</span>
+                    </h3>
+                    <p class="text-xs font-mono text-[#111111]/60 mt-0.5">Automated clinical risk scoring, allergy contraindications, differential diagnosis &amp; Rx safety</p>
+                  </div>
+                </div>
+
+                <!-- AI Quick Tools -->
+                <div class="flex items-center gap-2 font-mono flex-wrap">
+                  <button type="button" onclick="runAiPatientSummary()" class="btn-primary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1 shadow-[2px_2px_0px_#111111]">
+                    <span class="material-symbols-outlined text-sm text-[#E11D2E]">auto_awesome</span>
+                    <span>Full Analysis</span>
+                  </button>
+                  <button type="button" onclick="runAiDifferential()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm text-blue-700">diagnostics</span>
+                    <span>Differential</span>
+                  </button>
+                  <button type="button" onclick="openAiScribeModal()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm text-purple-700">mic</span>
+                    <span>AI Scribe</span>
+                  </button>
+                  <button type="button" onclick="checkPrescriptionSafety()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1 text-[#E11D2E]">
+                    <span class="material-symbols-outlined text-sm">health_and_safety</span>
+                    <span>Rx Safety</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- AI Dynamic Output Container (Styled in Swiss Editorial) -->
+              <div id="aiClinicalOutputContainer" class="p-5 border-2 border-[#111111] bg-[#f9fafb] space-y-4">
+                <div class="flex items-center justify-between pb-2 border-b border-[#111111]/20">
+                  <span class="font-mono text-xs font-bold uppercase text-[#111111] flex items-center gap-1.5">
+                    <span class="live-dot"></span>
+                    <span>Clinical Neural Analysis Ready</span>
+                  </span>
+                  <span class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">AES-256 Validated</span>
+                </div>
+                <p class="text-xs text-[#111111]/80 font-sans leading-relaxed font-medium">
+                  Click <strong>"Full Analysis"</strong> above to evaluate this patient's blood compatibility, lethal drug contraindications, active prescription interactions, and emergency trauma triage timeline.
+                </p>
+              </div>
+            </div>
+
             <!-- ==================== REAL-WORLD CLINICAL CONSULTATION & DIGITAL RX SUITE ==================== -->
             <div id="clinicalConsultationSection" class="editorial-card p-6 sm:p-7 space-y-6 bg-white border-2 border-[#111111]">
               
@@ -519,7 +585,12 @@
               <!-- 1. Chief Complaints & History -->
               <div class="grid sm:grid-cols-2 gap-4 font-sans text-xs">
                 <div>
-                  <label class="block font-mono text-[10px] font-bold uppercase mb-1 text-[#111111]">Chief Complaints &amp; Symptoms *</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block font-mono text-[10px] font-bold uppercase text-[#111111]">Chief Complaints &amp; Symptoms *</label>
+                    <button type="button" onclick="openAiScribeModal()" class="text-[10px] font-mono font-bold text-[#E11D2E] hover:underline flex items-center gap-1">
+                      <span class="material-symbols-outlined text-xs">mic</span> AI Scribe
+                    </button>
+                  </div>
                   <textarea id="consultComplaint" rows="2" class="w-full p-2.5 font-bold" placeholder="e.g. Acute chest discomfort, progressive wheezing for 2 days"></textarea>
                 </div>
                 <div>
@@ -557,7 +628,12 @@
               <!-- 3. Diagnosis & Clinical Notes -->
               <div class="grid sm:grid-cols-2 gap-4 font-sans text-xs">
                 <div>
-                  <label class="block font-mono text-[10px] font-bold uppercase mb-1 text-[#111111]">Primary Clinical Diagnosis *</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block font-mono text-[10px] font-bold uppercase text-[#111111]">Primary Clinical Diagnosis *</label>
+                    <button type="button" onclick="runAiDifferential()" class="text-[10px] font-mono font-bold text-blue-700 hover:underline flex items-center gap-1">
+                      <span class="material-symbols-outlined text-xs">diagnostics</span> AI Differential
+                    </button>
+                  </div>
                   <input type="text" id="consultDiagnosis" required placeholder="e.g. Acute Bronchial Asthma Exacerbation" class="w-full p-2.5 font-black text-sm text-[#111111]">
                 </div>
                 <div>
@@ -573,9 +649,15 @@
                     <span class="font-serif text-lg font-black text-[#E11D2E]">&#8478;</span>
                     <span>Digital Prescription Builder</span>
                   </h4>
-                  <button type="button" onclick="addRxRow()" class="btn-secondary text-[11px] px-2.5 py-1 font-mono uppercase font-bold">
-                    + Add Medication
-                  </button>
+                  <div class="flex items-center gap-2">
+                    <button type="button" onclick="checkPrescriptionSafety()" class="btn-secondary text-[11px] px-2.5 py-1 font-mono uppercase font-bold text-[#E11D2E] hover:text-white flex items-center gap-1">
+                      <span class="material-symbols-outlined text-xs">health_and_safety</span>
+                      <span>AI Safety Check</span>
+                    </button>
+                    <button type="button" onclick="addRxRow()" class="btn-secondary text-[11px] px-2.5 py-1 font-mono uppercase font-bold">
+                      + Add Medication
+                    </button>
+                  </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -660,94 +742,7 @@
 
             </div>
 
-            <!-- AI Clinical Copilot Suite -->
-            <div id="aiClinicalSuite" class="editorial-card p-6 sm:p-7 space-y-5 bg-[#111111] text-white">
-              
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#2e2e2e]">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 border-2 border-[#E11D2E] bg-red-950/80 text-[#E11D2E] flex items-center justify-center">
-                    <span class="material-symbols-outlined text-xl">psychology</span>
-                  </div>
-                  <div>
-                    <h3 class="font-black text-base uppercase tracking-tight text-white flex items-center gap-2">
-                      AI Clinical Copilot Suite
-                      <span class="px-2 py-0.5 border border-[#E11D2E] bg-red-950/60 text-[#E11D2E] text-[10px] font-mono font-bold uppercase">v2.5 Engine</span>
-                    </h3>
-                    <p class="text-xs font-mono text-white/60">5 AI diagnostic and documentation tools for attending physicians</p>
-                  </div>
-                </div>
-              </div>
 
-              <!-- 5 AI Tools Grid -->
-              <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                
-                <!-- Tool 1: Patient Summary -->
-                <button onclick="runAiPatientSummary()" class="p-3.5 border-2 border-[#2e2e2e] bg-[#161616] hover:border-[#E11D2E] transition text-left flex flex-col justify-between space-y-2.5 cursor-pointer">
-                  <div class="w-8 h-8 border border-[#2e2e2e] bg-[#111111] text-[#E11D2E] flex items-center justify-center">
-                    <span class="material-symbols-outlined text-lg">summarize</span>
-                  </div>
-                  <div>
-                    <h4 class="font-mono font-bold text-xs text-white uppercase">Patient Brief</h4>
-                    <p class="text-[10px] font-mono text-white/50">Pre-consult summary</p>
-                  </div>
-                </button>
-
-                <!-- Tool 2: Medical Scribe -->
-                <button onclick="openAiScribeModal()" class="p-3.5 border-2 border-[#2e2e2e] bg-[#161616] hover:border-[#E11D2E] transition text-left flex flex-col justify-between space-y-2.5 cursor-pointer">
-                  <div class="w-8 h-8 border border-[#2e2e2e] bg-[#111111] text-[#E11D2E] flex items-center justify-center">
-                    <span class="material-symbols-outlined text-lg">mic</span>
-                  </div>
-                  <div>
-                    <h4 class="font-mono font-bold text-xs text-white uppercase">Medical Scribe</h4>
-                    <p class="text-[10px] font-mono text-white/50">Voice auto-noter</p>
-                  </div>
-                </button>
-
-                <!-- Tool 3: Differential Diagnosis -->
-                <button onclick="runAiDifferential()" class="p-3.5 border-2 border-[#2e2e2e] bg-[#161616] hover:border-[#E11D2E] transition text-left flex flex-col justify-between space-y-2.5 cursor-pointer">
-                  <div class="w-8 h-8 border border-[#2e2e2e] bg-[#111111] text-[#E11D2E] flex items-center justify-center">
-                    <span class="material-symbols-outlined text-lg">diagnostics</span>
-                  </div>
-                  <div>
-                    <h4 class="font-mono font-bold text-xs text-white uppercase">Differential Dx</h4>
-                    <p class="text-[10px] font-mono text-white/50">Top 3-5 conditions</p>
-                  </div>
-                </button>
-
-                <!-- Tool 4: Prescription Safety -->
-                <button onclick="checkPrescriptionSafety()" class="p-3.5 border-2 border-[#2e2e2e] bg-[#161616] hover:border-[#E11D2E] transition text-left flex flex-col justify-between space-y-2.5 cursor-pointer">
-                  <div class="w-8 h-8 border border-[#2e2e2e] bg-[#111111] text-[#E11D2E] flex items-center justify-center">
-                    <span class="material-symbols-outlined text-lg">health_and_safety</span>
-                  </div>
-                  <div>
-                    <h4 class="font-mono font-bold text-xs text-white uppercase">Rx Safety Check</h4>
-                    <p class="text-[10px] font-mono text-white/50">Drug-allergy screen</p>
-                  </div>
-                </button>
-
-                <!-- Tool 5: SOAP Note Generator -->
-                <button onclick="generateSoapNote()" class="p-3.5 border-2 border-[#2e2e2e] bg-[#161616] hover:border-[#E11D2E] transition text-left flex flex-col justify-between space-y-2.5 cursor-pointer">
-                  <div class="w-8 h-8 border border-[#2e2e2e] bg-[#111111] text-[#E11D2E] flex items-center justify-center">
-                    <span class="material-symbols-outlined text-lg">note_alt</span>
-                  </div>
-                  <div>
-                    <h4 class="font-mono font-bold text-xs text-white uppercase">Auto-SOAP Note</h4>
-                    <p class="text-[10px] font-mono text-white/50">Standardized EHR</p>
-                  </div>
-                </button>
-
-              </div>
-
-              <!-- AI Output Display Box -->
-              <div id="aiClinicalOutputContainer" class="hidden p-4 border-2 border-[#2e2e2e] bg-[#161616] space-y-2 font-mono text-xs">
-                <div class="flex items-center justify-between pb-2 border-b border-[#2e2e2e]">
-                  <span class="font-bold uppercase text-[#E11D2E] flex items-center gap-1.5" id="aiOutputTitle">AI Analysis Result</span>
-                  <button onclick="document.getElementById('aiClinicalOutputContainer').classList.add('hidden')" class="text-white/60 hover:text-white"><span class="material-symbols-outlined text-sm">close</span></button>
-                </div>
-                <div id="aiOutputContent" class="text-white/90 leading-relaxed whitespace-pre-line"></div>
-              </div>
-
-            </div>
 
             <!-- Doctor 26-Stage Decision Tree Suite -->
             <div id="doctorDecisionTreeContainer" class="editorial-card p-6 sm:p-7 space-y-5">
@@ -958,6 +953,138 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- AI Medical Scribe Modal -->
+  <div id="aiScribeModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="editorial-card max-w-xl w-full p-6 sm:p-8 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#E11D2E] text-2xl">mic</span>
+          <div>
+            <h3 class="font-black text-lg uppercase tracking-tight text-[#111111]">AI Medical Scribe &amp; Voice Copilot</h3>
+            <p class="text-[11px] font-mono text-[#111111]/60">Dictate or paste clinical conversation &bull; Auto-structured into EHR</p>
+          </div>
+        </div>
+        <button onclick="closeAiScribeModal()" class="text-[#111111] hover:text-[#E11D2E] font-bold"><span class="material-symbols-outlined">close</span></button>
+      </div>
+
+      <div class="space-y-3 font-sans text-xs">
+        <div>
+          <label class="block font-mono text-[10px] font-bold uppercase mb-1 text-[#111111]">Clinical Dictation / Consultation Transcript</label>
+          <textarea id="aiScribeInput" rows="4" class="w-full p-3 font-sans text-xs" placeholder="e.g. 32-year old male presenting with acute wheezing for 2 days, dry cough, SpO2 94%, pulse 92. Known asthmatic on Albuterol. Auscultation reveals bilateral expiratory wheezes. Plan: PEFR test, Salbutamol 2 puffs SOS, Budesonide 200mcg BID."></textarea>
+        </div>
+
+        <div>
+          <span class="block font-mono text-[10px] font-bold uppercase text-[#111111]/70 mb-1.5">Quick Clinical Case Templates:</span>
+          <div class="flex flex-wrap gap-1.5 font-mono text-[10px]">
+            <button type="button" onclick="loadScribePreset('asthma')" class="px-2 py-1 border border-[#111111] bg-gray-50 hover:bg-black hover:text-white transition font-bold">Asthma Flare</button>
+            <button type="button" onclick="loadScribePreset('cardiac')" class="px-2 py-1 border border-[#111111] bg-gray-50 hover:bg-black hover:text-white transition font-bold">Chest Pain / ACS</button>
+            <button type="button" onclick="loadScribePreset('urti')" class="px-2 py-1 border border-[#111111] bg-gray-50 hover:bg-black hover:text-white transition font-bold">Fever &amp; URTI</button>
+            <button type="button" onclick="loadScribePreset('trauma')" class="px-2 py-1 border border-[#111111] bg-gray-50 hover:bg-black hover:text-white transition font-bold">Acute Trauma / RTA</button>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-3 border-t-2 border-[#111111] font-mono">
+          <button type="button" onclick="closeAiScribeModal()" class="btn-secondary flex-1 py-2.5 uppercase font-bold text-xs">
+            Cancel
+          </button>
+          <button type="button" onclick="submitAiScribe()" class="btn-primary flex-1 py-2.5 uppercase font-bold text-xs flex items-center justify-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">auto_awesome</span>
+            <span>Process &amp; Populate Form</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Doctor Help & Admin Assistance Modal -->
+  <div id="doctorHelpModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="editorial-card max-w-2xl w-full p-6 sm:p-8 space-y-4 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+        <div class="flex items-center gap-2">
+          <div class="w-9 h-9 bg-[#111111] text-[#E11D2E] flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-xl">support_agent</span>
+          </div>
+          <div>
+            <h3 class="font-black text-lg uppercase tracking-tight text-[#111111]">Physician Support &amp; Admin Dispatch</h3>
+            <p class="text-[11px] font-mono text-[#111111]/60">Submit urgent consultation issues, identity overrides, or technical inquiries to Administrators</p>
+          </div>
+        </div>
+        <button onclick="closeHelpModal()" class="text-[#111111] hover:text-[#E11D2E] font-bold"><span class="material-symbols-outlined">close</span></button>
+      </div>
+
+      <!-- Tab Switcher: Submit Request / Ticket History -->
+      <div class="flex items-center gap-2 font-mono text-xs border-b border-[#111111]/20 pb-2">
+        <button type="button" onclick="switchHelpTab('new')" id="helpTabNewBtn" class="px-3 py-1.5 border-2 border-[#111111] bg-[#111111] text-white font-bold uppercase tracking-wider">
+          + New Help Request
+        </button>
+        <button type="button" onclick="switchHelpTab('history')" id="helpTabHistoryBtn" class="px-3 py-1.5 border-2 border-[#111111] bg-white text-[#111111] font-bold uppercase tracking-wider hover:bg-gray-50 flex items-center gap-1.5">
+          <span>My Tickets &amp; Admin Responses</span>
+          <span id="helpMyTicketsBadge" class="px-1.5 py-0.2 bg-gray-200 text-[#111111] text-[10px] font-bold">0</span>
+        </button>
+      </div>
+
+      <!-- Pane 1: Submit Form -->
+      <form id="doctorHelpForm" onsubmit="handleDoctorHelpSubmit(event)" class="space-y-4 font-sans text-xs">
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Issue Category *</label>
+            <select id="helpCategory" required class="w-full p-2.5 font-bold">
+              <option value="EMERGENCY_OVERRIDE">🚨 Emergency Patient Record Override / Unlock</option>
+              <option value="MEDICATION_SAFETY">⚠️ Drug Interaction / Formulary Discrepancy</option>
+              <option value="IDENTITY_MISMATCH">🆔 Patient LifeQR / Identity Discrepancy</option>
+              <option value="SYSTEM_TECHNICAL">💻 Workstation / Technical Glitch</option>
+              <option value="ACCOUNT_VERIFICATION">🛡️ Practitioner Verification / Clearance</option>
+              <option value="GENERAL_ASSISTANCE" selected>📋 General Administrative Assistance</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Priority Urgency *</label>
+            <select id="helpPriority" required class="w-full p-2.5 font-bold">
+              <option value="NORMAL" selected>Normal — Routine query (within 24 hrs)</option>
+              <option value="HIGH">High — Active OPD consultation blocked</option>
+              <option value="CRITICAL">Critical / Emergency — Immediate patient safety risk</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Subject / Summary *</label>
+            <input type="text" id="helpSubject" required class="w-full p-2.5 font-bold" placeholder="e.g. Need emergency bypass for patient scan">
+          </div>
+          <div>
+            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Related Patient QR ID (Optional)</label>
+            <input type="text" id="helpPatientId" class="w-full p-2.5 font-mono font-bold text-[#E11D2E]" placeholder="e.g. RAH-D3200470">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-mono text-[10px] font-bold uppercase mb-1">Detailed Description &amp; Clinical Context *</label>
+          <textarea id="helpMessage" rows="4" required class="w-full p-3 font-sans text-xs" placeholder="Describe the exact difficulty, clinical scenario, or error message so administrators can investigate and respond immediately..."></textarea>
+        </div>
+
+        <div class="flex gap-2 pt-3 border-t-2 border-[#111111] font-mono">
+          <button type="button" onclick="closeHelpModal()" class="btn-secondary flex-1 py-2.5 uppercase font-bold text-xs">
+            Cancel
+          </button>
+          <button type="submit" id="helpSubmitBtn" class="btn-primary flex-1 py-2.5 uppercase font-bold text-xs flex items-center justify-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">send</span>
+            <span>Dispatch Help Request to Admins</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Pane 2: Ticket History & Admin Responses -->
+      <div id="doctorHelpHistoryPane" class="hidden space-y-3 font-sans text-xs">
+        <div id="doctorHelpHistoryList" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
 
     </div>
   </div>

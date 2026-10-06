@@ -11,7 +11,7 @@ const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
 const socketIo = require("socket.io");
 const jwt = require("jsonwebtoken");
-const { getFrontendUrl, isSecureUrl } = require("./utils/frontendUrl");
+const { getFrontendUrl, isSecureUrl, getLocalIpAddress } = require("./utils/frontendUrl");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const app = express();
@@ -25,9 +25,9 @@ app.use(helmet({
     useDefaults: true,
     directives: {
       defaultSrc: ["'self'", "*"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://cdn.onesignal.com", "https://onesignal.com", "https://unpkg.com"],
       scriptSrcAttr: ["'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://fonts.material.com", "https://fonts.googleapis.com/css2", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://fonts.material.com", "https://fonts.googleapis.com/css2", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://unpkg.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
       imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
       connectSrc: ["'self'", "https:", "http:", "ws:", "wss:"],
@@ -64,8 +64,7 @@ let devClients = [];
 
 // Run two-way frontend directory sync on server boot & start watcher
 try {
-  const { syncAll, startWatcher } = require("../scripts/sync-frontend");
-  syncAll();
+  const { startWatcher } = require("../scripts/sync-frontend");
   startWatcher((file) => {
     // Notify all connected development clients to reload
     devClients.forEach(client => {
@@ -133,6 +132,7 @@ const patientAppRoutes = require("./routes/v1/patientApp");
 const aiClinicalRoutes = require("./routes/v1/aiClinical");
 const doctorDecisionTreeRoutes = require("./routes/v1/doctorDecisionTree");
 const hospitalRoutes = require("./routes/v1/hospitals");
+const helpTicketsRoutes = require("./routes/v1/helpTickets");
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/patient", patientProfileRoutes);
@@ -149,6 +149,7 @@ app.use("/api/v1/er", erHandoverRoutes);
 app.use("/api/v1/ai-clinical", aiClinicalRoutes);
 app.use("/api/v1/doctor-decision-tree", doctorDecisionTreeRoutes);
 app.use("/api/v1/hospitals", hospitalRoutes);
+app.use("/api/v1/help-tickets", helpTicketsRoutes);
 
 // Public configuration endpoint for frontend (OneSignal, etc)
 app.get("/api/v1/config", (req, res) => {
@@ -211,7 +212,7 @@ const startServer = async () => {
 
     if (mongoURI.startsWith('mongodb+srv://')) {
       dns.setServers(['8.8.8.8', '1.1.1.1']);
-      console.log('🔎 Using public DNS servers for Atlas SRV resolution');
+      console.log('🌐 DNS Resolver : Configured public DNS (8.8.8.8, 1.1.1.1) for Atlas SRV resolution');
     }
 
     // Connect to MongoDB
@@ -221,7 +222,7 @@ const startServer = async () => {
       maxPoolSize: 10
     });
     
-    console.log("✅ MongoDB Connected Successfully");
+    console.log("🍃 Database     : MongoDB Atlas connected successfully");
 
     // Start server - listen on all network interfaces
     const frontendUrl = getFrontendUrl();
@@ -313,8 +314,32 @@ const startServer = async () => {
     });
 
     server.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🏥 Environment: ${process.env.NODE_ENV || 'development'}`);
+      const localIp = getLocalIpAddress();
+      const isHttps = useHttps;
+      const protocol = isHttps ? 'https' : 'http';
+      const localUrl = `${protocol}://localhost:${PORT}`;
+      const networkUrl = localIp && localIp !== 'localhost' ? `${protocol}://${localIp}:${PORT}` : null;
+      const envName = process.env.NODE_ENV || 'development';
+
+      console.log('\n┌────────────────────────────────────────────────────────────┐');
+      console.log('│         🚑  LifeQR Emergency Medical Platform  🚑          │');
+      console.log('└────────────────────────────────────────────────────────────┘');
+      console.log(`  🚀 Server Status : Operational in [${envName}] mode`);
+      console.log(`  🚪 Server Port   : ${PORT}`);
+      console.log('\n  🌐 Website & Application Links:');
+      console.log(`  ➜ Local Website     : ${localUrl}/`);
+      if (networkUrl) {
+        console.log(`  ➜ Network Website   : ${networkUrl}/`);
+      }
+      console.log('\n  📱 Emergency Dashboards & Portals:');
+      console.log(`  ➜ Patient Dashboard : ${localUrl}/patient_dashboard.html`);
+      console.log(`  ➜ Patient Mobile App: ${localUrl}/patient_app.html`);
+      console.log(`  ➜ Ambulance Crew    : ${localUrl}/CrewAmbulance_dashboard.html`);
+      console.log(`  ➜ Doctor Portal     : ${localUrl}/doctor_dashboard.html`);
+      console.log(`  ➜ Admin Portal      : ${localUrl}/admin_dashboard.html`);
+      console.log(`  ➜ Emergency Scanner : ${localUrl}/emergency_access.html`);
+      console.log(`  ➜ API Health Status : ${localUrl}/api/v1/health`);
+      console.log('──────────────────────────────────────────────────────────────\n');
     });
 
     server.on('error', (listenErr) => {

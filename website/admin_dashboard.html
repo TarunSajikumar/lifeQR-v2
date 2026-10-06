@@ -211,7 +211,7 @@
     </div>
 
     <!-- Analytics Stats Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 font-mono">
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4 font-mono">
       <div class="editorial-stat-card p-4 text-center">
         <p class="text-[9px] text-[#111111]/60 font-bold uppercase tracking-wider">Total Users</p>
         <p class="font-black text-2xl text-[#111111] mt-1" id="statTotalUsers">0</p>
@@ -233,39 +233,74 @@
         <p class="font-black text-2xl text-emerald-700 mt-1" id="statTotalScans">0</p>
       </div>
       <div class="editorial-stat-card p-4 text-center border-2 border-[#E11D2E]">
-        <p class="text-[9px] text-[#E11D2E] font-bold uppercase tracking-wider">Pending Queue</p>
+        <p class="text-[9px] text-[#E11D2E] font-bold uppercase tracking-wider">Verif. Queue</p>
         <p class="font-black text-2xl text-[#E11D2E] mt-1" id="statPendingVerifications">0</p>
+      </div>
+      <div class="editorial-stat-card p-4 text-center border-2 border-blue-600 bg-blue-50/20">
+        <p class="text-[9px] text-blue-700 font-bold uppercase tracking-wider">Help Requests</p>
+        <p class="font-black text-2xl text-blue-700 mt-1" id="statHelpTickets">0</p>
       </div>
     </div>
 
     <!-- Tabs Navigation -->
-    <div class="flex items-center gap-3 pt-2 font-mono text-xs">
+    <div class="flex items-center gap-3 pt-2 font-mono text-xs flex-wrap">
       <button onclick="switchTab('users')" id="tabUsers" class="btn-primary px-5 py-2.5 uppercase tracking-wider font-bold">
         User Accounts Management
       </button>
       <button onclick="switchTab('verifications')" id="tabVerifications" class="btn-secondary px-5 py-2.5 uppercase tracking-wider font-bold">
         Professional Verification Queue
       </button>
+      <button onclick="switchTab('helpTickets')" id="tabHelpTickets" class="btn-secondary px-5 py-2.5 uppercase tracking-wider font-bold flex items-center gap-1.5 text-blue-700 hover:text-white">
+        <span class="material-symbols-outlined text-sm">support_agent</span>
+        <span>Help &amp; Support Tickets</span>
+        <span id="statHelpTicketsTabBadge" class="hidden px-2 py-0.5 border border-[#E11D2E] bg-red-100 text-[#E11D2E] text-[10px] font-mono font-bold">0 Pending</span>
+      </button>
+      <button onclick="switchTab('aiOps')" id="tabAiOps" class="btn-secondary px-5 py-2.5 uppercase tracking-wider font-bold flex items-center gap-1.5 text-[#E11D2E] hover:text-white">
+        <span class="material-symbols-outlined text-sm">smart_toy</span>
+        <span>AI Operations &amp; Copilot</span>
+      </button>
     </div>
 
     <!-- User Management Table Card -->
     <div id="sectionUsers" class="editorial-card p-6 space-y-4">
-      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
-        <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#111111]">manage_accounts</span>
-          <span>Registered Users Directory</span>
-        </h3>
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111] flex-wrap gap-3">
+        <div>
+          <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#111111]">manage_accounts</span>
+            <span>Registered Users Directory &bull; Profile Clearinghouse</span>
+          </h3>
+          <p class="text-xs font-mono text-[#111111]/60 mt-0.5">Inspect, edit, and fix profiles across Patients, Doctors, Paramedics, and Administrators</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <!-- Live User Search -->
+          <div class="relative">
+            <input type="text" id="adminUserSearchInput" oninput="handleAdminUserSearch(this.value)" placeholder="Search Name, Email, Phone, QR ID..." class="px-3 py-1.5 text-xs font-mono border-2 border-[#111111] w-64 bg-white">
+            <span class="material-symbols-outlined absolute right-2 top-2 text-xs text-gray-400 pointer-events-none">search</span>
+          </div>
+
+          <!-- Role Filter Buttons -->
+          <div class="flex border-2 border-[#111111] text-xs font-mono font-bold uppercase">
+            <button onclick="filterAdminUsers('ALL')" id="filterRoleAll" class="px-3 py-1.5 bg-[#111111] text-white transition">All (<span id="countRoleAll">0</span>)</button>
+            <button onclick="filterAdminUsers('patient')" id="filterRolePatient" class="px-3 py-1.5 bg-white text-[#111111] hover:bg-gray-100 transition border-l border-[#111111]">Patients</button>
+            <button onclick="filterAdminUsers('doctor')" id="filterRoleDoctor" class="px-3 py-1.5 bg-white text-[#111111] hover:bg-gray-100 transition border-l border-[#111111]">Doctors</button>
+            <button onclick="filterAdminUsers('crew')" id="filterRoleCrew" class="px-3 py-1.5 bg-white text-[#111111] hover:bg-gray-100 transition border-l border-[#111111]">Crew</button>
+            <button onclick="filterAdminUsers('admin')" id="filterRoleAdmin" class="px-3 py-1.5 bg-white text-[#111111] hover:bg-gray-100 transition border-l border-[#111111]">Admins</button>
+          </div>
+        </div>
       </div>
+
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse font-sans text-xs">
           <thead>
-            <tr class="border-b-2 border-[#111111] text-[#111111] text-[10px] uppercase font-bold tracking-wider">
+            <tr class="border-b-2 border-[#111111] text-[#111111] text-[10px] uppercase font-bold tracking-wider bg-gray-50/60 font-mono">
               <th class="p-3">#</th>
-              <th class="p-3">User Details</th>
+              <th class="p-3">User &amp; Credentials</th>
               <th class="p-3">System Role</th>
-              <th class="p-3">Password (Encrypted)</th>
-              <th class="p-3">Registration Date</th>
-              <th class="p-3 text-right">Actions</th>
+              <th class="p-3">Profile Identifier / Clinical Summary</th>
+              <th class="p-3">Status / Clearance</th>
+              <th class="p-3 text-center">Help Requests</th>
+              <th class="p-3 text-right">Administrative Actions</th>
             </tr>
           </thead>
           <tbody id="usersTableBody" class="divide-y border-b border-[#111111]/20">
@@ -276,13 +311,66 @@
     </div>
 
     <!-- Verification Queue Card -->
-    <div id="sectionVerifications" class="hidden editorial-card p-6 space-y-4">
-      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
-        <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
+    <div id="sectionVerifications" class="hidden editorial-card p-6 space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111] flex-wrap gap-3">
+        <div class="flex items-center gap-2">
           <span class="material-symbols-outlined text-[#E11D2E]">verified_user</span>
-          <span>Doctor &amp; Ambulance Crew Verification</span>
-        </h3>
+          <h3 class="font-black text-sm uppercase text-[#111111]">Doctor &amp; Ambulance Crew Verification</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnAiBatchAudit" onclick="runBatchAIAudit()" class="btn-primary text-xs px-4 py-2 uppercase font-mono tracking-wider font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+            <span class="material-symbols-outlined text-sm text-[#E11D2E]">auto_awesome</span>
+            <span>Run AI Smart Audit</span>
+          </button>
+          <button onclick="autoRejectMissingCredentials()" class="btn-secondary text-xs px-3.5 py-2 uppercase font-mono tracking-wider font-bold text-[#E11D2E] hover:text-white" title="Auto-reject accounts with 0 uploaded credentials">
+            <span class="material-symbols-outlined text-sm">filter_alt_off</span>
+            <span class="hidden sm:inline">Reject 0-Doc Accounts</span>
+          </button>
+        </div>
       </div>
+
+      <!-- AI Sentinel Insight Banner -->
+      <div id="aiSentinelBanner" class="p-4 border-2 border-[#111111] bg-[#f9fafb] flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 bg-[#111111] text-[#E11D2E] flex items-center justify-center flex-shrink-0 border-2 border-[#111111]">
+            <span class="material-symbols-outlined text-xl">psychology</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-black text-xs uppercase tracking-wider text-[#111111]">AI Credential Sentinel Active</span>
+              <span class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[9px] font-mono font-bold uppercase tracking-wider">Automated Registry &amp; Fraud Audit</span>
+            </div>
+            <p class="text-xs text-[#111111]/70 font-sans font-medium mt-1">
+              Cross-references medical licenses, council databases, institutional emails, and credential file attachments.
+            </p>
+          </div>
+        </div>
+
+        <!-- AI KPI Metrics -->
+        <div class="flex items-center gap-2 font-mono text-[10px] uppercase font-bold flex-wrap">
+          <div class="px-2.5 py-1.5 border border-[#111111] bg-white">
+            <span class="text-[#111111]/60">Total:</span> <span id="aiStatTotal" class="text-[#111111]">0</span>
+          </div>
+          <div class="px-2.5 py-1.5 border border-[#E11D2E] bg-red-50 text-[#E11D2E]">
+            <span>High Risk:</span> <span id="aiStatHighRisk">0</span>
+          </div>
+          <div class="px-2.5 py-1.5 border border-emerald-600 bg-emerald-50 text-emerald-800">
+            <span>Low Risk:</span> <span id="aiStatLowRisk">0</span>
+          </div>
+          <div class="px-2.5 py-1.5 border border-[#111111] bg-white">
+            <span>Avg Trust:</span> <span id="aiStatAvgScore" class="text-blue-700">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Tabs for Verification Queue -->
+      <div class="flex items-center gap-2 font-mono text-[11px] pt-1 flex-wrap">
+        <span class="text-[#111111]/60 font-bold uppercase mr-1">Filter:</span>
+        <button onclick="filterVerifications('ALL')" id="filterBtnAll" class="px-3 py-1 border-2 border-[#111111] bg-[#111111] text-white font-bold uppercase tracking-wider">All (<span id="countFilterAll">0</span>)</button>
+        <button onclick="filterVerifications('MISSING')" id="filterBtnMissing" class="px-3 py-1 border-2 border-[#111111] bg-white text-[#E11D2E] font-bold uppercase tracking-wider hover:bg-[#f9fafb]">0 Files / Missing (<span id="countFilterMissing">0</span>)</button>
+        <button onclick="filterVerifications('DOCS_PRESENT')" id="filterBtnDocs" class="px-3 py-1 border-2 border-[#111111] bg-white text-emerald-700 font-bold uppercase tracking-wider hover:bg-[#f9fafb]">Files Uploaded (<span id="countFilterDocs">0</span>)</button>
+      </div>
+
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse font-sans text-xs">
           <thead>
@@ -290,6 +378,7 @@
               <th class="p-3">Practitioner</th>
               <th class="p-3">Role</th>
               <th class="p-3">Uploaded Credentials</th>
+              <th class="p-3">AI Risk &amp; Trust Score</th>
               <th class="p-3">Status</th>
               <th class="p-3 text-right">Review Actions</th>
             </tr>
@@ -301,7 +390,528 @@
       </div>
     </div>
 
+    <!-- AI Operations & Copilot Card -->
+    <div id="sectionAiOps" class="hidden editorial-card p-6 space-y-6">
+      
+      <!-- Section Header -->
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111] flex-wrap gap-3">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#E11D2E] text-2xl">smart_toy</span>
+          <div>
+            <h3 class="font-black text-sm uppercase text-[#111111]">AI Operations &amp; Platform Intelligence</h3>
+            <p class="text-[11px] font-mono text-[#111111]/60 font-bold">Autonomous Sentinel, Threat Radar &amp; Natural Language Copilot</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="loadAiOpsBrief()" class="btn-primary text-xs px-4 py-2 uppercase font-mono tracking-wider font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+            <span class="material-symbols-outlined text-sm text-[#E11D2E]">summarize</span>
+            <span>Generate Executive Brief</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI System Health & Security Threat Radar -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
+        <div class="p-4 border-2 border-[#111111] bg-[#f9fafb]">
+          <p class="text-[10px] text-[#111111]/60 font-bold uppercase tracking-wider">AI System Integrity</p>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
+            <span class="font-black text-2xl text-emerald-700" id="aiOpsHealthScore">99.2%</span>
+          </div>
+          <p class="text-[10px] text-emerald-800 font-bold mt-1 uppercase">Nominal / Healthy</p>
+        </div>
+
+        <div class="p-4 border-2 border-[#111111] bg-[#f9fafb]">
+          <p class="text-[10px] text-[#111111]/60 font-bold uppercase tracking-wider">Security Threat Posture</p>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="material-symbols-outlined text-emerald-700 text-xl">verified_user</span>
+            <span class="font-black text-xl text-[#111111]" id="aiOpsThreatLevel">LOW / SAFE</span>
+          </div>
+          <p class="text-[10px] text-[#111111]/60 font-bold mt-1 uppercase">Zero Breaches Detected</p>
+        </div>
+
+        <div class="p-4 border-2 border-[#111111] bg-[#f9fafb]">
+          <p class="text-[10px] text-[#111111]/60 font-bold uppercase tracking-wider">Zero-Knowledge Triage</p>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="material-symbols-outlined text-[#E11D2E] text-xl">enhanced_encryption</span>
+            <span class="font-black text-xl text-[#E11D2E]">AES-256 GCM</span>
+          </div>
+          <p class="text-[10px] text-[#111111]/60 font-bold mt-1 uppercase">Active Cryptographic Passes</p>
+        </div>
+
+        <div class="p-4 border-2 border-[#111111] bg-[#f9fafb]">
+          <p class="text-[10px] text-[#111111]/60 font-bold uppercase tracking-wider">Dispatch Mesh</p>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="material-symbols-outlined text-blue-700 text-xl">hub</span>
+            <span class="font-black text-xl text-blue-700">Socket.IO Live</span>
+          </div>
+          <p class="text-[10px] text-[#111111]/60 font-bold mt-1 uppercase">Rooms: crew:all &bull; hospital:er</p>
+        </div>
+      </div>
+
+      <!-- Real-Time AI Insights & Recommendations (Dynamic) -->
+      <div id="aiOpsBriefContainer" class="p-5 border-2 border-[#111111] bg-white space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b-2 border-[#111111]">
+          <h4 class="font-black text-xs uppercase font-mono tracking-wider text-[#111111] flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-[#E11D2E]">analytics</span>
+            <span>Live Executive Operational Intelligence Brief</span>
+          </h4>
+          <span id="aiOpsBriefTimestamp" class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">Real-Time Data Feed</span>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <p class="text-[10px] font-mono font-bold uppercase text-[#111111]/70">Key Operational Signals</p>
+            <ul id="aiOpsSignalsList" class="space-y-1.5 text-xs font-sans font-medium text-[#111111]/80">
+              <li class="flex items-start gap-2">
+                <span class="material-symbols-outlined text-xs text-[#E11D2E] mt-0.5">circle</span>
+                <span>Click "Generate Executive Brief" above to compile real-time neural operational telemetry.</span>
+              </li>
+            </ul>
+          </div>
+          <div class="space-y-2">
+            <p class="text-[10px] font-mono font-bold uppercase text-[#111111]/70">Recommended Administrative Actions</p>
+            <ul id="aiOpsRecsList" class="space-y-1.5 text-xs font-sans font-medium text-[#111111]/80">
+              <li class="flex items-start gap-2">
+                <span class="material-symbols-outlined text-xs text-emerald-700 mt-0.5">check_circle</span>
+                <span>Screen pending practitioners in the verification queue to clear medical license backlog.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Operations Copilot (Chat Interface) -->
+      <div class="p-5 border-2 border-[#111111] bg-[#f9fafb] space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b-2 border-[#111111]">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#E11D2E]">forum</span>
+            <h4 class="font-black text-xs uppercase font-mono tracking-wider text-[#111111]">LifeQR AI Operations Copilot</h4>
+          </div>
+          <span class="text-[9px] font-mono font-bold uppercase px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800">Online &bull; Context Aware</span>
+        </div>
+
+        <!-- Quick Query Suggestion Chips -->
+        <div class="flex items-center gap-2 flex-wrap font-mono text-[10px] font-bold">
+          <span class="text-[#111111]/60 uppercase">Quick Inquiries:</span>
+          <button onclick="askAiQuery('Run comprehensive platform security audit')" class="px-2.5 py-1 border border-[#111111] bg-white hover:bg-[#111111] hover:text-white transition">
+            🛡️ Security Audit
+          </button>
+          <button onclick="askAiQuery('Summarize doctor & crew credential queue')" class="px-2.5 py-1 border border-[#111111] bg-white hover:bg-[#111111] hover:text-white transition">
+            👨‍⚕️ Credential Backlog
+          </button>
+          <button onclick="askAiQuery('Show emergency QR scan & SOS triage velocity')" class="px-2.5 py-1 border border-[#111111] bg-white hover:bg-[#111111] hover:text-white transition">
+            🚑 QR &amp; SOS Velocity
+          </button>
+          <button onclick="askAiQuery('Platform user metrics and registration growth')" class="px-2.5 py-1 border border-[#111111] bg-white hover:bg-[#111111] hover:text-white transition">
+            📊 Platform Metrics
+          </button>
+        </div>
+
+        <!-- Chat Conversation Log -->
+        <div id="aiChatLog" class="p-4 border-2 border-[#111111] bg-white min-h-[220px] max-h-[380px] overflow-y-auto space-y-3 font-sans text-xs">
+          <!-- Initial Assistant Greeting -->
+          <div class="flex items-start gap-2.5">
+            <div class="w-6 h-6 rounded-full bg-[#111111] text-[#E11D2E] flex items-center justify-center flex-shrink-0 font-mono text-[10px] font-bold">AI</div>
+            <div class="bg-gray-100 p-3 border border-[#111111]/20 max-w-xl text-[#111111] leading-relaxed">
+              <p class="font-bold font-mono text-[11px] mb-1">LifeQR System Intelligence:</p>
+              <p>Welcome, Administrator. I am connected directly to the LifeQR database, real-time Socket.IO dispatch mesh, and security event loggers. Ask me anything about user growth, security anomalies, doctor/paramedic verifications, or emergency telemetry.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <div class="flex gap-2 font-mono">
+          <input type="text" id="aiChatInput" placeholder="Ask AI Copilot about system telemetry, security, or practitioner audits..." class="flex-1 px-4 py-2.5 border-2 border-[#111111] text-xs focus:outline-none focus:border-[#E11D2E]">
+          <button id="aiChatSubmitBtn" onclick="submitAiOpsQuery()" class="btn-primary px-5 py-2.5 text-xs uppercase font-bold tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+            <span>Ask AI</span>
+            <span class="material-symbols-outlined text-sm">send</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Help & Support Tickets Card -->
+    <div id="sectionHelpTickets" class="hidden editorial-card p-6 space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111] flex-wrap gap-3">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-blue-700 text-2xl">support_agent</span>
+          <div>
+            <h3 class="font-black text-sm uppercase text-[#111111]">Practitioner &amp; User Support Clearinghouse</h3>
+            <p class="text-[11px] font-mono text-[#111111]/60 font-bold">Review emergency consult overrides, drug safety queries, and operational tickets</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 font-mono">
+          <button onclick="loadAdminHelpTickets()" class="btn-secondary text-xs px-3.5 py-2 uppercase font-bold tracking-wider flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-[#E11D2E]">sync</span>
+            <span>Refresh Queue</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Tabs for Help Tickets -->
+      <div class="flex items-center gap-2 font-mono text-[11px] pt-1 flex-wrap">
+        <span class="text-[#111111]/60 font-bold uppercase mr-1">Filter:</span>
+        <button onclick="filterAdminTickets('ALL')" id="ticketFilterAll" class="px-3 py-1 border-2 border-[#111111] bg-[#111111] text-white font-bold uppercase tracking-wider">All (<span id="ticketCountAll">0</span>)</button>
+        <button onclick="filterAdminTickets('PENDING')" id="ticketFilterPending" class="px-3 py-1 border-2 border-[#111111] bg-white text-amber-900 font-bold uppercase tracking-wider hover:bg-[#f9fafb]">Pending (<span id="ticketCountPending">0</span>)</button>
+        <button onclick="filterAdminTickets('IN_PROGRESS')" id="ticketFilterInProgress" class="px-3 py-1 border-2 border-[#111111] bg-white text-blue-700 font-bold uppercase tracking-wider hover:bg-[#f9fafb]">In Progress (<span id="ticketCountInProgress">0</span>)</button>
+        <button onclick="filterAdminTickets('RESOLVED')" id="ticketFilterResolved" class="px-3 py-1 border-2 border-[#111111] bg-white text-emerald-700 font-bold uppercase tracking-wider hover:bg-[#f9fafb]">Resolved (<span id="ticketCountResolved">0</span>)</button>
+        <button onclick="filterAdminTickets('CRITICAL')" id="ticketFilterCritical" class="px-3 py-1 border-2 border-[#E11D2E] bg-white text-[#E11D2E] font-bold uppercase tracking-wider hover:bg-red-50">🚨 Critical (<span id="ticketCountCritical">0</span>)</button>
+      </div>
+
+      <!-- Tickets Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse font-sans text-xs">
+          <thead>
+            <tr class="border-b-2 border-[#111111] text-[#111111] text-[10px] uppercase font-bold tracking-wider font-mono bg-gray-50">
+              <th class="p-3">Ticket ID</th>
+              <th class="p-3">Requester</th>
+              <th class="p-3">Category &amp; Subject</th>
+              <th class="p-3">Patient Context</th>
+              <th class="p-3">Urgency</th>
+              <th class="p-3">Status</th>
+              <th class="p-3">Submitted</th>
+              <th class="p-3 text-right">Admin Actions</th>
+            </tr>
+          </thead>
+          <tbody id="helpTicketsTableBody" class="divide-y border-b border-[#111111]/20 font-sans text-xs">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </main>
+
+  <!-- AI Credential Inspection Modal -->
+  <div id="aiInspectionModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+    <div class="bg-white border-2 border-[#111111] shadow-[8px_8px_0px_#111111] max-w-xl w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 bg-[#111111] text-[#E11D2E] flex items-center justify-center">
+            <span class="material-symbols-outlined text-base">psychology</span>
+          </div>
+          <div>
+            <h3 class="font-black text-sm uppercase tracking-wider text-[#111111]">AI Clinical Credential Audit</h3>
+            <p id="aiModalPractitionerSub" class="text-[10px] font-mono text-[#111111]/60 font-bold">PRACTITIONER AUDIT</p>
+          </div>
+        </div>
+        <button onclick="closeAiModal()" class="p-1 text-[#111111] hover:bg-gray-100 transition" title="Close">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Trust Score & Risk Level Meter -->
+      <div class="p-4 border-2 border-[#111111] bg-[#f9fafb] space-y-3">
+        <div class="flex items-center justify-between font-mono text-xs">
+          <span class="text-[#111111]/70 font-bold uppercase">AI Trust Confidence:</span>
+          <span id="aiModalTrustScoreText" class="font-black text-lg text-[#E11D2E]">-- / 100</span>
+        </div>
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-200 h-3 border border-[#111111] overflow-hidden">
+          <div id="aiModalProgressBar" class="h-full bg-[#E11D2E] transition-all duration-500" style="width: 0%;"></div>
+        </div>
+        <div class="flex items-center justify-between text-[10px] font-mono font-bold uppercase pt-1">
+          <span id="aiModalRiskBadge" class="px-2 py-0.5 border border-[#E11D2E] bg-red-100 text-[#E11D2E]">AUDITING...</span>
+          <span id="aiModalRecBadge" class="text-[#111111]/70 font-mono">CALCULATING</span>
+        </div>
+      </div>
+
+      <!-- Detailed Findings & Red Flags -->
+      <div class="space-y-2">
+        <h4 class="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111111] flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm text-[#E11D2E]">warning</span>
+          <span>Detected Flags &amp; Anomalies</span>
+        </h4>
+        <div id="aiModalFlagsList" class="space-y-1.5 text-xs font-sans font-medium text-[#111111]/80 max-h-36 overflow-y-auto pr-1">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Positive Signals / Registry Checks -->
+      <div class="space-y-2">
+        <h4 class="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111111] flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm text-emerald-700">check_circle</span>
+          <span>Verified Registry Signals</span>
+        </h4>
+        <div id="aiModalSignalsList" class="space-y-1.5 text-xs font-sans font-medium text-emerald-800 max-h-36 overflow-y-auto pr-1">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- AI Clinical Assessment Note -->
+      <div class="p-3 border border-[#111111]/20 bg-gray-50 text-[11px] font-mono text-[#111111]/80 leading-relaxed" id="aiModalSummaryText">
+        AI Evaluation loading...
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-end gap-3 pt-2 border-t-2 border-[#111111] font-mono text-xs">
+        <button onclick="closeAiModal()" class="btn-secondary px-4 py-2 uppercase font-bold">
+          Close
+        </button>
+        <button id="aiModalRejectBtn" onclick="applyAiReject()" class="btn-danger px-4 py-2 uppercase font-bold tracking-wider">
+          Reject with AI Note
+        </button>
+        <button id="aiModalApproveBtn" onclick="applyAiApprove()" class="btn-primary px-4 py-2 uppercase font-bold tracking-wider">
+          Approve Practitioner
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Admin Ticket Review & Resolution Modal -->
+  <div id="adminTicketModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+    <div class="bg-white border-2 border-[#111111] shadow-[8px_8px_0px_#111111] max-w-xl w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 bg-[#111111] text-[#E11D2E] flex items-center justify-center">
+            <span class="material-symbols-outlined text-xl">support_agent</span>
+          </div>
+          <div>
+            <h3 class="font-black text-sm uppercase tracking-wider text-[#111111]">Admin Ticket Review &amp; Resolution</h3>
+            <p id="adminModalTicketId" class="text-[10px] font-mono text-[#E11D2E] font-bold">TICKET ID</p>
+          </div>
+        </div>
+        <button onclick="closeAdminTicketModal()" class="p-1 text-[#111111] hover:bg-gray-100 transition" title="Close">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Ticket Details Strip -->
+      <div class="p-4 border-2 border-[#111111] bg-[#f9fafb] space-y-2 text-xs font-sans">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <span class="font-mono text-[10px] font-bold text-gray-500 uppercase block">Requester:</span>
+            <strong id="adminModalRequester" class="text-sm text-[#111111]">Dr. Staff (doctor@lifeqr.com)</strong>
+          </div>
+          <div class="text-right">
+            <span class="font-mono text-[10px] font-bold text-gray-500 uppercase block">Priority:</span>
+            <span id="adminModalPriorityBadge" class="px-2 py-0.5 border border-[#E11D2E] bg-red-100 text-[#E11D2E] font-mono text-[10px] font-bold uppercase">NORMAL</span>
+          </div>
+        </div>
+
+        <div id="adminModalPatientContext" class="font-mono text-[11px] text-gray-700 pt-1">
+          <!-- Associated patient if any -->
+        </div>
+
+        <div>
+          <span class="font-mono text-[10px] font-bold text-gray-500 uppercase block">Subject:</span>
+          <strong id="adminModalSubject" class="text-sm text-[#111111]">-</strong>
+        </div>
+
+        <div class="p-3 bg-white border border-[#111111]/30 text-xs text-[#111111] leading-relaxed whitespace-pre-line" id="adminModalMessage">
+          <!-- Message text -->
+        </div>
+
+        <div class="pt-2 flex items-center justify-between gap-2 border-t border-[#111111]/20 flex-wrap">
+          <span class="text-[10px] font-mono text-gray-500">Need to inspect or fix this user's profile to solve their problem?</span>
+          <button type="button" id="adminModalFixProfileBtn" onclick="adminFixProfileFromCurrentTicket()" class="btn-primary text-xs px-3.5 py-1.5 uppercase font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+            <span class="material-symbols-outlined text-sm text-[#E11D2E]">edit_square</span>
+            <span>Troubleshoot &amp; Fix Profile</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Resolution Response Form -->
+      <form id="adminTicketResolutionForm" onsubmit="handleAdminTicketSubmit(event)" class="space-y-4 font-sans text-xs">
+        <input type="hidden" id="adminModalHiddenTicketId">
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Update Status *</label>
+            <select id="adminModalStatusSelect" class="w-full p-2.5 font-bold">
+              <option value="PENDING">PENDING (Keep in queue)</option>
+              <option value="IN_PROGRESS">IN PROGRESS (Under active investigation)</option>
+              <option value="RESOLVED" selected>RESOLVED (Action complete / Dispatched)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Timestamp</label>
+            <input type="text" id="adminModalTimestamp" readonly class="w-full p-2.5 font-mono text-gray-500 bg-gray-100">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-mono text-[10px] font-bold uppercase mb-1">Administrative Resolution Note / Doctor Response *</label>
+          <textarea id="adminModalNotesInput" rows="3" class="w-full p-3 font-sans text-xs" placeholder="Type resolution or guidance provided to the practitioner... (e.g. 'Emergency bypass authorized for QR RAH-D3200470. Formulary cross-check verified safe.')"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2 border-t-2 border-[#111111] font-mono text-xs">
+          <button type="button" onclick="closeAdminTicketModal()" class="btn-secondary px-4 py-2 uppercase font-bold">
+            Cancel
+          </button>
+          <button type="submit" id="adminTicketSubmitBtn" class="btn-primary px-5 py-2 uppercase font-bold tracking-wider flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">check_circle</span>
+            <span>Save &amp; Notify Requester</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Universal User Profile Management & Troubleshooting Modal (All User Types: Patient, Doctor, Crew, Admin) -->
+  <div id="adminUserProfileModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+    <div class="bg-white border-2 border-[#111111] shadow-[8px_8px_0px_#111111] max-w-4xl w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111] flex-wrap gap-2">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-[#111111] text-[#E11D2E] flex items-center justify-center border-2 border-[#111111] font-bold">
+            <span class="material-symbols-outlined text-xl">manage_accounts</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h3 id="adminUserModalName" class="font-black text-lg uppercase tracking-tight text-[#111111]">Loading User...</h3>
+              <span id="adminUserModalRoleBadge" class="px-2 py-0.5 border border-[#111111] bg-gray-50 text-[10px] font-mono font-bold uppercase">PATIENT</span>
+              <span id="adminUserModalActiveBadge" class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[10px] font-mono font-bold uppercase">ACTIVE</span>
+            </div>
+            <p id="adminUserModalSub" class="text-xs font-mono text-[#111111]/60">User ID: <span id="adminUserModalId">-</span> &bull; Email: <span id="adminUserModalEmail">-</span></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="closeAdminUserProfile()" class="p-1 text-[#111111] hover:bg-gray-100 transition" title="Close">
+            <span class="material-symbols-outlined text-2xl">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Action / Diagnostic Bar -->
+      <div id="adminUserQuickActions" class="p-3 border-2 border-[#111111] bg-[#f9fafb] flex items-center justify-between gap-3 flex-wrap text-xs font-mono">
+        <!-- Dynamically populated quick actions: e.g. "Regenerate QR Code", "View Active Tickets", "Unlock Password" -->
+      </div>
+
+      <!-- Profile Form -->
+      <form id="adminUserProfileForm" onsubmit="handleAdminProfileSave(event)" class="space-y-5">
+        <input type="hidden" id="adminUserHiddenId">
+        <input type="hidden" id="adminUserHiddenRole">
+        <input type="hidden" id="adminUserHiddenSourceTicketId">
+
+        <!-- SECTION 1: Core Account & Personal Details -->
+        <div class="border-2 border-[#111111] p-4 bg-white space-y-4">
+          <div class="flex items-center justify-between border-b border-[#111111]/20 pb-2">
+            <h4 class="font-black text-xs uppercase font-mono text-[#111111] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-[#E11D2E]">badge</span>
+              <span>1. Core Account &amp; System Clearance</span>
+            </h4>
+            <span class="text-[10px] font-mono text-gray-500 uppercase">Primary Credentials</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Full Legal Name *</label>
+              <input type="text" id="adminProfName" required class="w-full p-2.5 text-xs font-bold border-2 border-[#111111]">
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Email Address *</label>
+              <input type="email" id="adminProfEmail" required class="w-full p-2.5 text-xs font-mono border-2 border-[#111111]">
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Phone Number</label>
+              <input type="tel" id="adminProfPhone" placeholder="+91 ..." class="w-full p-2.5 text-xs font-mono border-2 border-[#111111]">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Gender</label>
+              <select id="adminProfGender" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111]">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Account Active Status</label>
+              <select id="adminProfActive" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111]">
+                <option value="true">Active (Access Allowed)</option>
+                <option value="false">Suspended / Deactivated</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Verification Status</label>
+              <select id="adminProfVerificationStatus" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111]">
+                <option value="PENDING">PENDING</option>
+                <option value="UNDER_REVIEW">UNDER REVIEW</option>
+                <option value="VERIFIED">VERIFIED</option>
+                <option value="SUSPENDED">SUSPENDED</option>
+                <option value="REVOKED">REVOKED</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Reset Password (Optional)</label>
+              <input type="text" id="adminProfNewPassword" placeholder="Enter new password to overwrite" class="w-full p-2.5 text-xs font-mono border-2 border-[#111111]">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Address</label>
+              <input type="text" id="adminProfAddress" placeholder="Street / Location" class="w-full p-2 text-xs border-2 border-[#111111]">
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">City</label>
+              <input type="text" id="adminProfCity" placeholder="City" class="w-full p-2 text-xs border-2 border-[#111111]">
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">State / Province</label>
+              <input type="text" id="adminProfState" placeholder="State" class="w-full p-2 text-xs border-2 border-[#111111]">
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Administrative Verification Note</label>
+            <input type="text" id="adminProfVerificationNote" placeholder="Notes on credential review, medical license audit, or override rationale..." class="w-full p-2 text-xs border-2 border-[#111111]">
+          </div>
+        </div>
+
+        <!-- SECTION 2: Dynamic Role-Specific Clinical / Professional Parameters -->
+        <div id="adminRoleSpecificSection" class="border-2 border-[#111111] p-4 bg-white space-y-4">
+          <!-- Dynamically swapped for Patient, Doctor, Crew, or Admin -->
+        </div>
+
+        <!-- SECTION 3: Open Help Tickets & Administrative Resolution Link -->
+        <div class="border-2 border-[#111111] p-4 bg-[#f9fafb] space-y-3">
+          <div class="flex items-center justify-between border-b border-[#111111]/20 pb-2">
+            <h4 class="font-black text-xs uppercase font-mono text-[#111111] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-blue-700">support_agent</span>
+              <span>3. Help Desk Ticket Auto-Resolution Link</span>
+            </h4>
+            <span id="adminUserTicketCountBadge" class="text-[10px] font-mono text-gray-500 font-bold uppercase">0 Tickets</span>
+          </div>
+
+          <div id="adminUserTicketList" class="space-y-2 text-xs font-mono max-h-40 overflow-y-auto">
+            <!-- Dynamically populated tickets -->
+          </div>
+
+          <div>
+            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Resolution Note to Requester (Auto-closes linked ticket)</label>
+            <textarea id="adminProfTicketResolutionNote" rows="2" class="w-full p-2.5 text-xs font-sans border-2 border-[#111111]" placeholder="Describe what profile parameters were updated or fixed so the user receives a complete explanation..."></textarea>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-between pt-2 border-t-2 border-[#111111] font-mono text-xs flex-wrap gap-2">
+          <span class="text-[10px] text-gray-500">All modifications are logged to immutable security audit trail.</span>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeAdminUserProfile()" class="btn-secondary px-4 py-2 uppercase font-bold">
+              Cancel
+            </button>
+            <button type="submit" id="adminProfSaveBtn" class="btn-primary px-6 py-2.5 uppercase font-bold tracking-wider flex items-center gap-2 shadow-[2px_2px_0px_#111111]">
+              <span class="material-symbols-outlined text-sm">verified</span>
+              <span>Save Changes &amp; Solve Problem</span>
+            </button>
+          </div>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer class="rule py-8 px-6 text-center text-xs font-mono text-[#111111]/60 no-print mt-12">

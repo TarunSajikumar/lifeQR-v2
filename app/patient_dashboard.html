@@ -223,6 +223,13 @@
           <span id="patientThemeLabel" class="hidden sm:inline">Theme</span>
         </button>
 
+        <!-- Help Button for Admin Assistance -->
+        <button onclick="openPatientHelpModal()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold flex items-center gap-1.5 relative" title="Request Admin Help & Support">
+          <span class="material-symbols-outlined text-sm text-[#E11D2E]">help</span>
+          <span class="hidden sm:inline">Help</span>
+          <span id="patientHelpPendingDot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#E11D2E] rounded-full border-2 border-white animate-ping"></span>
+        </button>
+
         <button onclick="logout()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold">
           <span class="material-symbols-outlined text-sm">logout</span>
           <span class="hidden sm:inline">Logout</span>
@@ -570,6 +577,135 @@
     </div>
   </main>
 
+  <!-- NFC Smart Medical Wallet Card Preview Modal -->
+  <div id="walletCardModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+    <div class="bg-white border-2 border-[#111111] shadow-[8px_8px_0px_#111111] max-w-3xl w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+        <div class="flex items-center gap-2.5">
+          <span class="live-dot"></span>
+          <h3 class="font-black text-sm uppercase tracking-wider text-[#111111]">LifeQR Smart NFC Medical Card</h3>
+        </div>
+        <button onclick="closeWalletCardModal()" class="p-1 text-[#111111] hover:bg-gray-100 transition" title="Close">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <p class="text-xs text-[#111111]/70 font-sans font-medium">
+          Your physical-ready ISO 7810 ID-1 Smart NFC Medical Card is ready. Sensitive medical parameters are kept private on the card face and revealed instantly when scanned or tapped by first responders.
+        </p>
+        <div class="border-2 border-[#111111] bg-[#07090e] p-3 sm:p-4 flex items-center justify-center overflow-hidden shadow-inner">
+          <img id="walletCardPreviewImg" src="" alt="Smart Medical Wallet Card" class="max-w-full h-auto object-contain rounded-md shadow-2xl border border-white/10">
+        </div>
+      </div>
+
+      <div class="grid sm:grid-cols-3 gap-3 pt-2">
+        <button onclick="triggerCardImageDownload()" class="btn-primary justify-center text-xs py-2.5 font-mono uppercase tracking-wider font-bold">
+          <span class="material-symbols-outlined text-sm">download</span>
+          <span>Download PNG</span>
+        </button>
+        <button onclick="printWalletCardImage()" class="btn-secondary justify-center text-xs py-2.5 font-mono uppercase tracking-wider font-bold">
+          <span class="material-symbols-outlined text-sm text-[#E11D2E]">print</span>
+          <span>Print Card</span>
+        </button>
+        <button onclick="closeWalletCardModal()" class="btn-secondary justify-center text-xs py-2.5 font-mono uppercase tracking-wider font-bold">
+          <span>Done</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient Help & Admin Support Modal -->
+  <div id="patientHelpModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+    <div class="bg-white border-2 border-[#111111] shadow-[8px_8px_0px_#111111] max-w-2xl w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 bg-[#E11D2E] rounded-full"></span>
+          <div>
+            <h3 class="font-black text-sm uppercase tracking-wider text-[#111111]">LifeQR Help & Support &bull; Administrator Assistance</h3>
+            <p class="text-[11px] font-mono text-[#111111]/70 font-semibold">Direct channel to system administrators for account, medical card, or emergency inquiries</p>
+          </div>
+        </div>
+        <button onclick="closePatientHelpModal()" class="p-1 text-[#111111] hover:bg-gray-100 transition" title="Close">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex border-b-2 border-[#111111] gap-2">
+        <button id="patientHelpTabNewBtn" onclick="switchPatientHelpTab('new')" class="px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider border-b-2 border-[#E11D2E] text-[#E11D2E] -mb-[2px] transition flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">edit_note</span>
+          <span>Submit Help Request</span>
+        </button>
+        <button id="patientHelpTabHistoryBtn" onclick="switchPatientHelpTab('history')" class="px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-[#111111]/60 hover:text-[#111111] transition flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">history</span>
+          <span>My Tickets & Responses</span>
+          <span id="patientHelpMyTicketsBadge" class="hidden ml-1 px-1.5 py-0.2 bg-[#E11D2E] text-white text-[10px] font-mono font-bold rounded-full">0</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: New Ticket Form -->
+      <form id="patientHelpForm" onsubmit="handlePatientHelpSubmit(event)" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-mono uppercase font-bold text-[#111111] mb-1">Issue Category</label>
+            <select id="patientHelpCategory" class="w-full p-2.5 text-xs font-mono font-bold border-2 border-[#111111] bg-white">
+              <option value="GENERAL_ASSISTANCE">General Assistance & Support</option>
+              <option value="ACCOUNT_VERIFICATION">Medical Profile & Verification</option>
+              <option value="IDENTITY_MISMATCH">Lost Card / Identity Dispute</option>
+              <option value="SYSTEM_TECHNICAL">Technical / PWA Sync Issue</option>
+              <option value="EMERGENCY_OVERRIDE">Emergency Contact Update Urgent</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-mono uppercase font-bold text-[#111111] mb-1">Priority Level</label>
+            <select id="patientHelpPriority" class="w-full p-2.5 text-xs font-mono font-bold border-2 border-[#111111] bg-white">
+              <option value="NORMAL">Normal — Routine inquiry</option>
+              <option value="HIGH">High — Profile access or QR issue</option>
+              <option value="CRITICAL">Critical — Medical emergency assistance</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-mono uppercase font-bold text-[#111111] mb-1">Your Patient QR ID (Auto-referenced)</label>
+          <input type="text" id="patientHelpQrId" readonly class="w-full p-2.5 text-xs font-mono font-bold border-2 border-[#111111] bg-gray-50 text-[#111111]/80" placeholder="Active Patient QR Code ID">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-mono uppercase font-bold text-[#111111] mb-1">Subject</label>
+          <input type="text" id="patientHelpSubject" required placeholder="E.g., Medical records update verification needed" class="w-full p-2.5 text-xs font-mono border-2 border-[#111111]">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-mono uppercase font-bold text-[#111111] mb-1">Detailed Description of the Issue</label>
+          <textarea id="patientHelpMessage" rows="4" required placeholder="Describe the assistance or support required in detail..." class="w-full p-2.5 text-xs font-sans border-2 border-[#111111]"></textarea>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t-2 border-[#111111]">
+          <span class="text-[10px] font-mono text-[#111111]/60">Monitored 24/7 by LifeQR System Administrators</span>
+          <div class="flex gap-2">
+            <button type="button" onclick="closePatientHelpModal()" class="btn-secondary text-xs px-4 py-2 font-mono uppercase tracking-wider font-bold">Cancel</button>
+            <button type="submit" id="patientHelpSubmitBtn" class="btn-primary text-xs px-5 py-2 font-mono uppercase tracking-wider font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+              <span class="material-symbols-outlined text-sm">send</span>
+              <span>Submit Help Request</span>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Tab 2: Ticket History & Admin Responses -->
+      <div id="patientHelpHistoryPane" class="hidden space-y-3 max-h-80 overflow-y-auto pr-1">
+        <div id="patientHelpHistoryList" class="space-y-3 font-mono text-xs">
+          <!-- Populated dynamically via loadPatientHelpTickets -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Fixed Mobile Bottom Navigation Bar -->
   <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#111111] z-50 px-2 py-2 shadow-2xl flex items-center justify-around no-print">
     <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Profile">
@@ -584,9 +720,9 @@
       <span class="material-symbols-outlined text-lg animate-pulse">sos</span>
       <span class="text-[10px] uppercase font-black">SOS</span>
     </button>
-    <button onclick="document.getElementById('reportsSection')?.scrollIntoView({behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Medical Reports">
-      <span class="material-symbols-outlined text-lg">folder_shared</span>
-      <span class="text-[10px] uppercase">Reports</span>
+    <button onclick="openPatientHelpModal()" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Help">
+      <span class="material-symbols-outlined text-lg text-[#E11D2E]">help</span>
+      <span class="text-[10px] uppercase">Help</span>
     </button>
     <button onclick="logout()" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Logout">
       <span class="material-symbols-outlined text-lg">logout</span>

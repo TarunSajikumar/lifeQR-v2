@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifeQR™ Smart NFC Card — Interactive Simulator & Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0f12;
+      --surface: #16191f;
+      --card-bg: #1c2028;
+      --border: #2c323f;
+      --text: #ffffff;
+      --text-muted: #8e99a8;
+      --red: #E11D2E;
+      --red-hover: #b91522;
+      --red-glow: rgba(225, 29, 46, 0.4);
+      --green: #10B981;
+      --font-display: 'Archivo', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-display);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Top Telemetry Ticker */
+    .ticker-bar {
+      background: #000;
+      border-bottom: 2px solid var(--border);
+      padding: 10px 24px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      letter-spacing: 0.5px;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--red);
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+      box-shadow: 0 0 10px var(--red);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 24px;
+      width: 100%;
+    }
+
+    .header {
+      margin-bottom: 36px;
+      text-align: center;
+    }
+
+    .badge-sub {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(225, 29, 46, 0.15);
+      border: 1px solid var(--red);
+      color: #ff5260;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .title {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    /* Main Grid Layout */
+    .simulator-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .simulator-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Interactive Card Arena */
+    .card-stage {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      box-shadow: 8px 8px 0px #000;
+      overflow: hidden;
+    }
+
+    .card-stage::before {
+      content: "";
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, var(--red-glow) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    /* Physical NFC Card Representation */
+    .nfc-physical-card {
+      width: 360px;
+      height: 226px;
+      background: linear-gradient(135deg, #1b1e24 0%, #111317 100%);
+      border: 2px solid #3d4554;
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.3s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .nfc-physical-card:hover {
+      transform: translateY(-4px) scale(1.02);
+      border-color: var(--red);
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), 0 0 25px var(--red-glow);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .medical-cross-logo {
+      width: 28px;
+      height: 28px;
+      background: var(--red);
+      position: relative;
+      clip-path: polygon(35% 0%, 65% 0%, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0% 65%, 0% 35%, 35% 35%);
+      box-shadow: 0 0 8px var(--red);
+    }
+
+    .brand-name {
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+    }
+
+    .nfc-signal-waves {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .wave {
+      display: inline-block;
+      border-right: 2.5px solid var(--red);
+      border-radius: 50%;
+      height: 16px;
+      width: 16px;
+      opacity: 0.8;
+    }
+
+    .wave:nth-child(2) { height: 22px; width: 22px; }
+    .wave:nth-child(3) { height: 28px; width: 28px; }
+
+    /* Middle Vitals */
+    .card-body {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .mini-qr {
+      width: 74px;
+      height: 74px;
+      background: #fff;
+      padding: 5px;
+      border-radius: 4px;
+      display: grid;
+      place-items: center;
+    }
+
+    .mini-qr svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .card-vitals-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .vital-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .vital-pill.alert {
+      border-color: var(--red);
+      color: #ff7683;
+      background: rgba(225, 29, 46, 0.12);
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 10px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .patient-id-badge {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* Floating Tap Simulation Controls */
+    .tap-action-zone {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      gap: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 14px 28px;
+      cursor: pointer;
+      border: 2px solid #000;
+      box-shadow: 4px 4px 0px #000;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .btn-red {
+      background: var(--red);
+      color: #fff;
+      border-color: #fff;
+    }
+
+    .btn-red:hover {
+      background: var(--red-hover);
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px #000;
+    }
+
+    .btn-red:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px #000;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #fff;
+      border: 2px solid var(--border);
+      box-shadow: 4px 4px 0px #000;
+    }
+
+    .btn-outline:hover {
+      border-color: #fff;
+      transform: translate(-2px, -2px);
+    }
+
+    /* Dynamic Smartphone Screen Output */
+    .phone-mockup {
+      background: #000;
+      border: 3px solid #222;
+      border-radius: 36px;
+      padding: 16px;
+      box-shadow: 12px 12px 0px #000;
+      position: relative;
+    }
+
+    .phone-notch {
+      width: 120px;
+      height: 22px;
+      background: #111;
+      border-radius: 0 0 14px 14px;
+      margin: 0 auto 16px auto;
+    }
+
+    .phone-screen {
+      background: #121418;
+      border-radius: 24px;
+      padding: 20px;
+      min-height: 480px;
+      display: flex;
+      flex-direction: column;
+      font-family: var(--font-display);
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .tab-pills {
+      display: flex;
+      gap: 6px;
+      background: #0a0c0e;
+      padding: 4px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .tab-pill {
+      flex: 1;
+      text-align: center;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .tab-pill.active {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .telemetry-card {
+      background: #191d24;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .telemetry-card.danger {
+      border-left: 4px solid var(--red);
+    }
+
+    .telemetry-card.success {
+      border-left: 4px solid var(--green);
+    }
+
+    .code-box {
+      background: #090a0d;
+      border: 1px solid #272c37;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #7dd3fc;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .ripple-effect {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      background: rgba(225, 29, 46, 0.8);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      animation: ripple 0.8s ease-out forwards;
+    }
+
+    @keyframes ripple {
+      0% { width: 0; height: 0; opacity: 1; }
+      100% { width: 500px; height: 500px; opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Real-time Bar -->
+  <div class="ticker-bar">
+    <div><span class="live-dot"></span>LIFEQR HARDWARE LABS — NFC EMULATION ENGINE v2.4</div>
+    <div>ISO/IEC 14443-A | 13.56 MHz | NTAG424 DNA READY</div>
+  </div>
+
+  <div class="container">
+    <header class="header">
+      <div class="badge-sub">Hardware & Protocol Simulator</div>
+      <h1 class="title">LifeQR Smart NFC Emergency Card</h1>
+      <p class="subtitle">0.5-second contactless medical triage for ambulance crews and civilian bystanders.</p>
+    </header>
+
+    <div class="simulator-grid">
+      
+      <!-- Left Column: Interactive Physical Card -->
+      <div class="card-stage" id="cardStage">
+        
+        <div class="nfc-physical-card" id="cardElement" onclick="triggerCardTap()">
+          <div class="card-top">
+            <div class="brand-group">
+              <div class="medical-cross-logo"></div>
+              <span class="brand-name">LifeQR</span>
+            </div>
+            <div class="nfc-signal-waves" title="NFC Contactless Antenna Inside">
+              <span class="wave"></span>
+              <span class="wave"></span>
+              <span class="wave"></span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="mini-qr">
+              <!-- Visual Vector QR Representation -->
+              <svg viewBox="0 0 24 24" fill="#000">
+                <path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm8-2h2v2h-2v-2zm4 0h2v2h-2v-2zm-4 4h2v2h-2v-2zm4 0h2v2h-2v-2zm2-2h2v2h-2v-2zm0 4h2v2h-2v-2zM5 5h2v2H5V5zm12 0h2v2h-2V5zM5 17h2v2H5v-2z"/>
+              </svg>
+            </div>
+            <div class="card-vitals-stack">
+              <div class="vital-pill">
+                <span>BLOOD GROUP</span>
+                <strong style="color:#ff5260; font-size:12px;">O+ POSITIVE</strong>
+              </div>
+              <div class="vital-pill alert">
+                <span>ALLERGIES</span>
+                <strong>PENICILLIN (SEVERE)</strong>
+              </div>
+              <div class="vital-pill">
+                <span>MEDICATION</span>
+                <strong>ALBUTEROL (PRN)</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <div>
+              <span>HOLDER: </span><span class="patient-id-badge">RAHUL SHARMA</span>
+            </div>
+            <div>
+              <span>ID: </span><span class="patient-id-badge">RAH-D3200470</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulator Buttons -->
+        <div class="tap-action-zone">
+          <button class="btn btn-red" onclick="triggerCardTap()">
+            📲 Tap Card to Phone (Simulate)
+          </button>
+          <button class="btn btn-outline" id="webNfcBtn" onclick="testWebNfcApi()">
+            ⚡ Test Hardware Web NFC (Browser API)
+          </button>
+        </div>
+
+        <p style="margin-top: 14px; font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">
+          Click card or press button to simulate 13.56MHz induction tap.
+        </p>
+      </div>
+
+      <!-- Right Column: Smartphone Receiver Screen -->
+      <div class="phone-mockup">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" id="phoneScreen">
+          
+          <!-- Mode Tabs -->
+          <div class="tab-pills">
+            <div class="tab-pill active" onclick="switchView('bystander')">1. Bystander Tap</div>
+            <div class="tab-pill" onclick="switchView('paramedic')">2. EMT / Doctor</div>
+            <div class="tab-pill" onclick="switchView('offline')">3. Offline NDEF</div>
+          </div>
+
+          <!-- Dynamic Output View Container -->
+          <div id="viewContainer">
+            <!-- Populated via JavaScript -->
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let currentView = 'bystander';
+    let tapCount = 0;
+
+    // Web Audio Chime Synthesis for Realistic Contactless Feedback
+    function playNfcChime() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        
+        // Two-tone cheerful NFC induction ding (880Hz -> 1760Hz)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.12);
+        
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      } catch (e) {
+        console.log('Audio chime not available');
+      }
+    }
+
+    function triggerCardTap() {
+      tapCount++;
+      playNfcChime();
+
+      // Trigger visual ripple on card
+      const stage = document.getElementById('cardStage');
+      const ripple = document.createElement('div');
+      ripple.className = 'ripple-effect';
+      stage.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 800);
+
+      // Vibration haptic (if device supports)
+      if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+
+      renderView();
+    }
+
+    function switchView(viewName) {
+      currentView = viewName;
+      document.querySelectorAll('.tab-pill').forEach(pill => pill.classList.remove('active'));
+      const activeIdx = viewName === 'bystander' ? 0 : (viewName === 'paramedic' ? 1 : 2);
+      document.querySelectorAll('.tab-pill')[activeIdx].classList.add('active');
+      renderView();
+    }
+
+    function renderView() {
+      const container = document.getElementById('viewContainer');
+
+      if (currentView === 'bystander') {
+        container.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-family:var(--font-mono); font-size:11px; color:#10B981;">● NFC DISPATCH ACTIVE</span>
+            <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">Taps: ${tapCount}</span>
+          </div>
+
+          <div class="telemetry-card danger">
+            <div style="font-size:11px; color:#ff7683; font-weight:700;">CRITICAL EMERGENCY VITALS</div>
+            <div style="font-size:22px; font-weight:900; margin:4px 0;">Blood Group: O+ POSITIVE</div>
+            <div style="font-size:13px; color:#fff;">⚠️ Severe Anaphylaxis: <strong>Penicillin & Peanuts</strong></div>
+          </div>
+
+          <div class="telemetry-card">
+            <div style="font-size:11px; color:var(--text-muted); font-weight:700;">EMERGENCY CONTACTS (ICE)</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+              <div>
+                <strong>Priya Sharma</strong> (Spouse)<br>
+                <span style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted);">+91 98765 43211</span>
+              </div>
+              <a href="tel:+919876543211" style="background:#10B981; color:#fff; text-decoration:none; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:700;">CALL</a>
+            </div>
+          </div>
+
+          <div class="telemetry-card" style="border:1px dashed var(--red);">
+            <div style="font-size:12px; color:#ff7683; font-weight:700; margin-bottom:6px;">AUTOMATED DISPATCH LINK</div>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+              Tapping card captured GPS coordinates [19.0760° N, 72.8777° E].
+            </p>
+            <button onclick="alert('SOS Broadcast emitted to LifeQR crew:all room!')" style="width:100%; background:var(--red); color:#fff; border:none; padding:10px; font-weight:800; font-family:var(--font-display); cursor:pointer;">
+              🚨 BROADCAST SOS TO AMBULANCE CREW
+            </button>
+          </div>
+        `;
+      } else if (currentView === 'paramedic') {
+        container.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-family:var(--font-mono); font-size:11px; color:#10B981;">🛡️ EMT SESSION VERIFIED</span>
+            <span style="font-family:var(--font-mono); font-size:11px; color:#7dd3fc;">JWT: CREW_VERIFIED</span>
+          </div>
+
+          <div class="telemetry-card success">
+            <div style="font-size:11px; color:#34d399; font-weight:700;">FULL CLINICAL EHR DECRYPTED</div>
+            <div style="font-size:18px; font-weight:800; margin:2px 0;">Patient: Rahul Sharma (34M)</div>
+            <div style="font-size:12px; color:var(--text-muted);">Card UID: 04:A2:3B:5F:89:C0:11 (NTAG424 DNA)</div>
+          </div>
+
+          <div class="telemetry-card">
+            <div style="font-size:11px; color:var(--text-muted); font-weight:700;">ACTIVE MEDICATIONS & DOSAGES</div>
+            <ul style="font-size:12px; margin-top:6px; padding-left:18px; line-height:1.6;">
+              <li>Albuterol Inhaler (90mcg PRN for bronchospasm)</li>
+              <li>Cetirizine 10mg OD (Allergic rhinitis)</li>
+            </ul>
+          </div>
+
+          <div class="telemetry-card danger">
+            <div style="font-size:11px; color:#ff7683; font-weight:700;">AI CLINICAL CONTRAINDICATION GUARD</div>
+            <p style="font-size:12px; color:#fff; margin-top:4px;">
+              🛑 <strong>DO NOT ADMINISTER:</strong> Cephalosporin / Beta-lactam antibiotics. Cross-reactivity risk with Penicillin.
+            </p>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-family:var(--font-mono); font-size:11px; color:#f59e0b;">📡 OFFLINE EEPROM MEMORY</span>
+            <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">888 Bytes NDEF</span>
+          </div>
+
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">
+            Zero cellular connection fallback payload decoded directly from physical tag:
+          </p>
+
+          <div class="code-box">LIFEQR:v1
+ID:RAH-D3200470
+NAME:Rahul Sharma
+BLOOD:O+
+ALLERGIES:Penicillin(Anaphylaxis),Peanuts
+MEDS:Albuterol Inhaler(PRN)
+ICE1:Priya Sharma:+919876543211
+ICE2:Dr Amit Sharma:+919876543212
+CHECKSUM:SHA256:7f4a2b9e</div>
+
+          <div style="margin-top:14px; font-family:var(--font-mono); font-size:11px; color:#10B981;">
+            ✓ Status: Cryptographic Signature OK (Offline Validated)
+          </div>
+        `;
+      }
+    }
+
+    // Modern Web NFC Browser API Tester
+    async function testWebNfcApi() {
+      if (!('NDEFReader' in window)) {
+        alert('Web NFC API is not available on this desktop browser. Web NFC is supported in Chrome/Edge on Android (v89+). This simulator has emulated the complete NFC protocol stack!');
+        return;
+      }
+
+      try {
+        const ndef = new NDEFReader();
+        alert('Approaching NFC Reader. Hold physical card near device...');
+        await ndef.scan();
+        ndef.onreading = event => {
+          alert(`NFC Card Detected! Serial: ${event.serialNumber}`);
+          triggerCardTap();
+        };
+      } catch (error) {
+        alert(`Web NFC Error: ${error.message}`);
+      }
+    }
+
+    // Initialize default view
+    renderView();
+  </script>
+</body>
+</html>

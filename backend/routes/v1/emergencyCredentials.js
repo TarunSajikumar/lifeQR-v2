@@ -9,15 +9,16 @@ const EmergencyCredential = require('../../models/EmergencyCredential');
 const { authenticateToken } = require('../../middleware/auth');
 const { getFrontendUrl } = require('../../utils/frontendUrl');
 const { logEvent } = require('../../services/securityLogger');
+const { resolvePatientProfile } = require('../../utils/patientResolver');
 
 const rateLimit = require('express-rate-limit');
 const router = express.Router();
 
 // Rate limiting for emergency token resolution (brute force protection)
 const emergencyLookupLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // limit each IP to 20 lookups per hour
-  message: "Too many emergency access attempts. Please try again later.",
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // allow up to 200 lookups per 15 minutes for rescuers & testing
+  message: { error: "Too many emergency access attempts. Please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -38,10 +39,47 @@ async function getPatientProfileWithUser(patientId) {
   return PatientProfile.findById(patientId).populate('userId', 'name gender phone address city state profilePhoto email');
 }
 
-function buildEmergencyProfileDTO(profile, user) {
+async function buildEmergencyProfileDTO(profile, user) {
+  let reports = [];
+  try {
+    if (Array.isArray(profile?.reports) && profile.reports.length > 0) {
+      reports = profile.reports.map(r => ({
+        id: r._id,
+        title: r.originalName || r.filename || 'Medical Report',
+        category: r.category || 'Diagnostic Report',
+        recordDate: r.uploadedAt,
+        fileUrl: r.url || `/uploads/${r.filename}`,
+        description: r.description || ''
+      }));
+    }
+    const MedicalRecord = require('../../models/MedicalRecord');
+    const dbRecords = await MedicalRecord.find({
+      $or: [{ userId: user?._id }, { patientProfileId: profile?._id }]
+    }).sort({ recordDate: -1 }).limit(20).lean();
+    if (dbRecords && dbRecords.length > 0) {
+      const dbMapped = dbRecords.map(r => ({
+        id: r._id,
+        title: r.title,
+        category: r.category,
+        recordDate: r.recordDate,
+        fileUrl: r.fileUrl,
+        doctorOrHospital: r.doctorOrHospital,
+        notes: r.notes
+      }));
+      reports = [...reports, ...dbMapped];
+    }
+  } catch (e) {
+    console.warn('Could not populate medical records for emergency profile:', e.message);
+  }
+
+  const fullAddress = [user?.address, user?.city, user?.state].filter(Boolean).join(', ') || profile?.address || 'Address on file';
+
   return {
     photo: user?.profilePhoto || '',
     firstName: user?.name || '',
+    name: user?.name || '',
+    phone: user?.phone || profile?.phone || '',
+    address: fullAddress,
     age: profile?.age || null,
     gender: user?.gender || '',
     bloodGroup: profile?.bloodGroup || '',
@@ -53,8 +91,20 @@ function buildEmergencyProfileDTO(profile, user) {
       phone: contact?.phone || '',
       relationship: contact?.relationship || ''
     })),
-    criticalWarnings: [] ,
-    organDonor: false,
+    qrCodeId: profile?.qrCodeId || '',
+    patientId: profile?._id || '',
+    medicalHistory: (profile?.medicalHistory || []).map(h => ({
+      type: h.type || 'vital',
+      title: h.title || '',
+      description: h.description || '',
+      timestamp: h.timestamp || h.createdAt || null,
+      author: h.author?.name || 'Medical Responder'
+    })),
+    reports: reports,
+    insuranceProvider: profile?.insuranceProvider || '',
+    insurancePolicyNumber: profile?.insurancePolicyNumber || '',
+    criticalWarnings: [],
+    organDonor: profile?.organDonor || false,
     lastUpdatedAt: profile?.updatedAt || profile?.createdAt || null
   };
 }
@@ -230,23 +280,17 @@ router.post('/:id/rotate', authenticateToken, async (req, res) => {
 router.get('/:token/photo', async (req, res) => {
   try {
     const token = req.params.token;
-    const tokenHash = hashToken(token);
-    const credential = await EmergencyCredential.findOne({ tokenHash, status: 'ACTIVE' });
-    if (!credential) {
-      return res.status(404).json({ error: 'Emergency credential not found or inactive' });
-    }
-
-    const profile = await getPatientProfileWithUser(credential.patientId);
+    const profile = await resolvePatientProfile(token, 'userId');
     if (!profile || !profile.userId) {
-      return res.status(404).json({ error: 'Patient profile not found' });
+      return res.status(404).json({ error: 'Patient profile not found or emergency credential inactive' });
     }
 
-    const securePhotoPath = path.join(__dirname, '../../uploads/photos', path.basename(profile.userId.profilePhoto || ''));
     const photoUrl = profile.userId.profilePhoto || '';
     if (!photoUrl) {
       return res.status(404).json({ error: 'No emergency photo available' });
     }
 
+    const securePhotoPath = path.join(__dirname, '../../uploads/photos', path.basename(photoUrl));
     if (!fs.existsSync(securePhotoPath)) {
       return res.status(404).json({ error: 'Emergency photo not found' });
     }
@@ -265,34 +309,27 @@ router.get('/:token', emergencyLookupLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Emergency token is required' });
     }
 
-    const tokenHash = hashToken(token);
-    let credential = await EmergencyCredential.findOne({ tokenHash, status: 'ACTIVE' });
-    let profile = null;
+    const profile = await resolvePatientProfile(token, 'userId');
+    if (!profile || !profile.userId) {
+      return res.status(404).json({ error: 'Patient profile not found or emergency credential inactive' });
+    }
 
+    const credential = profile._matchedCredential || null;
     if (credential) {
       if (credential.expiresAt && new Date(credential.expiresAt) < new Date()) {
         credential.status = 'EXPIRED';
         await credential.save();
         return res.status(410).json({ error: 'Emergency credential has expired' });
       }
-
-      profile = await getPatientProfileWithUser(credential.patientId);
       credential.lastUsedAt = new Date();
       await credential.save();
-    } else {
-      // Fallback: check if token is a direct PatientProfile qrCodeId
-      profile = await PatientProfile.findOne({ qrCodeId: token }).populate('userId', 'name gender phone address city state profilePhoto email');
     }
 
-    if (!profile || !profile.userId) {
-      return res.status(404).json({ error: 'Patient profile not found or emergency credential inactive' });
-    }
-
-    const dto = buildEmergencyProfileDTO(profile, profile.userId);
+    const dto = await buildEmergencyProfileDTO(profile, profile.userId);
     logEvent('EMERGENCY_CREDENTIAL_ACCESS', {
       patientId: profile.userId._id || profile.userId,
-      credentialId: credential._id,
-      credentialType: credential.credentialType,
+      credentialId: credential?._id || profile.qrCodeId,
+      credentialType: credential?.credentialType || 'QR',
       accessType: 'QR/NFC',
       timestamp: new Date().toISOString(),
       ipHash: crypto.createHash('sha256').update(req.ip || 'unknown').digest('hex'),

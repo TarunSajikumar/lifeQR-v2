@@ -52,4 +52,26 @@
 - **Capabilities**: Inpatient Admissions Registry, Ward & Bed Allocation Matrix (Trauma Bays, ICU, General Wards), On-Duty Specialist Roster, Emergency Blood Bank & Supplies Vault, Fast Patient Intake via LifeQR auto-fill.
 - **Database Models**: `Hospital.js`, `PatientProfile.js`, `Doctor.js`, `User.js`
 
+### 9. Smart Emergency NFC Card System
+- **Module Directory**: `nfc-card/`
+- **Documentation**: [README.md](file:///c:/Users/USER/Downloads/lifeqr-complete/nfc-card/README.md), [IDEAS_AND_FEATURES.md](file:///c:/Users/USER/Downloads/lifeqr-complete/nfc-card/IDEAS_AND_FEATURES.md), [ARCHITECTURE.md](file:///c:/Users/USER/Downloads/lifeqr-complete/nfc-card/ARCHITECTURE.md)
+- **Interactive Simulator**: [demo-simulator.html](file:///c:/Users/USER/Downloads/lifeqr-complete/nfc-card/demo-simulator.html)
+- **Hardware & Chip Standards**: ISO/IEC 14443 Type A, 13.56 MHz, NXP NTAG216 (888B offline EEPROM), NTAG424 DNA (AES-128 SUN CMAC)
+- **Database Models & Schemas**: `nfc-card/schemas/NfcCard.js`, `nfc-card/schemas/nfcCard.schema.json`
+- **Features**: 0.5s zero-login tap, dual-tier privacy (bystander vs verified paramedic), offline NDEF emergency telegram, tap-to-dispatch geolocated SOS, Web NFC in-browser flashing.
+
+### 10. Help & Support Ticket Clearinghouse
+- **Frontend Views**: Dedicated Help Modals across [patient_dashboard.html](file:///c:/Users/USER/Downloads/lifeqr-complete/app/patient_dashboard.html), [doctor_dashboard.html](file:///c:/Users/USER/Downloads/lifeqr-complete/app/doctor_dashboard.html), [CrewAmbulance_dashboard.html](file:///c:/Users/USER/Downloads/lifeqr-complete/app/CrewAmbulance_dashboard.html) and Admin Clearinghouse tab in [admin_dashboard.html](file:///c:/Users/USER/Downloads/lifeqr-complete/app/admin_dashboard.html).
+- **Frontend Logic**: `patient-dashboard.js`, `doctor-dashboard.js`, `crew-dashboard.js`, `admin-dashboard.js`
+- **Backend Route**: [helpTickets.js](file:///c:/Users/USER/Downloads/lifeqr-complete/backend/routes/v1/helpTickets.js) (`/api/v1/help-tickets`)
+- **Database Model**: `backend/models/HelpTicket.js`
+- **Features**: Category & priority tagging, auto-linked patient QR code context, live Socket.IO alerts to `admin:all` and user rooms, status filtering (`PENDING`, `IN_PROGRESS`, `RESOLVED`), and 1-click admin resolution.
+
+### 11. Universal Admin User Profile Handling & Troubleshooting System
+- **Frontend View**: `#adminUserProfileModal` in [admin_dashboard.html](file:///c:/Users/USER/Downloads/lifeqr-complete/app/admin_dashboard.html)
+- **Frontend Logic**: `admin-dashboard.js` (`openAdminUserProfile()`, `renderRoleSpecificForm()`, `handleAdminProfileSave()`, `adminRegenerateUserQR()`)
+- **Backend Routes**: [admin.js](file:///c:/Users/USER/Downloads/lifeqr-complete/backend/routes/v1/admin.js) (`GET /api/v1/admin/users`, `GET /api/v1/admin/users/:id/profile`, `PUT /api/v1/admin/users/:id/profile`, `POST /api/v1/admin/users/:id/regenerate-qr`)
+- **Capabilities**: Universal management for Patients (blood group, age, allergies, chronic conditions, medications, emergency contacts, QR badge regeneration), Doctors (specialization, license, hospital, council, verification status), Ambulance Crew (vehicle number, crew type, station, organization), and Administrators; password reset override with `UserSecurity` synchronization; seamless ticket-to-profile troubleshooting with auto-resolution notes.
+
+
 

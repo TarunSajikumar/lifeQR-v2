@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LifeQrNfcCard",
+  "description": "Validation schema for LifeQR Smart Emergency NFC Cards and provisioned payloads",
+  "type": "object",
+  "required": [
+    "cardUid",
+    "cardId",
+    "userId",
+    "patientProfileId",
+    "chipType",
+    "formFactor",
+    "status"
+  ],
+  "properties": {
+    "cardUid": {
+      "type": "string",
+      "pattern": "^([0-9A-Fa-f]{2}[:-]){3,7}([0-9A-Fa-f]{2})$",
+      "description": "Unique physical hardware identifier of the NFC chip in hexadecimal"
+    },
+    "cardId": {
+      "type": "string",
+      "pattern": "^LQR-NFC-[A-Z0-9]{5,10}$",
+      "description": "LifeQR customer facing serialized card ID"
+    },
+    "userId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{24}$",
+      "description": "MongoDB ObjectID of the card owner"
+    },
+    "patientProfileId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{24}$",
+      "description": "MongoDB ObjectID of the patient profile"
+    },
+    "chipType": {
+      "type": "string",
+      "enum": ["NTAG213", "NTAG215", "NTAG216", "NTAG424_DNA", "DESFIRE_EV3"],
+      "default": "NTAG216"
+    },
+    "formFactor": {
+      "type": "string",
+      "enum": ["CARD", "WRISTBAND", "STICKER", "KEYFOB"],
+      "default": "CARD"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ACTIVE", "LOCKED_BY_USER", "REPORTED_LOST", "DECOMMISSIONED"],
+      "default": "ACTIVE"
+    },
+    "privacyTierSettings": {
+      "type": "object",
+      "properties": {
+        "allowBystanderAccess": { "type": "boolean", "default": true },
+        "showBloodGroup": { "type": "boolean", "default": true },
+        "showAllergies": { "type": "boolean", "default": true },
+        "showMedications": { "type": "boolean", "default": true },
+        "showEmergencyContacts": { "type": "boolean", "default": true },
+        "showFullClinicalNotes": { "type": "boolean", "default": false },
+        "autoNotifyFamilyOnTap": { "type": "boolean", "default": true }
+      }
+    },
+    "offlinePayload": {
+      "type": "object",
+      "properties": {
+        "lastSyncedAt": { "type": "string", "format": "date-time" },
+        "checksum": { "type": "string" },
+        "syncedVersion": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

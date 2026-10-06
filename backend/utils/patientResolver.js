@@ -48,10 +48,18 @@ async function resolvePatientProfile(identifier, populateQuery = '') {
   });
 
   if (credential && credential.patientId) {
-    let credProfileQuery = PatientProfile.findById(credential.patientId);
+    let credProfileQuery = PatientProfile.findOne({
+      $or: [
+        { _id: credential.patientId },
+        { userId: credential.patientId }
+      ]
+    });
     if (populateQuery) credProfileQuery = credProfileQuery.populate(populateQuery);
     profile = await credProfileQuery;
-    if (profile) return profile;
+    if (profile) {
+      profile._matchedCredential = credential;
+      return profile;
+    }
   }
 
   // 4. Check if valid ObjectId
@@ -65,6 +73,52 @@ async function resolvePatientProfile(identifier, populateQuery = '') {
     if (populateQuery) idProfileQuery = idProfileQuery.populate(populateQuery);
     profile = await idProfileQuery;
     if (profile) return profile;
+  }
+
+  // 5. Fallback to User collection for legacy patients missing PatientProfile
+  try {
+    const User = require('../models/User');
+    let legacyUser = await User.findOne({
+      $or: [
+        { qrCodeId: cleaned },
+        { qrCodeId: new RegExp('^' + cleaned.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') }
+      ],
+      role: 'patient'
+    });
+
+    if (!legacyUser && mongoose.Types.ObjectId.isValid(cleaned)) {
+      legacyUser = await User.findOne({ _id: cleaned, role: 'patient' });
+    }
+
+    if (legacyUser && legacyUser.role === 'patient') {
+      let p = await PatientProfile.findOne({ userId: legacyUser._id });
+      if (!p) {
+        const contacts = [];
+        if (legacyUser.emergencyContact && legacyUser.emergencyContact.phone) {
+          contacts.push({
+            name: legacyUser.emergencyContact.name || 'Emergency Contact',
+            phone: legacyUser.emergencyContact.phone,
+            relationship: legacyUser.emergencyContact.relationship || 'Next of Kin',
+            priority: 1
+          });
+        }
+        p = await PatientProfile.create({
+          userId: legacyUser._id,
+          qrCodeId: legacyUser.qrCodeId || cleaned,
+          age: legacyUser.age || null,
+          bloodGroup: legacyUser.bloodGroup || '',
+          healthIssues: legacyUser.healthIssues || '',
+          allergies: legacyUser.allergies || '',
+          medications: legacyUser.medications || '',
+          emergencyContacts: contacts,
+          publicProfile: true
+        });
+      }
+      if (populateQuery) p = await PatientProfile.findById(p._id).populate(populateQuery);
+      return p;
+    }
+  } catch (err) {
+    console.error('Error in resolvePatientProfile legacy User fallback:', err);
   }
 
   return null;

@@ -4,9 +4,9 @@
   "description": "Emergency Medical QR Code System",
   "main": "backend/server.js",
   "scripts": {
-    "start": "cd backend && node server.js",
-    "dev": "cd backend && nodemon server.js",
-    "install-all": "cd backend && npm install",
+    "start": "npm --prefix backend start",
+    "dev": "npm --prefix backend run dev",
+    "install-all": "npm --prefix backend install",
     "sync": "node scripts/sync-frontend.js",
     "sync:watch": "node scripts/sync-frontend.js --watch",
     "build-css": "node scripts/sync-frontend.js && npx tailwindcss -i ./website/src/input.css -o ./website/dist/output.css --minify && node scripts/sync-frontend.js"
@@ -24,5 +24,8 @@
   },
   "devDependencies": {
     "tailwindcss": "^3.4.1"
+  },
+  "dependencies": {
+    "puppeteer-core": "^25.12.0"
   }
 }

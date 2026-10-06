@@ -46,6 +46,19 @@
 
 ---
 
+## 📚 Documentation
+
+The project includes complete engineering and product documentation located in [`docs/`](file:///c:/Users/tarun/Downloads/lifeqr-complete/docs):
+
+- 📄 [**PRD.md**](file:///c:/Users/tarun/Downloads/lifeqr-complete/docs/PRD.md) — Product Requirements Document, user personas, emergency workflows, and feature specifications.
+- 🏛️ [**ARCHITECTURE.md**](file:///c:/Users/tarun/Downloads/lifeqr-complete/docs/ARCHITECTURE.md) — System topology, directory separation (`website/` vs `app/`), database schemas, and Socket.IO real-time dispatch.
+- 📜 [**RULES.md**](file:///c:/Users/tarun/Downloads/lifeqr-complete/docs/RULES.md) — Development rules, security standards (no plain passwords), sync protocols, and coding guidelines.
+- 🎨 [**DESIGN.md**](file:///c:/Users/tarun/Downloads/lifeqr-complete/docs/DESIGN.md) — Swiss Brutalist design system, color tokens, typography, 2px borders, and dark/light mode synchronization.
+- 📋 [**TASKS.md**](file:///c:/Users/tarun/Downloads/lifeqr-complete/docs/TASKS.md) — Implementation roadmap, completed milestones (Phases 1–4), and active backlog (Phase 5).
+- 🧠 [**MEMORY.md**](file:///c:/Users/tarun/Downloads/lifeqr-complete/docs/MEMORY.md) — Working memory bank, verified test accounts, 14 resolved critical pitfalls, and quick reference.
+
+---
+
 Made with ❤️ for saving lives, one scan at a time.
 
 **LifeQR - When every second counts.**

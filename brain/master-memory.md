@@ -22,7 +22,9 @@
   - `emergency_access.html` & `js/emergency-access.js` (Zero-login emergency QR page)
 - **Backend API (`backend/`)**: Node.js + Express API (`/api/v1/...`), MongoDB Mongoose schemas (`User`, `UserSecurity`, `PatientProfile`, `EmergencyContact`, `QRProfile`, `MedicalRecord`, `Doctor`, `AmbulanceCrew`, `Hospital`, `Consultation`, `Prescription`, `SOS`, `ERHandover`, `AuditLog`), Socket.IO real-time event server, Helmet security headers, rate limiters, JWT cookie auth. Note: `UserSecurity` synchronizes with `users` during registration/resets to store credentials in the `'user securities'` collection.
 - **Notification Services**: Integrated OneSignal for multi-platform push notifications and Telegram Bot support for professional crew dispatch.
-- **AI Clinical Engine**: Integrated logic for AI Patient Summaries, Medical Scribe (Auto-note), Differential Diagnosis, and Rx Safety validation.
+- **AI Clinical & Verification Engine**: Integrated logic for AI Deep Patient Analysis & Risk Stratification, Medical Scribe modal dictation, Differential Diagnosis copilot with 1-click apply, Rx Safety cross-checking against lethal contraindications, and AI Credential Sentinel (practitioner license audits in `admin_dashboard.html`). All seamlessly integrated into `doctor_dashboard.html` with Swiss Editorial styling and 1-click consultation form population.
+- **Help & Support Ticket Clearinghouse**: End-to-end ticketing system (`HelpTicket` Mongoose model, `/api/v1/help-tickets` REST API, Socket.IO live notifications to `admin:all` and user rooms). Patients, doctors, and crew have dedicated Help modals with auto-referenced patient QR context to file issues (e.g. damaged QR badges, urgent medication safety checks, system overrides). Admins review, prioritize, filter, and resolve tickets with audit notes in `admin_dashboard.html`.
+- **Universal Admin User Profile Handling & Troubleshooting System**: Multi-type administrative profile manager (`#adminUserProfileModal`, `GET/PUT /api/v1/admin/users/:id/profile`, `POST /api/v1/admin/users/:id/regenerate-qr`). Empowers admins to inspect and troubleshoot any user type (`patient`, `doctor`, `crew`, `admin`), edit clinical parameters (allergies, health issues, medications, emergency contacts), rotate/regenerate QR codes, manage medical council licenses, reset locked passwords with `UserSecurity` synchronization, and auto-resolve associated help tickets directly upon saving.
 
 ---
 
@@ -53,4 +55,5 @@
 ## ⚠️ Known Pitfalls & Fixes
 
 - **Dotenv Path**: Always specify `{ path: path.join(__dirname, '.env') }` when requiring `dotenv` in `backend/` scripts.
+- **Nodemailer Dependency**: `backend/services/emailService.js` incorporates safe fallback mocking if SMTP credentials or `nodemailer` are absent.
 - **Mongoose Index Warnings**: `qrCodeId` has schema index `patientProfileSchema.index({ qrCodeId: 1 })`; avoid duplicate `index: true` inline declarations.

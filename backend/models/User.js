@@ -77,7 +77,15 @@ const userSchema = new mongoose.Schema({
   isProfileComplete: {
     type: Boolean,
     default: false
-  }
+  },
+  qrCode: String,
+  qrCodeId: String,
+  bloodGroup: String,
+  age: Number,
+  allergies: String,
+  medications: String,
+  healthIssues: String,
+  emergencyContact: mongoose.Schema.Types.Mixed
 }, {
   timestamps: true
 });

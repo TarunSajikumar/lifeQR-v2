@@ -1,9 +1,14 @@
-const nodemailer = require("nodemailer");
-require("dotenv").config();
+let nodemailer = null;
+try {
+  nodemailer = require("nodemailer");
+} catch (e) {
+  // nodemailer will use dev mock
+}
+require("dotenv").config({ path: require("path").join(__dirname, "../.env") });
 
 let transporter = null;
 
-if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+if (nodemailer && process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
   transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || "587"),

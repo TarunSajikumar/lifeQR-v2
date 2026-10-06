@@ -65,7 +65,71 @@
 - **Root Cause**: Client-side JavaScript modules (`patient-dashboard.js`, `crew-dashboard.js`, `doctor-dashboard.js`, `er-dashboard.js`, `admin-dashboard.js`, `pwa-install.js`) dynamically created and injected HTML template strings containing legacy Tailwind classes (`rounded-2xl`, `bg-purple-50`, `bg-teal-50`, `bg-slate-900`, `shadow-xs`).
 - **Fix**: Systematically audited and refactored all dynamic JavaScript template injectors across all dashboards to use 2px solid borders (`border-2 border-[#111111]` / `border-2 border-[#E11D2E]`), hard offset drop-shadows (`shadow-[4px_4px_0px_#111111]`, `shadow-[6px_6px_0px_#111111]`), uppercase `Archivo Black` (`font-black`) headings, `JetBrains Mono` (`font-mono`) badges/telemetry, and semantic buttons (`btn-primary`, `btn-secondary`, `btn-danger`). Re-synchronized `website/` and `app/`.
 - **Status**: Resolved.
+## Issue 012: Cross-Device QR Code Scanning & Emergency Content Resolution Failure
+- **Symptom**: Scanning patient QR badges from external devices (e.g. mobile phones on Wi-Fi) failed to load the emergency profile, resulting in network connection errors ("Site can't be reached") or server 500 error ("Failed to resolve emergency access token").
+- **Root Cause**:
+  1. `FRONTEND_URL` in `.env` held an obsolete IP (`192.168.100.82:5000`) instead of the host machine's active network IP (`192.168.100.144`), or defaulted to `localhost:5000` which on external phones points to the phone's loopback rather than the host server.
+  2. `backend/routes/v1/emergencyCredentials.js` threw `TypeError: Cannot read properties of null (reading '_id')` in `logEvent` when resolving by `qrCodeId` because `credential` was null in the fallback branch, returning 500 to the client.
+  3. `backend/generateQR.js` attempted to read `user.qrCodeId` from the `User` schema (where it was `undefined`) instead of `PatientProfile.qrCodeId`.
+- **Fix**:
+  1. Enhanced `backend/utils/frontendUrl.js` with `getLocalIpAddress()` via `os.networkInterfaces()` to detect the live non-internal IPv4 address and automatically resolve reachable network URLs for QR codes.
+  2. Updated `backend/routes/v1/emergencyCredentials.js` to integrate `resolvePatientProfile`, safely read `credentialId: credential?._id || profile.qrCodeId`, support case-insensitive lookups, and allow photo access for all QR formats.
+  3. Corrected `backend/generateQR.js` and `patientProfile.js` to read `qrCodeId` from `PatientProfile` and re-generated the live badge for `patient@lifeqr.com`.
+- **Status**: Resolved.
 
+## Issue 013: Server Startup Crash Due to Missing `nodemailer` Dependency
+- **Symptom**: Executing `node server.js` failed immediately on boot with `Error: Cannot find module 'nodemailer' Require stack: .../services/emailService.js`.
+- **Root Cause**: `nodemailer` was imported unconditionally in `backend/services/emailService.js` without being listed in `backend/package.json` dependencies. In addition, an accidental user string was present at the end of `backend/.env`.
+- **Fix**: Wrapped `nodemailer` loading in a safe `try-catch` with automatic fallback to mock console email dispatch, corrected the `.env` path resolution to `{ path: path.join(__dirname, "../.env") }`, cleaned up `backend/.env`, and installed `nodemailer` with `--save` into `backend/package.json`.
+- **Status**: Resolved.
 
+## Issue 014: `npm run dev` Failure from Workspace Root
+- **Symptom**: Running `npm run dev` from workspace root failed with `'nodemon' is not recognized as an internal or external command, operable program or batch file` or `❌ Port 5000 is already in use`.
+- **Root Cause**: 
+  1. The root `package.json` defined `"dev": "cd backend && nodemon server.js"`. When executing root scripts on Windows, `npm` only injects root `node_modules/.bin` into PATH, leaving `backend/node_modules/.bin/nodemon` unresolved.
+  2. A previous background server instance was running on port 5000, causing nodemon to hit `EADDRINUSE`.
+- **Fix**: Replaced `"cd backend && nodemon server.js"` with `"npm --prefix backend run dev"` (and `"start": "npm --prefix backend start"`) in root [`package.json`](file:///c:/Users/tarun/Downloads/lifeqr-complete/package.json), set `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force` to prevent PowerShell script execution blocking on `npm.ps1`, and terminated background instances on port 5000.
+- **Status**: Resolved.
 
+## Issue 015: Doctor AI Copilot Output Box Remaining Hidden
+- **Symptom**: In `doctor_dashboard.html`, clicking "AI Clinical Summary", "Medical Scribe", "Differential Diagnosis", "Rx Safety", or "Auto-SOAP Note" executed backend requests, but the output box never appeared on screen.
+- **Root Cause**: `doctor_dashboard.html` defines the output container as `id="aiClinicalOutputContainer"`, while `doctor-dashboard.js` strictly queried `document.getElementById('aiOutputContainer')`, resulting in `null` and uncaught TypeError on `classList.remove('hidden')`.
+- **Fix**: Created helper `getAiContainer()` in `doctor-dashboard.js` that checks both `aiClinicalOutputContainer` and `aiOutputContainer` before mutating DOM.
+- **Status**: Resolved.
 
+## Issue 016: Admin Dashboard JavaScript Crash on Uncaught Null Property Access
+- **Symptom**: In `admin_dashboard.html`, statistics cards failed to complete loading and the pending practitioner verification queue stayed blank.
+- **Root Cause**: `admin-dashboard.js` line 47 executed `document.getElementById('statTotalSos').textContent = data.stats.sos;` without checking if `#statTotalSos` existed in the HTML. Because `#statTotalSos` was absent, an uncaught TypeError aborted `loadAdminStats()` mid-execution.
+- **Fix**: Added defensive null guard `if (document.getElementById('statTotalSos'))` before assigning textContent.
+- **Status**: Resolved.
+
+## Issue 017: Ambulance Dispatch HUD Dead Google Maps Navigation Button
+- **Symptom**: In `CrewAmbulance_dashboard.html`, clicking "Open Google Maps" on the patient radar map did nothing or navigated to an empty URL.
+- **Root Cause**: The anchor tag `#gmapsNavBtn` had `href=""`, and `renderEmergencyMap(lat, lng)` initialized the Leaflet radar but never assigned coordinates to the anchor.
+- **Fix**: Updated `renderEmergencyMap(lat, lng)` in `crew-dashboard.js` to dynamically set `gmapsBtn.href = 'https://maps.google.com/?q=' + lat + ',' + lng`.
+- **Status**: Resolved.
+
+## Issue 018: Missing Master Test Accounts in Active Database
+- **Symptom**: Attempting to log in as `admin@lifeqr.com` or `er@lifeqr.com` failed with 401 "Invalid email or password"; `doctor@lifeqr.com` and `crew@lifeqr.com` remained stuck in `PENDING` verification status.
+- **Root Cause**: Test accounts defined in `TEST_CREDENTIALS.md` were never seeded into the live MongoDB collection.
+- **Fix**: Created and executed `backend/seed_master_accounts.js`, creating `admin@lifeqr.com` and `er@lifeqr.com` and elevating `doctor@lifeqr.com` and `crew@lifeqr.com` to `VERIFIED` with `Password@123`.
+- **Status**: Resolved.
+
+## Issue 019: Automated Browser Testing Multi-Role Session Leakage & Keystroke State
+- **Symptom**: During automated headful browser testing across multiple portals (Patient -> Doctor -> Ambulance Crew), the browser timed out waiting for role-specific dashboard elements or threw `401 Unauthorized` during login form submission.
+- **Root Cause**:
+  1. Consecutive `page.type()` calls in single-page applications without clearing existing input values concatenated keystrokes (e.g. `patient@lifeqr.comdoctor@lifeqr.com`), triggering login rejections.
+  2. Attempting to clear `localStorage` while on `about:blank` triggered `DOMException: SecurityError: Access is denied for this document`.
+  3. Single browser contexts shared HTTP-only authentication cookies across role transitions, triggering client-side `auth-guard.js` auto-redirects before new credentials could be submitted.
+- **Fix**: Upgraded browser automation test suites to utilize `browser.createBrowserContext()` for each role transition, providing 100% session isolation with clean cookies, isolated local storage, and independent page lifecycles.
+## Issue 020: Stale Host IP & Unsynchronized Legacy User Schema Resulting in ERR_CONNECTION_TIMED_OUT on Mobile QR Scan
+- **Symptom**: Scanning patient QR badges (such as `SUJ04O`) with mobile cameras / Google Lens navigated to `http://192.168.100.82:5000/emergency_access.html?id=SUJ04O` which hung and failed with `ERR_CONNECTION_TIMED_OUT` ("192.168.100.82 took too long to respond"). Furthermore, the patient dashboard rendered blank clinical vitals (blood group, allergies, medications, emergency contacts).
+- **Root Cause**:
+  1. **Dynamic IP Change**: The host machine's Wi-Fi DHCP address shifted from `192.168.100.82` to `192.168.100.144`. Previously stored QR PNG data URLs statically contained the old IP.
+  2. **Schema Inconsistency**: 7 legacy patient users had vital data directly on `User` collection records rather than in `PatientProfile` collection documents. When querying `/api/v1/patient/me` or `/api/v1/emergency-access/:token`, lack of a `PatientProfile` returned null, suppressing dashboard form fields and failing emergency credential resolution.
+- **Fix**:
+  1. Updated `backend/utils/patientResolver.js` with fallback logic to inspect `User` and self-heal missing `PatientProfile` records.
+  2. Updated `backend/routes/v1/patientProfile.js` (`GET /me` and `PUT /update`) to auto-create and synchronize `PatientProfile` and `User` fields, keeping `User.qrCode` and `PatientProfile.qrCode` aligned.
+  3. Created and executed `backend/migrate-qr-ips.js`, which backfilled all 7 missing patient profiles with legacy vitals and regenerated QR codes for all 21 patient accounts pointing to the active host IP (`http://192.168.100.144:5000/emergency_access.html?id=...`).
+  4. Updated `APP_URL` in `android-wrapper/app/src/main/java/com/lifeqr/MainActivity.java` to `http://192.168.100.144:5000`.
+- **Status**: Resolved.

@@ -385,6 +385,9 @@ router.get('/verify', async (req, res) => {
       if (profile) {
         qrCode = profile.qrCode;
         qrCodeId = profile.qrCodeId;
+      } else {
+        qrCode = user.qrCode || null;
+        qrCodeId = user.qrCodeId || null;
       }
     }
 

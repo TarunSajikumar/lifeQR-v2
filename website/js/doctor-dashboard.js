@@ -40,6 +40,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Handle forms
   setupDoctorListeners();
+
+  // Check pending help tickets
+  loadDoctorHelpTickets();
 });
 
 async function checkVerificationStatus() {
@@ -498,267 +501,642 @@ window.stopQRScanner = function() {
 // AI CLINICAL COPILOT SUITE (5 High-Impact AI Features)
 // ============================================================
 
-// Helper to show AI loading state
+// ============================================================
+// AI CLINICAL INTELLIGENCE & PATIENT ANALYSIS SUITE
+// ============================================================
+
+// Helper to retrieve AI output container
+function getAiContainer() {
+  return document.getElementById('aiClinicalOutputContainer');
+}
+
+// Helper to show AI loading state in Swiss Editorial aesthetic
 function showAiLoading(toolName) {
-  const container = document.getElementById('aiOutputContainer');
+  const container = getAiContainer();
   if (!container) return;
   container.classList.remove('hidden');
   container.innerHTML = `
-    <div class="flex items-center gap-3 p-2 text-indigo-300 font-semibold">
-      <span class="material-symbols-outlined text-lg animate-spin">progress_activity</span>
-      <span>AI Clinical Engine running ${toolName}...</span>
+    <div class="p-5 border-2 border-[#111111] bg-white space-y-3 font-mono">
+      <div class="flex items-center gap-3 text-xs font-bold text-[#111111]">
+        <span class="material-symbols-outlined text-lg animate-spin text-[#E11D2E]">progress_activity</span>
+        <span class="tracking-wider uppercase">CLINICAL NEURAL ENGINE: ANALYZING PATIENT &bull; [${toolName}]</span>
+      </div>
+      <div class="w-full bg-gray-100 h-1.5 overflow-hidden border border-[#111111]/20">
+        <div class="bg-[#E11D2E] h-full w-2/3 animate-pulse"></div>
+      </div>
+      <p class="text-[11px] text-gray-500 font-sans">Cross-referencing verified LifeQR patient matrix, lethal allergy contraindications, and clinical practice guidelines.</p>
     </div>
   `;
 }
 
-// 1. ⭐⭐⭐⭐⭐ AI PATIENT SUMMARY
+// 1. ⭐⭐⭐⭐⭐ AI FULL PATIENT ANALYSIS & RISK STRATIFICATION
 window.runAiPatientSummary = async function() {
   if (!activePatient || !activePatient.qrCodeId) {
-    showToast('Please search and select a patient first.', 'warning');
+    showToast('Please search or select an active patient first.', 'warning');
     return;
   }
-  showAiLoading('AI Patient Summary');
+
+  showAiLoading('DEEP CLINICAL RISK STRATIFICATION & CONTRAINDICATION REVIEW');
 
   try {
-    const res = await fetch('/api/v1/ai-clinical/patient-summary', {
+    const res = await doctorApiFetch('/ai-clinical/patient-summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ qrCodeId: activePatient.qrCodeId })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+    if (!res.ok) throw new Error(data.error || 'Failed to generate AI Patient Analysis');
 
-    const container = document.getElementById('aiOutputContainer');
+    const container = getAiContainer();
+    if (!container) return;
     container.classList.remove('hidden');
+
+    const isCritical = data.riskLevel === 'CRITICAL';
+    const isElevated = data.riskLevel === 'ELEVATED';
+    const riskBadgeClass = isCritical 
+      ? 'bg-red-50 text-[#E11D2E] border-2 border-[#E11D2E]' 
+      : (isElevated ? 'bg-amber-50 text-amber-900 border-2 border-amber-600' : 'bg-emerald-50 text-emerald-800 border-2 border-emerald-600');
+
+    // Contraindications markup
+    let contraindicationsHtml = '';
+    if (data.contraindications && data.contraindications.length > 0) {
+      contraindicationsHtml = `
+        <div class="p-3.5 bg-red-50/80 border-2 border-[#E11D2E] text-red-950 space-y-1.5 font-sans">
+          <div class="flex items-center gap-1.5 font-mono text-xs font-black uppercase text-[#E11D2E]">
+            <span class="material-symbols-outlined text-base">emergency_home</span>
+            <span>🚨 LETHAL DRUG CONTRAINDICATIONS &amp; ALLERGY HAZARDS</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-xs font-bold text-red-900">
+            ${data.contraindications.map(c => `<li>${c}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    // Polypharmacy markup
+    let polypharmacyHtml = '';
+    if (data.polypharmacyRisks && data.polypharmacyRisks.length > 0) {
+      polypharmacyHtml = `
+        <div class="p-3 bg-amber-50/80 border-2 border-amber-600 text-amber-950 space-y-1 font-sans">
+          <div class="flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase text-amber-800">
+            <span class="material-symbols-outlined text-sm">medication</span>
+            <span>Active Polypharmacy &amp; Drug Cautions</span>
+          </div>
+          <ul class="list-disc list-inside space-y-0.5 text-xs text-amber-950">
+            ${data.polypharmacyRisks.map(p => `<li>${p}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    // Suggested Labs chips
+    const suggestedLabs = data.suggestedLabOrders || [];
+    const labsChips = suggestedLabs.map(lab => `
+      <span class="px-2.5 py-1 border border-[#111111] bg-white text-[#111111] font-mono text-[11px] font-bold shadow-xs">
+        ${lab}
+      </span>
+    `).join('');
+
+    const jsonSafeData = encodeURIComponent(JSON.stringify({
+      summary: data.summary,
+      diagnosis: data.chronicConditionReview && data.chronicConditionReview[0] ? data.chronicConditionReview[0].replace('Pre-existing Medical History: ', '') : 'Clinical Assessment',
+      labs: suggestedLabs.join(', ')
+    }));
+
+    container.innerHTML = `
+      <div class="space-y-4">
+        
+        <!-- Header Strip -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#111111]">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h4 class="font-black text-sm uppercase tracking-tight text-[#111111] flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base text-[#E11D2E]">analytics</span>
+                <span>AI Clinical Risk &amp; Patient Analysis: ${data.patientName}</span>
+              </h4>
+              <span class="px-2 py-0.5 ${riskBadgeClass} font-mono text-[10px] font-bold uppercase tracking-wider">
+                RISK: ${data.riskLevel} (${data.riskScore}/100)
+              </span>
+            </div>
+            <p class="text-xs font-mono text-gray-600 mt-0.5">
+              LifeQR ID: <strong>${data.qrCodeId}</strong> &bull; Blood Group: <strong class="text-[#E11D2E]">${data.bloodGroup}</strong> &bull; Confidence: <strong>${data.confidenceScore}</strong>
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 font-mono flex-shrink-0">
+            <button type="button" onclick="populateAiAnalysisToConsultation('${jsonSafeData}')" class="btn-primary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+              <span class="material-symbols-outlined text-sm">input</span>
+              <span>Insert AI Notes into Consultation</span>
+            </button>
+          </div>
+        </div>
+
+        ${contraindicationsHtml}
+        ${polypharmacyHtml}
+
+        <!-- Clinical Narrative -->
+        <div class="p-3.5 bg-white border-2 border-[#111111] space-y-2">
+          <span class="block font-mono text-[10px] font-bold uppercase tracking-wider text-gray-500">Executive Clinical Assessment</span>
+          <p class="text-xs font-sans text-[#111111] leading-relaxed font-medium">${data.summary}</p>
+        </div>
+
+        <!-- Labs & Recommendations Grid -->
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div class="p-3 bg-white border-2 border-[#111111] space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#111111]">Suggested Lab Investigations</span>
+              <button type="button" onclick="addLabsToConsultation('${encodeURIComponent(suggestedLabs.join(', '))}')" class="text-[10px] font-mono font-bold text-[#E11D2E] hover:underline flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-xs">add</span> Add to Form
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              ${labsChips || '<span class="text-xs text-gray-500 font-mono">Routine baseline blood work recommended</span>'}
+            </div>
+          </div>
+
+          <div class="p-3 bg-white border-2 border-[#111111] space-y-1.5">
+            <span class="block font-mono text-[10px] font-bold uppercase tracking-wider text-[#111111]">Recommended Attending Focus</span>
+            <ul class="list-disc list-inside space-y-0.5 text-xs text-[#111111]/80 font-sans">
+              ${(data.recommendedFocus || []).map(f => `<li>${f}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+
+        <!-- Triage Velocity Strip -->
+        <div class="flex items-center justify-between text-[11px] font-mono text-gray-600 bg-white p-2.5 border-2 border-[#111111]">
+          <span>Triage Access Velocity: <strong>${data.triageVelocity?.scansCount || 0}</strong> emergency scans on file</span>
+          <span>SOS Distress Incidents: <strong class="${(data.triageVelocity?.sosCount || 0) > 0 ? 'text-[#E11D2E]' : 'text-emerald-700'}">${data.triageVelocity?.sosCount || 0} alerts</strong></span>
+        </div>
+
+      </div>
+    `;
+
+    showToast('AI Patient Analysis & Clinical Risk Stratification completed!', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+    console.error('runAiPatientSummary error:', err);
+  }
+};
+
+// 1.1 Helper to populate AI analysis into Consultation form
+window.populateAiAnalysisToConsultation = function(encodedJson) {
+  try {
+    const data = JSON.parse(decodeURIComponent(encodedJson));
     
-    let alertsHtml = '';
-    if (data.alerts && data.alerts.length > 0) {
-      alertsHtml = `
-        <div class="p-2.5 bg-amber-500/20 border border-amber-500/40 rounded-xl text-amber-200 font-bold space-y-1">
-          ${data.alerts.map(a => `<div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm text-amber-400">warning</span> ${a}</div>`).join('')}
+    // 1. History / Complaints
+    const historyEl = document.getElementById('consultHistory');
+    if (historyEl) {
+      historyEl.value = (historyEl.value ? historyEl.value + '\n\n' : '') + `[AI Clinical Summary]: ${data.summary}`;
+    }
+
+    // 2. Diagnosis
+    const diagEl = document.getElementById('consultDiagnosis');
+    if (diagEl && !diagEl.value && data.diagnosis) {
+      diagEl.value = data.diagnosis;
+    }
+
+    // 3. Labs
+    const labsEl = document.getElementById('consultLabOrders');
+    if (labsEl && data.labs) {
+      labsEl.value = labsEl.value ? `${labsEl.value}, ${data.labs}` : data.labs;
+    }
+
+    // Scroll smoothly to consultation form
+    const consultSection = document.getElementById('clinicalConsultationSection');
+    if (consultSection) {
+      consultSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    showToast('✅ AI Clinical Notes and Suggested Labs populated into Consultation Form!', 'success');
+  } catch (e) {
+    console.error('Error populating AI notes:', e);
+    showToast('Failed to populate notes to form.', 'error');
+  }
+};
+
+// 1.2 Helper to append recommended labs
+window.addLabsToConsultation = function(encodedLabs) {
+  const labs = decodeURIComponent(encodedLabs);
+  const labsEl = document.getElementById('consultLabOrders');
+  if (labsEl) {
+    labsEl.value = labsEl.value ? `${labsEl.value}, ${labs}` : labs;
+    showToast('Recommended labs added to Consultation Form!', 'success');
+  }
+};
+
+// 2. ⭐⭐⭐⭐⭐ AI DIFFERENTIAL DIAGNOSIS COPILOT
+window.runAiDifferential = async function() {
+  const complaint = document.getElementById('consultComplaint')?.value?.trim() || '';
+  const history = document.getElementById('consultHistory')?.value?.trim() || '';
+  let symptoms = complaint || history;
+
+  if (!symptoms) {
+    symptoms = prompt('🧠 AI Differential Diagnosis: Enter patient symptoms or chief complaints:', 'Acute chest tightness, progressive wheezing for 2 days, dry cough');
+    if (!symptoms || !symptoms.trim()) return;
+  }
+
+  showAiLoading('DIFFERENTIAL DIAGNOSIS & PROBABILITY CALCULATION');
+
+  try {
+    const res = await doctorApiFetch('/ai-clinical/differential-diagnosis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symptoms })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Differential engine failed');
+
+    const container = getAiContainer();
+    if (!container) return;
+    container.classList.remove('hidden');
+
+    const diffsHtml = (data.differentials || []).map((d, idx) => {
+      const urgencyBadge = d.urgency === 'CRITICAL' || d.urgency === 'HIGH'
+        ? 'bg-red-50 text-[#E11D2E] border border-[#E11D2E]'
+        : 'bg-blue-50 text-blue-900 border border-blue-600';
+
+      const labsStr = encodeURIComponent((data.recommendedLabs || []).join(', '));
+      const diagStr = encodeURIComponent(d.diagnosis);
+
+      return `
+        <div class="p-3.5 bg-white border-2 border-[#111111] flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-sans">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-mono text-xs font-bold text-gray-500">#${idx + 1}</span>
+              <strong class="font-black text-sm text-[#111111] uppercase tracking-tight">${d.diagnosis}</strong>
+              <span class="px-2 py-0.5 ${urgencyBadge} font-mono text-[10px] font-bold uppercase">${d.urgency}</span>
+            </div>
+            <p class="text-xs font-mono text-gray-600">Calculated Probability: <strong class="text-[#111111]">${d.probability}</strong></p>
+          </div>
+          <button type="button" onclick="applyDifferentialDiagnosis('${diagStr}', '${labsStr}')" class="btn-secondary text-xs px-3 py-1.5 uppercase font-mono font-bold tracking-wider flex items-center gap-1 flex-shrink-0">
+            <span class="material-symbols-outlined text-sm text-[#E11D2E]">check_circle</span>
+            <span>Apply to Diagnosis</span>
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+          <h4 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
+            <span class="material-symbols-outlined text-base text-blue-700">diagnostics</span>
+            <span>AI Differential Diagnosis &bull; Evaluated for: "${symptoms.substring(0, 45)}..."</span>
+          </h4>
+          <span class="text-[10px] font-mono font-bold text-gray-500 uppercase">EVIDENCE-BASED</span>
+        </div>
+
+        <div class="space-y-2.5">
+          ${diffsHtml}
+        </div>
+
+        <div class="p-3 bg-white border-2 border-[#111111] space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#111111]">Recommended Diagnostic Lab Battery</span>
+            <button type="button" onclick="addLabsToConsultation('${encodeURIComponent((data.recommendedLabs || []).join(', '))}')" class="text-[10px] font-mono font-bold text-[#E11D2E] hover:underline flex items-center gap-0.5">
+              <span class="material-symbols-outlined text-xs">add</span> Add All Labs
+            </button>
+          </div>
+          <p class="text-xs font-mono font-bold text-gray-800">${(data.recommendedLabs || []).join(' &bull; ')}</p>
+        </div>
+      </div>
+    `;
+
+    showToast('AI Differential Diagnoses evaluated successfully!', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};
+
+window.applyDifferentialDiagnosis = function(encodedDiag, encodedLabs) {
+  const diag = decodeURIComponent(encodedDiag);
+  const labs = decodeURIComponent(encodedLabs);
+
+  const diagEl = document.getElementById('consultDiagnosis');
+  if (diagEl) diagEl.value = diag;
+
+  if (labs) {
+    const labsEl = document.getElementById('consultLabOrders');
+    if (labsEl) {
+      labsEl.value = labsEl.value ? `${labsEl.value}, ${labs}` : labs;
+    }
+  }
+
+  const consultSection = document.getElementById('clinicalConsultationSection');
+  if (consultSection) consultSection.scrollIntoView({ behavior: 'smooth' });
+
+  showToast(`✅ Primary Diagnosis set to: ${diag}`, 'success');
+};
+
+// 3. ⭐⭐⭐⭐⭐ AI MEDICAL SCRIBE & MODAL WORKFLOW
+window.openAiScribeModal = function() {
+  const modal = document.getElementById('aiScribeModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    const input = document.getElementById('aiScribeInput');
+    if (input) {
+      if (!input.value) {
+        input.value = document.getElementById('consultComplaint')?.value || '';
+      }
+      input.focus();
+    }
+  }
+};
+
+window.closeAiScribeModal = function() {
+  const modal = document.getElementById('aiScribeModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.loadScribePreset = function(type) {
+  const input = document.getElementById('aiScribeInput');
+  if (!input) return;
+
+  if (type === 'asthma') {
+    input.value = '32-year old male presenting with acute wheezing for 2 days, dry cough, SpO2 94%, pulse 92. Known asthmatic on Albuterol. Auscultation reveals bilateral expiratory wheezes. Plan: PEFR test, Salbutamol 2 puffs SOS, Budesonide 200mcg BID.';
+  } else if (type === 'cardiac') {
+    input.value = '54-year old female presenting with retrosternal chest tightness radiating to left shoulder for 45 mins. Diaphoresis, BP 148/92, pulse 88. Order immediate 12-lead ECG, Troponin-I. Prescribe Aspirin 300mg stat (verify no allergy) and sublingual Sorbitrate.';
+  } else if (type === 'urti') {
+    input.value = '26-year old patient with 3 days acute fever 101F, severe sore throat, painful swallowing, tonsillar erythema. Vitals stable. Order CBC. Prescribe Paracetamol 650mg TID, Cetirizine 10mg HS, warm saline gargles.';
+  } else if (type === 'trauma') {
+    input.value = '29-year old presenting post two-wheeler collision. Right forearm swelling, deformity, severe local tenderness. Distal neurovascular status intact. Order X-ray Right Forearm AP/Lateral, immobilization, Paracetamol 1g IV.';
+  }
+};
+
+window.submitAiScribe = async function() {
+  const input = document.getElementById('aiScribeInput');
+  const dictationText = input?.value?.trim();
+  if (!dictationText) {
+    showToast('Please type or paste clinical conversation/dictation first.', 'warning');
+    return;
+  }
+
+  closeAiScribeModal();
+  showAiLoading('MEDICAL SCRIBE: STRUCTURING UNFORMATTED CLINICAL DICTATION');
+
+  try {
+    const res = await doctorApiFetch('/ai-clinical/medical-scribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dictationText })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Medical Scribe failed');
+
+    const note = data.structuredNote;
+
+    // 1. Populate into consultation form fields
+    const complaintEl = document.getElementById('consultComplaint');
+    if (complaintEl) complaintEl.value = dictationText;
+
+    const diagEl = document.getElementById('consultDiagnosis');
+    if (diagEl) diagEl.value = note.diagnosis;
+
+    const historyEl = document.getElementById('consultHistory');
+    if (historyEl) {
+      historyEl.value = `${note.formattedObservations}\n\nNext Steps: ${note.suggestedNextSteps}`;
+    }
+
+    // 2. If prescriptions extracted, add them into Rx table
+    if (note.prescriptions && note.prescriptions.length > 0) {
+      const rxTbody = document.getElementById('rxMedicationsTableBody');
+      if (rxTbody) {
+        rxTbody.innerHTML = ''; // reset table with structured prescriptions
+        note.prescriptions.forEach((rx, i) => {
+          const row = document.createElement('tr');
+          row.className = 'border-b border-[#111111]/10 font-sans text-xs';
+          row.id = `rxRow_${i}`;
+          row.innerHTML = `
+            <td class="p-2">
+              <input type="text" class="rx-med-name w-full p-1.5 font-bold" value="${rx}" required>
+            </td>
+            <td class="p-2">
+              <input type="text" class="rx-med-dosage w-full p-1.5 font-mono" value="As Directed">
+            </td>
+            <td class="p-2">
+              <select class="rx-med-freq w-full p-1.5 font-mono font-bold">
+                <option value="1-0-1" selected>1-0-1 (Twice daily)</option>
+                <option value="1-1-1">1-1-1 (Thrice daily)</option>
+                <option value="1-0-0">1-0-0 (Morning)</option>
+                <option value="SOS">SOS (When needed)</option>
+              </select>
+            </td>
+            <td class="p-2">
+              <input type="text" class="rx-med-duration w-full p-1.5 font-mono" value="5 Days">
+            </td>
+            <td class="p-2">
+              <input type="text" class="rx-med-instructions w-full p-1.5" value="Post meals">
+            </td>
+            <td class="p-2 text-right">
+              <button type="button" onclick="removeRxRow(this)" class="text-gray-400 hover:text-[#E11D2E] p-1 font-bold">✕</button>
+            </td>
+          `;
+          rxTbody.appendChild(row);
+        });
+      }
+    }
+
+    // 3. Render scribe output in container
+    const container = getAiContainer();
+    if (container) {
+      container.classList.remove('hidden');
+      container.innerHTML = `
+        <div class="space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b-2 border-[#111111]">
+            <h4 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
+              <span class="material-symbols-outlined text-base text-purple-700">mic</span>
+              <span>AI Scribe: Standardized EHR Consultation Note</span>
+            </h4>
+            <span class="px-2 py-0.5 border border-purple-600 bg-purple-50 text-purple-900 font-mono text-[10px] font-bold uppercase">Auto-Populated</span>
+          </div>
+
+          <div class="p-3.5 bg-white border-2 border-[#111111] space-y-2 text-xs font-sans">
+            <div><strong>Clinical Diagnosis:</strong> <span class="font-bold text-[#E11D2E]">${note.diagnosis}</span></div>
+            <div class="text-gray-700"><strong>Observations:</strong> ${note.formattedObservations}</div>
+            <div><strong>Extracted Medications:</strong> <span class="font-mono font-bold">${note.prescriptions.join(', ')}</span></div>
+            <div class="text-gray-600 italic"><strong>Follow-up:</strong> ${note.suggestedNextSteps}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    const consultSection = document.getElementById('clinicalConsultationSection');
+    if (consultSection) consultSection.scrollIntoView({ behavior: 'smooth' });
+
+    showToast('✅ AI Scribe structured dictation & populated Consultation Form!', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};
+
+// 4. ⭐⭐⭐⭐⭐ AI PRESCRIPTION SAFETY & ALLERGY CROSS-CHECK
+window.checkPrescriptionSafety = async function() {
+  const rows = document.querySelectorAll('#rxMedicationsTableBody tr');
+  const medNames = [];
+  rows.forEach(tr => {
+    const name = tr.querySelector('.rx-med-name')?.value?.trim();
+    if (name) medNames.push(name);
+  });
+
+  const consultDiag = document.getElementById('consultDiagnosis')?.value || '';
+  const prescriptionText = medNames.length > 0 ? medNames.join(', ') : consultDiag;
+
+  if (!prescriptionText || !prescriptionText.trim()) {
+    showToast('Please add at least one medication in the Prescription Builder first.', 'warning');
+    return;
+  }
+
+  showAiLoading('PRESCRIPTION SAFETY: ALLERGY CROSS-REACTIVITY & CONTRAINDICATION SCREEN');
+
+  try {
+    const res = await doctorApiFetch('/ai-clinical/prescription-checker', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        qrCodeId: activePatient ? activePatient.qrCodeId : null,
+        prescriptionText
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Prescription safety engine failed');
+
+    const container = getAiContainer();
+    if (!container) return;
+    container.classList.remove('hidden');
+
+    const isSafe = data.status === 'SAFE';
+    const scoreColor = isSafe ? 'text-emerald-700' : 'text-[#E11D2E]';
+    const cardBorder = isSafe ? 'border-emerald-600 bg-emerald-50/40' : 'border-[#E11D2E] bg-red-50/60';
+
+    let warningsList = '';
+    if (data.warnings && data.warnings.length > 0) {
+      warningsList = `
+        <div class="p-3.5 bg-red-50 border-2 border-[#E11D2E] text-red-950 space-y-1.5">
+          <div class="flex items-center gap-1.5 font-mono text-xs font-black uppercase text-[#E11D2E]">
+            <span class="material-symbols-outlined text-base">report</span>
+            <span>🚨 ALLERGY / LETHAL CONTRAINDICATION ALERT</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-xs font-bold text-red-900">
+            ${data.warnings.map(w => `<li>${w}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    let interactionsList = '';
+    if (data.interactions && data.interactions.length > 0) {
+      interactionsList = `
+        <div class="p-3 bg-amber-50 border-2 border-amber-600 text-amber-950 space-y-1">
+          <div class="flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase text-amber-800">
+            <span class="material-symbols-outlined text-sm">warning</span>
+            <span>Clinical Interaction Warnings</span>
+          </div>
+          <ul class="list-disc list-inside space-y-0.5 text-xs text-amber-950">
+            ${data.interactions.map(i => `<li>${i}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    let alternativesHtml = '';
+    if (data.alternativeSuggestions && data.alternativeSuggestions.length > 0) {
+      alternativesHtml = `
+        <div class="p-3 bg-white border-2 border-[#111111] space-y-1">
+          <span class="block font-mono text-[10px] font-bold uppercase tracking-wider text-gray-500">Suggested Safe Clinical Alternatives</span>
+          <p class="text-xs font-mono font-bold text-gray-800">${data.alternativeSuggestions.join(' &bull; ')}</p>
         </div>
       `;
     }
 
     container.innerHTML = `
-      <div class="flex items-center justify-between border-b border-indigo-500/30 pb-2">
-        <h4 class="font-bold text-amber-300 flex items-center gap-1.5 text-xs">
-          <span class="material-symbols-outlined text-sm">summarize</span> AI Pre-Consultation Summary for ${data.patientName}
-        </h4>
-        <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full text-[10px] font-bold">Confidence ${data.confidenceScore}</span>
-      </div>
-      ${alertsHtml}
-      <p class="text-slate-200 leading-relaxed font-medium">${data.summary}</p>
-      <div class="pt-2 border-t border-indigo-500/20">
-        <p class="font-bold text-indigo-300 mb-1">Recommended Focus Areas:</p>
-        <ul class="list-disc list-inside space-y-0.5 text-slate-300">
-          ${data.recommendedFocus.map(f => `<li>${f}</li>`).join('')}
-        </ul>
-      </div>
-    `;
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-};
-
-// 2. ⭐⭐⭐⭐⭐ AI MEDICAL SCRIBE (Auto Note-Taking)
-window.openAiScribeModal = async function() {
-  const input = prompt('🎙️ AI Medical Scribe: Type or paste your consultation dictation notes below:\n\nExample: "Patient has 3 days dry cough, fever 101F, chest congestion. BP 120/80. Prescribed paracetamol 500mg tid and azithromycin 500mg daily."');
-  if (!input || !input.trim()) return;
-
-  showAiLoading('AI Medical Scribe');
-  try {
-    const res = await fetch('/api/v1/ai-clinical/medical-scribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ dictationText: input })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-
-    const note = data.structuredNote;
-    const container = document.getElementById('aiOutputContainer');
-    container.classList.remove('hidden');
-
-    container.innerHTML = `
-      <div class="flex items-center justify-between border-b border-indigo-500/30 pb-2">
-        <h4 class="font-bold text-purple-300 flex items-center gap-1.5 text-xs">
-          <span class="material-symbols-outlined text-sm">mic</span> AI Structured Clinical Note
-        </h4>
-        <button onclick="insertScribeToForm('${encodeURIComponent(note.title)}', '${encodeURIComponent(note.formattedObservations)}')" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[10px] font-bold shadow-xs transition flex items-center gap-1">
-          <span class="material-symbols-outlined text-xs">download</span> Insert into Treatment Form
-        </button>
-      </div>
-      <div class="space-y-1.5">
-        <p><strong class="text-purple-300">Diagnosis:</strong> ${note.diagnosis}</p>
-        <p><strong class="text-purple-300">Observations:</strong> ${note.formattedObservations}</p>
-        ${note.prescriptions.length > 0 ? `<p><strong class="text-purple-300">Extracted Rx:</strong> ${note.prescriptions.join(', ')}</p>` : ''}
-        <p class="text-slate-400 text-[11px]"><em>Next Steps: ${note.suggestedNextSteps}</em></p>
-      </div>
-    `;
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-};
-
-window.insertScribeToForm = function(encodedTitle, encodedDesc) {
-  const title = decodeURIComponent(encodedTitle);
-  const desc = decodeURIComponent(encodedDesc);
-
-  const titleInput = document.getElementById('treatmentTitle');
-  const descInput = document.getElementById('treatmentDesc');
-  if (titleInput) titleInput.value = title;
-  if (descInput) descInput.value = desc;
-
-  showToast('Scribe notes inserted into Treatment Form!', 'success');
-};
-
-// 3. ⭐⭐⭐⭐⭐ AI DIFFERENTIAL DIAGNOSIS
-window.runAiDifferential = async function() {
-  const symptoms = prompt('🧠 AI Differential Diagnosis: Enter patient symptoms or chief complaints:', 'Dry cough, fever 101F, chest congestion, fatigue');
-  if (!symptoms || !symptoms.trim()) return;
-
-  showAiLoading('AI Differential Diagnosis');
-  try {
-    const res = await fetch('/api/v1/ai-clinical/differential-diagnosis', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ symptoms })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-
-    const container = document.getElementById('aiOutputContainer');
-    container.classList.remove('hidden');
-
-    const diffsHtml = data.differentials.map(d => `
-      <div class="flex items-center justify-between p-2 bg-slate-900 border border-slate-800 rounded-xl">
-        <span class="font-bold text-slate-100">${d.diagnosis}</span>
-        <div class="flex items-center gap-2">
-          <span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded-full font-mono text-[10px] font-bold">${d.probability} Probability</span>
-          <span class="px-2 py-0.5 ${d.urgency === 'CRITICAL' ? 'bg-rose-500/30 text-rose-300' : 'bg-amber-500/20 text-amber-300'} rounded-full text-[10px] font-bold">${d.urgency}</span>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-base ${isSafe ? 'text-emerald-700' : 'text-[#E11D2E]'}">health_and_safety</span>
+            <h4 class="font-black text-sm uppercase text-[#111111]">AI Prescription Safety Validation</h4>
+          </div>
+          <span class="px-2.5 py-0.5 border-2 ${isSafe ? 'border-emerald-600 bg-emerald-50 text-emerald-800' : 'border-[#E11D2E] bg-red-50 text-[#E11D2E]'} font-mono text-xs font-bold uppercase">
+            SAFETY SCORE: ${data.safetyScore}/100 (${data.status})
+          </span>
         </div>
-      </div>
-    `).join('');
 
-    container.innerHTML = `
-      <div class="flex items-center justify-between border-b border-indigo-500/30 pb-2">
-        <h4 class="font-bold text-teal-300 flex items-center gap-1.5 text-xs">
-          <span class="material-symbols-outlined text-sm">diagnostics</span> AI Differential Diagnosis Copilot
-        </h4>
-      </div>
-      <div class="space-y-2">
-        <p class="font-bold text-slate-300">Top Potential Diagnoses:</p>
-        ${diffsHtml}
-      </div>
-      <div class="pt-2 border-t border-indigo-500/20">
-        <p class="font-bold text-teal-300 mb-1">Recommended Labs & Investigations:</p>
-        <p class="text-slate-300 font-medium">${data.recommendedLabs.join(' • ')}</p>
+        <div class="p-3 bg-white border-2 border-[#111111] font-mono text-xs">
+          <span class="text-gray-500 block uppercase text-[10px] font-bold">Tested Prescription Payload:</span>
+          <strong>${prescriptionText}</strong>
+        </div>
+
+        ${warningsList}
+        ${interactionsList}
+
+        ${isSafe ? `
+          <div class="p-3.5 bg-emerald-50 border-2 border-emerald-600 text-emerald-900 font-sans text-xs font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-base text-emerald-700">verified</span>
+            <span>✅ VERIFIED CLINICALLY SAFE: No known lethal allergy cross-reactivities or acute drug-drug contraindications detected for active patient.</span>
+          </div>
+        ` : ''}
+
+        ${alternativesHtml}
       </div>
     `;
+
+    if (isSafe) {
+      showToast('✅ Prescription verified clinically safe!', 'success');
+    } else {
+      showToast('⚠️ Clinical Contraindications detected in prescription!', 'error');
+    }
   } catch (err) {
     showToast(err.message, 'error');
   }
 };
 
-// 4. ⭐⭐⭐⭐⭐ AI PRESCRIPTION SAFETY CHECKER
-window.checkPrescriptionSafety = async function() {
-  const rxInput = document.getElementById('treatmentTitle')?.value + ' ' + document.getElementById('treatmentDesc')?.value;
-  if (!rxInput || !rxInput.trim()) {
-    showToast('Please type prescription details in the Clinical Note form first.', 'warning');
-    return;
-  }
-
-  showAiLoading('Rx Safety Checker');
-  try {
-    const res = await fetch('/api/v1/ai-clinical/prescription-checker', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        qrCodeId: activePatient ? activePatient.qrCodeId : null,
-        prescriptionText: rxInput
-      })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-
-    const container = document.getElementById('aiOutputContainer');
-    container.classList.remove('hidden');
-
-    const isSafe = data.status === 'SAFE';
-    const statusBg = isSafe ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40';
-
-    let warningsHtml = '';
-    if (data.warnings.length > 0) {
-      warningsHtml = `<div class="p-2 bg-rose-950/80 border border-rose-500/50 rounded-xl text-rose-200 font-bold space-y-1">${data.warnings.map(w => `<div>${w}</div>`).join('')}</div>`;
-    }
-    if (data.interactions.length > 0) {
-      warningsHtml += `<div class="p-2 bg-amber-950/80 border border-amber-500/50 rounded-xl text-amber-200 font-bold space-y-1">${data.interactions.map(i => `<div>${i}</div>`).join('')}</div>`;
-    }
-
-    container.innerHTML = `
-      <div class="flex items-center justify-between border-b border-indigo-500/30 pb-2">
-        <h4 class="font-bold text-emerald-300 flex items-center gap-1.5 text-xs">
-          <span class="material-symbols-outlined text-sm">verified_user</span> AI Prescription Safety Validator
-        </h4>
-        <span class="px-2.5 py-0.5 ${statusBg} border rounded-full text-[10px] font-bold">Safety Score: ${data.safetyScore} (${data.status})</span>
-      </div>
-      ${warningsHtml || `<p class="text-emerald-300 font-bold">✅ No drug-allergy or drug-drug interaction warnings detected. Safe to prescribe.</p>`}
-      ${data.alternativeSuggestions.length > 0 ? `<p class="text-indigo-300 font-medium">💡 Alternative Suggestions: ${data.alternativeSuggestions.join(' • ')}</p>` : ''}
-    `;
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-};
-
-// 5. ⭐⭐⭐⭐⭐ AI CONSULTATION NOTES (SOAP Generator)
+// 5. ⭐⭐⭐⭐⭐ AI AUTO-SOAP NOTE GENERATOR
 window.generateSoapNote = async function() {
-  const title = document.getElementById('treatmentTitle')?.value.trim();
-  const desc = document.getElementById('treatmentDesc')?.value.trim();
+  const title = document.getElementById('consultDiagnosis')?.value?.trim() || 'Clinical Assessment';
+  const complaint = document.getElementById('consultComplaint')?.value?.trim() || '';
+  const history = document.getElementById('consultHistory')?.value?.trim() || '';
+  const description = complaint || history;
 
-  if (!title || !desc) {
-    showToast('Please fill in Note Title and Clinical Observations in the form first.', 'warning');
+  if (!description) {
+    showToast('Please fill in Chief Complaints or HPI in the consultation form first.', 'warning');
     return;
   }
 
-  showAiLoading('AI SOAP Generator');
+  showAiLoading('SOAP NOTE: GENERATING STANDARDIZED CLINICAL RECORD');
+
   try {
-    const res = await fetch('/api/v1/ai-clinical/soap-generator', {
+    const res = await doctorApiFetch('/ai-clinical/soap-generator', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ title, description: desc })
+      body: JSON.stringify({ title, description })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+    if (!res.ok) throw new Error(data.error || 'SOAP generator failed');
 
-    const descInput = document.getElementById('treatmentDesc');
-    if (descInput) {
-      descInput.value = data.formattedText;
+    const historyEl = document.getElementById('consultHistory');
+    if (historyEl) {
+      historyEl.value = data.formattedText;
     }
 
-    const container = document.getElementById('aiOutputContainer');
-    container.classList.remove('hidden');
-    container.innerHTML = `
-      <div class="flex items-center justify-between border-b border-indigo-500/30 pb-2">
-        <h4 class="font-bold text-blue-300 flex items-center gap-1.5 text-xs">
-          <span class="material-symbols-outlined text-sm">post_add</span> AI Standardized SOAP Note Generated
-        </h4>
-        <span class="text-emerald-400 font-bold text-[10px]">Auto-inserted into Clinical Form</span>
-      </div>
-      <div class="space-y-1 font-mono text-[11px] text-slate-300">
-        <p><strong class="text-blue-300">Subjective:</strong> ${data.soap.subjective}</p>
-        <p><strong class="text-blue-300">Objective:</strong> ${data.soap.objective}</p>
-        <p><strong class="text-blue-300">Assessment:</strong> ${data.soap.assessment}</p>
-        <p><strong class="text-blue-300">Plan:</strong> ${data.soap.plan.replace(/\n/g, ' ')}</p>
-      </div>
-    `;
+    const container = getAiContainer();
+    if (container) {
+      container.classList.remove('hidden');
+      container.innerHTML = `
+        <div class="space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b-2 border-[#111111]">
+            <h4 class="font-black text-sm uppercase text-[#111111] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-base text-amber-700">note_alt</span>
+              <span>AI Standardized SOAP Note Generated</span>
+            </h4>
+            <span class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 font-mono text-[10px] font-bold uppercase">Inserted into HPI</span>
+          </div>
+          <div class="p-3.5 bg-white border-2 border-[#111111] font-mono text-xs space-y-1.5 whitespace-pre-line text-[#111111]">
+            ${data.formattedText}
+          </div>
+        </div>
+      `;
+    }
 
-    showToast('SOAP note formatted & auto-inserted into Clinical Note form!', 'success');
+    showToast('✅ Standardized SOAP Note generated and inserted into HPI!', 'success');
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -1393,4 +1771,178 @@ function setupDoctorSocketQueue() {
     }
   }
 }
+
+// ============================================================
+// DOCTOR HELP & ADMIN ASSISTANCE TICKET WORKFLOW
+// ============================================================
+window.openHelpModal = function() {
+  const modal = document.getElementById('doctorHelpModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  // Auto-fill active patient ID if present
+  const patInput = document.getElementById('helpPatientId');
+  if (patInput && activePatient && activePatient.qrCodeId) {
+    patInput.value = activePatient.qrCodeId;
+  }
+
+  loadDoctorHelpTickets();
+};
+
+window.closeHelpModal = function() {
+  const modal = document.getElementById('doctorHelpModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.switchHelpTab = function(tab) {
+  const newBtn = document.getElementById('helpTabNewBtn');
+  const histBtn = document.getElementById('helpTabHistoryBtn');
+  const formPane = document.getElementById('doctorHelpForm');
+  const histPane = document.getElementById('doctorHelpHistoryPane');
+
+  if (tab === 'new') {
+    if (newBtn) newBtn.className = 'px-3 py-1.5 border-2 border-[#111111] bg-[#111111] text-white font-bold uppercase tracking-wider';
+    if (histBtn) histBtn.className = 'px-3 py-1.5 border-2 border-[#111111] bg-white text-[#111111] font-bold uppercase tracking-wider hover:bg-gray-50 flex items-center gap-1.5';
+    if (formPane) formPane.classList.remove('hidden');
+    if (histPane) histPane.classList.add('hidden');
+  } else {
+    if (histBtn) histBtn.className = 'px-3 py-1.5 border-2 border-[#111111] bg-[#111111] text-white font-bold uppercase tracking-wider flex items-center gap-1.5';
+    if (newBtn) newBtn.className = 'px-3 py-1.5 border-2 border-[#111111] bg-white text-[#111111] font-bold uppercase tracking-wider hover:bg-gray-50';
+    if (formPane) formPane.classList.add('hidden');
+    if (histPane) histPane.classList.remove('hidden');
+    loadDoctorHelpTickets();
+  }
+};
+
+window.handleDoctorHelpSubmit = async function(e) {
+  e.preventDefault();
+  const subject = document.getElementById('helpSubject')?.value?.trim();
+  const message = document.getElementById('helpMessage')?.value?.trim();
+  const category = document.getElementById('helpCategory')?.value;
+  const priority = document.getElementById('helpPriority')?.value;
+  const patientQrCodeId = document.getElementById('helpPatientId')?.value?.trim();
+
+  if (!subject || !message) {
+    showToast('Please provide both subject and detailed message.', 'warning');
+    return;
+  }
+
+  const submitBtn = document.getElementById('helpSubmitBtn');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span><span>Dispatching...</span>';
+  }
+
+  try {
+    const res = await doctorApiFetch('/help-tickets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject,
+        message,
+        category,
+        priority,
+        patientQrCodeId
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to submit help ticket');
+
+    showToast('✅ Help ticket dispatched to System Administrators!', 'success');
+    document.getElementById('doctorHelpForm').reset();
+    switchHelpTab('history');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm">send</span><span>Dispatch Help Request to Admins</span>';
+    }
+  }
+};
+
+window.loadDoctorHelpTickets = async function() {
+  try {
+    const res = await doctorApiFetch('/help-tickets/my');
+    if (!res.ok) return;
+    const data = await res.json();
+    const tickets = data.tickets || [];
+
+    const badge = document.getElementById('helpMyTicketsBadge');
+    if (badge) badge.textContent = tickets.length;
+
+    const dot = document.getElementById('helpPendingDot');
+    const hasPending = tickets.some(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS');
+    if (dot) {
+      if (hasPending) dot.classList.remove('hidden');
+      else dot.classList.add('hidden');
+    }
+
+    const list = document.getElementById('doctorHelpHistoryList');
+    if (!list) return;
+
+    if (tickets.length === 0) {
+      list.innerHTML = `
+        <div class="p-6 border-2 border-dashed border-[#111111]/30 text-center text-gray-500 font-mono text-xs">
+          No help tickets submitted yet. If you encounter any technical difficulty or emergency consult block, submit a request above.
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = tickets.map(t => {
+      let statusBadge = '';
+      if (t.status === 'RESOLVED') {
+        statusBadge = '<span class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[10px] font-mono font-bold uppercase">RESOLVED</span>';
+      } else if (t.status === 'IN_PROGRESS') {
+        statusBadge = '<span class="px-2 py-0.5 border border-blue-600 bg-blue-50 text-blue-900 text-[10px] font-mono font-bold uppercase">IN PROGRESS</span>';
+      } else {
+        statusBadge = '<span class="px-2 py-0.5 border border-amber-600 bg-amber-50 text-amber-900 text-[10px] font-mono font-bold uppercase">PENDING ADMIN CHECK</span>';
+      }
+
+      const priorityBadge = t.priority === 'CRITICAL' 
+        ? '<span class="px-1.5 py-0.2 bg-red-100 text-[#E11D2E] border border-[#E11D2E] text-[9px] font-mono font-bold">CRITICAL</span>'
+        : (t.priority === 'HIGH' ? '<span class="px-1.5 py-0.2 bg-amber-100 text-amber-800 border border-amber-500 text-[9px] font-mono font-bold">HIGH</span>' : '');
+
+      const dateStr = new Date(t.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+      return `
+        <div class="p-3.5 bg-white border-2 border-[#111111] space-y-2">
+          <div class="flex items-center justify-between gap-2 flex-wrap pb-1.5 border-b border-[#111111]/15">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="font-mono font-black text-xs text-[#E11D2E]">${t.ticketId}</span>
+              ${priorityBadge}
+              <span class="text-xs font-bold text-[#111111]">${t.subject}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              ${statusBadge}
+              <span class="text-[10px] font-mono text-gray-500">${dateStr}</span>
+            </div>
+          </div>
+
+          <p class="text-xs text-[#111111]/80 font-sans leading-relaxed">${t.message}</p>
+
+          ${t.patientQrCodeId ? `
+            <div class="font-mono text-[11px] text-gray-600">
+              Related Patient: <strong class="text-[#E11D2E]">${t.patientQrCodeId}</strong>
+            </div>
+          ` : ''}
+
+          ${t.adminNotes ? `
+            <div class="p-2.5 bg-[#f9fafb] border-l-4 border-emerald-600 text-xs font-sans space-y-1">
+              <span class="font-mono text-[10px] font-bold text-emerald-800 uppercase block">Admin Resolution Response:</span>
+              <p class="text-[#111111] font-medium">${t.adminNotes}</p>
+            </div>
+          ` : `
+            <div class="text-[10px] font-mono text-gray-500 italic">
+              Ticket logged. Awaiting administrator review and clearance.
+            </div>
+          `}
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.warn('Failed to load doctor help tickets:', err);
+  }
+};
 

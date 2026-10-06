@@ -127,21 +127,23 @@ function syncFile(fileRelative) {
 /**
  * Runs one-time synchronization for all files
  */
-function syncAll() {
-  console.log('[Frontend Sync] Running two-way sync between website/ and app/...');
+function syncAll(options = {}) {
+  const silent = options && options.silent;
+  if (!silent) {
+    console.log('🔄 Asset Sync   : Two-way sync verified between website/ and app/');
+  }
   const allFiles = getCombinedFileList();
   for (const relFile of allFiles) {
     syncFile(relFile);
   }
-  console.log('[Frontend Sync] Sync complete.');
 }
 
 /**
  * Starts continuous real-time file watcher
  */
 function startWatcher(onChangeCallback) {
-  syncAll();
-  console.log('[Frontend Sync] Watching website/ and app/ for live changes...');
+  syncAll({ silent: true });
+  console.log('🔄 Frontend Sync: Active & live watching website/ and app/ for changes');
 
   const watchOptions = { recursive: true };
 

@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -45,28 +46,27 @@ const uploadPhoto = multer({
   }
 });
 
-async function ensureEmergencyCredential(profile) {
-  if (!profile) return null;
-
+async function ensureEmergencyCredential(profile, req) {
   let credential = await EmergencyCredential.findOne({ patientId: profile._id, status: 'ACTIVE' }).sort({ createdAt: -1 });
-  if (credential) {
-    return credential;
+  const frontendUrl = getFrontendUrl(req);
+
+  if (!credential) {
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const credentialHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    credential = await EmergencyCredential.create({
+      patientId: profile._id,
+      credentialType: 'QR',
+      tokenHash: credentialHash,
+      tokenPrefix: 'EMG',
+      status: 'ACTIVE',
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+      metadata: { createdBy: profile.userId, label: 'Primary Emergency Credential' }
+    });
   }
 
-  const rawToken = crypto.randomBytes(32).toString('hex');
-  const credentialHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-  const newCredential = await EmergencyCredential.create({
-    patientId: profile._id,
-    credentialType: 'QR',
-    tokenHash: credentialHash,
-    tokenPrefix: 'EMG',
-    status: 'ACTIVE',
-    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
-    metadata: { createdBy: profile.userId, label: 'Primary Emergency Credential' }
-  });
-
-  const credentialUrl = `${getFrontendUrl()}/e/${rawToken}`;
-  const qrCodeDataURL = await QRCode.toDataURL(credentialUrl, {
+  // Ensure QR code is present and points to accessible emergency URL
+  const qrUrl = `${frontendUrl}/emergency_access.html?id=${profile.qrCodeId}`;
+  const qrCodeDataURL = await QRCode.toDataURL(qrUrl, {
     errorCorrectionLevel: 'H',
     type: 'image/png',
     width: 300,
@@ -79,7 +79,10 @@ async function ensureEmergencyCredential(profile) {
 
   profile.qrCode = qrCodeDataURL;
   await profile.save();
-  return newCredential;
+  if (profile.userId) {
+    await User.findByIdAndUpdate(profile.userId, { qrCode: qrCodeDataURL, qrCodeId: profile.qrCodeId });
+  }
+  return credential;
 }
 
 // Authenticated photo access for the current patient
@@ -173,6 +176,8 @@ router.get('/profile/:qrCodeId', async (req, res) => {
       phone: patient.phone,
       profilePhoto: patient.profilePhoto,
       lastLocation: patientProfile.lastLocation,
+      reports: patientProfile.reports || [],
+      medicalHistory: patientProfile.medicalHistory || [],
       privateProfile: false
     });
   } catch (error) {
@@ -207,8 +212,31 @@ router.get('/me', authenticateToken, async (req, res) => {
 
     if (user.role === 'patient') {
       profileData = await PatientProfile.findOne({ userId: user._id });
+      if (!profileData) {
+        const rawUser = await mongoose.connection.collection('users').findOne({ _id: user._id });
+        const contacts = [];
+        if (rawUser && rawUser.emergencyContact && rawUser.emergencyContact.phone) {
+          contacts.push({
+            name: rawUser.emergencyContact.name || 'Emergency Contact',
+            phone: rawUser.emergencyContact.phone,
+            relationship: rawUser.emergencyContact.relationship || 'Next of Kin',
+            priority: 1
+          });
+        }
+        profileData = await PatientProfile.create({
+          userId: user._id,
+          qrCodeId: rawUser?.qrCodeId || user.qrCodeId || `PAT-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
+          age: rawUser?.age || user.age || null,
+          bloodGroup: rawUser?.bloodGroup || user.bloodGroup || '',
+          healthIssues: rawUser?.healthIssues || user.healthIssues || '',
+          allergies: rawUser?.allergies || user.allergies || '',
+          medications: rawUser?.medications || user.medications || '',
+          emergencyContacts: contacts,
+          publicProfile: true
+        });
+      }
       if (profileData) {
-        await ensureEmergencyCredential(profileData);
+        await ensureEmergencyCredential(profileData, req);
       }
     } else if (user.role === 'doctor') {
       profileData = await DoctorProfile.findOne({ userId: user._id });
@@ -270,27 +298,32 @@ router.put('/update', authenticateToken, async (req, res) => {
 
     // Update role profiles
     if (user.role === 'patient') {
-      const profile = await PatientProfile.findOne({ userId: user._id });
-      if (profile) {
-        if (age !== undefined) profile.age = age;
-        if (bloodGroup !== undefined) profile.bloodGroup = bloodGroup;
-        if (healthIssues !== undefined) profile.healthIssues = healthIssues;
-        if (allergies !== undefined) profile.allergies = allergies;
-        if (medications !== undefined) profile.medications = medications;
-
-        if (Array.isArray(emergencyContacts)) {
-          // Limit to max 3 contacts and assign priority sequence
-          profile.emergencyContacts = emergencyContacts.slice(0, 3).map((c, idx) => ({
-            name: c.name || '',
-            phone: c.phone || '',
-            relationship: c.relationship || '',
-            priority: idx + 1
-          }));
-        }
-
-        await ensureEmergencyCredential(profile);
-        await profile.save();
+      let profile = await PatientProfile.findOne({ userId: user._id });
+      if (!profile) {
+        profile = new PatientProfile({
+          userId: user._id,
+          qrCodeId: user.qrCodeId || `PAT-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
+          publicProfile: true
+        });
       }
+      if (age !== undefined) profile.age = age;
+      if (bloodGroup !== undefined) profile.bloodGroup = bloodGroup;
+      if (healthIssues !== undefined) profile.healthIssues = healthIssues;
+      if (allergies !== undefined) profile.allergies = allergies;
+      if (medications !== undefined) profile.medications = medications;
+
+      if (Array.isArray(emergencyContacts)) {
+        // Limit to max 3 contacts and assign priority sequence
+        profile.emergencyContacts = emergencyContacts.slice(0, 3).map((c, idx) => ({
+          name: c.name || '',
+          phone: c.phone || '',
+          relationship: c.relationship || '',
+          priority: idx + 1
+        }));
+      }
+
+      await ensureEmergencyCredential(profile, req);
+      await profile.save();
     } else if (user.role === 'doctor') {
       const profile = await DoctorProfile.findOne({ userId: user._id });
       if (profile) {
@@ -421,7 +454,7 @@ router.post('/regenerate-qr', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Patient profile not found' });
     }
 
-    const frontendUrl = getFrontendUrl();
+    const frontendUrl = getFrontendUrl(req);
     const qrUrl = `${frontendUrl}/emergency_access.html?id=${profile.qrCodeId}`;
     
     const qrCodeDataURL = await QRCode.toDataURL(qrUrl, {

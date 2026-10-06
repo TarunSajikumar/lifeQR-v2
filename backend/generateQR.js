@@ -1,3 +1,5 @@
+const dns = require("dns");
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 const mongoose = require("mongoose");
 const QRCode = require('qrcode');
 const User = require("./models/User");
@@ -30,8 +32,17 @@ async function generateQRForAccount(email) {
       return;
     }
 
+    const PatientProfile = require("./models/PatientProfile");
+    let profile = await PatientProfile.findOne({ userId: user._id });
+    const qrCodeId = profile?.qrCodeId || user.qrCodeId;
+    if (!qrCodeId) {
+      console.error(`❌ No qrCodeId found for ${targetEmail}`);
+      await mongoose.connection.close();
+      return;
+    }
+
     const frontendUrl = getFrontendUrl();
-    const qrUrl = `${frontendUrl}/emergency_access.html?id=${user.qrCodeId}`;
+    const qrUrl = `${frontendUrl}/emergency_access.html?id=${qrCodeId}`;
 
     console.log("📝 Generating QR code...");
     console.log("QR Code URL:", qrUrl);
@@ -49,13 +60,19 @@ async function generateQRForAccount(email) {
     user.qrCode = qrCodeDataUrl;
     await user.save();
 
+    if (profile) {
+      profile.qrCode = qrCodeDataUrl;
+      await profile.save();
+      console.log("✅ Updated PatientProfile qrCode as well!");
+    }
+
     console.log("✅ QR Code generated and saved successfully!");
     console.log("\n📊 User Details:");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log("Name:", user.name);
     console.log("Email:", user.email);
-    console.log("QR Code ID:", user.qrCodeId);
-    console.log("Blood Group:", user.bloodGroup);
+    console.log("QR Code ID:", qrCodeId);
+    console.log("Blood Group:", profile?.bloodGroup || 'N/A');
     console.log("QR Code Length:", qrCodeDataUrl.length, "bytes");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 

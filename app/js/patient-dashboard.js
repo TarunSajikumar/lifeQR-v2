@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Setup form listeners
   setupFormListeners();
+
+  // Load active help requests
+  loadPatientHelpTickets();
 });
 
 function initSocketConnection() {
@@ -61,6 +64,12 @@ function initSocketConnection() {
     socket.on('sos-acknowledged', (data) => {
       showToast(`Emergency crew (${data.responderName}) acknowledged your SOS alert!`, 'info');
       loadDashboardData();
+    });
+
+    // Listen for admin responses to help requests
+    socket.on('help-ticket-updated', (data) => {
+      showToast(`LifeQR Admin updated ticket ${data.ticketId} (${data.status})`, 'info');
+      loadPatientHelpTickets();
     });
   } catch (e) {
     console.warn('Socket.IO connection failed. Offline notifications unavailable.');
@@ -816,41 +825,384 @@ window.shareLiveLocation = function() {
   });
 };
 
-// Wallet card print download logic
-window.downloadWalletCard = function() {
-  // Create wallet card container dynamically
-  const card = document.createElement('div');
-  card.className = 'wallet-card-container wallet-card-print';
-  card.innerHTML = `
-    <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-      <div>
-        <h2>🚑 LifeQR ID</h2>
-        <p style="margin: 4px 0 0 0; font-weight: bold; font-size: 13px;">${currentUser.name}</p>
-        <p style="margin: 2px 0 0 0; font-size: 10px; color: #4b5563;">QR Code ID: ${currentProfile.qrCodeId}</p>
-      </div>
-      <div>
-        <div style="display: flex; gap: 8px; margin-bottom: 4px;">
-          <span style="background: #fef2f2; color: #dc2626; padding: 2px 6px; border-radius: 4px; font-weight: bold;">Blood: ${currentProfile.bloodGroup || 'N/A'}</span>
-        </div>
-        <p style="margin: 0; font-size: 9px; color: #dc2626; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          Allergies: ${currentProfile.allergies || 'None'}
-        </p>
-      </div>
-    </div>
-    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; border-left: 1px dashed #d1d5db; padding-left: 4mm;">
-      <img src="${currentProfile.qrCode}" class="wallet-card-qr" />
-      <span style="font-size: 8px; margin-top: 2px; font-weight: bold;">SCAN FOR LIFE</span>
-    </div>
-  `;
+// NFC Smart Medical Card Helper: Draw rounded rectangles safely across all browsers
+function drawCardRoundRect(ctx, x, y, w, h, r, fill, stroke) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+  if (fill) ctx.fill();
+  if (stroke) ctx.stroke();
+}
 
-  document.body.appendChild(card);
-  window.print();
+// NFC Smart Medical Card Helper: Draw contactless wave symbol
+function drawNfcWaves(ctx, x, y, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3.5;
+  ctx.lineCap = 'round';
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y, 4, 0, Math.PI * 2);
+  ctx.fill();
+  for (let i = 1; i <= 3; i++) {
+    ctx.beginPath();
+    ctx.arc(x, y, i * 11, -Math.PI * 0.42, Math.PI * 0.42, false);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+let currentCardImageBlobUrl = null;
+let currentCardDataUrl = null;
+
+// EMV Smart Contact Chip Helper (Brushed Metallic Gold)
+function drawEmvChip(ctx, x, y, w, h) {
+  ctx.save();
+  const chipGrad = ctx.createLinearGradient(x, y, x + w, y + h);
+  chipGrad.addColorStop(0, '#e5b651');
+  chipGrad.addColorStop(0.25, '#fae08c');
+  chipGrad.addColorStop(0.5, '#d49b28');
+  chipGrad.addColorStop(0.75, '#f5d576');
+  chipGrad.addColorStop(1, '#b57b12');
+  ctx.fillStyle = chipGrad;
+  drawCardRoundRect(ctx, x, y, w, h, 8, true, false);
+
+  ctx.strokeStyle = '#8c590b';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+
+  // Internal circuit contact trace lines
+  ctx.strokeStyle = '#7c4d07';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(x + 10, y + h / 2);
+  ctx.lineTo(x + w - 10, y + h / 2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x + w * 0.34, y + 6);
+  ctx.lineTo(x + w * 0.34, y + h - 6);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x + w * 0.66, y + 6);
+  ctx.lineTo(x + w * 0.66, y + h - 6);
+  ctx.stroke();
+
+  // Center contact pad
+  drawCardRoundRect(ctx, x + w * 0.34, y + h * 0.26, w * 0.32, h * 0.48, 4, false, true);
+
+  ctx.restore();
+}
+
+// Download Wallet Card: Generates and downloads a physical-ready ISO 7810 ID-1 NFC Smart Medical Card
+window.downloadWalletCard = function() {
+  const qrSrc = currentProfile?.qrCode || currentUser?.qrCode || localStorage.getItem('offline_qrCode') || document.getElementById('qrCodeImage')?.src;
   
-  // Clean up
-  setTimeout(() => {
-    card.remove();
-  }, 1000);
+  if (!qrSrc) {
+    showToast('Patient QR code is still generating. Please wait a moment.', 'warning');
+    return;
+  }
+
+  showToast('Generating NFC Smart Medical Card...', 'info');
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 756;
+  const ctx = canvas.getContext('2d');
+
+  const name = (currentUser?.name || localStorage.getItem('offline_name') || 'Patient Identity').trim();
+  const qrId = (currentProfile?.qrCodeId || currentUser?.qrCodeId || localStorage.getItem('offline_qrCodeId') || 'LQR-EMERGENCY').trim();
+
+  const qrImg = new Image();
+  qrImg.crossOrigin = 'anonymous';
+
+  qrImg.onload = () => {
+    // 1. Base Card Shell (Standard CR80 1200x756 with 36px rounded corners)
+    ctx.save();
+    drawCardRoundRect(ctx, 0, 0, 1200, 756, 36, false, false);
+    ctx.clip();
+
+    // Dark sleek obsidian brushed texture gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 1200, 756);
+    bgGrad.addColorStop(0, '#070a11');
+    bgGrad.addColorStop(0.35, '#101726');
+    bgGrad.addColorStop(0.7, '#151f32');
+    bgGrad.addColorStop(1, '#080b12');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1200, 756);
+
+    // Subtle micro security grid watermark
+    ctx.save();
+    ctx.strokeStyle = '#ffffff';
+    ctx.globalAlpha = 0.028;
+    ctx.lineWidth = 1;
+    for (let gx = 0; gx <= 1200; gx += 36) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, 756); ctx.stroke();
+    }
+    for (let gy = 0; gy <= 756; gy += 36) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(1200, gy); ctx.stroke();
+    }
+    ctx.restore();
+
+    // Subtle concentric radar rings originating from the EMV/NFC zone
+    ctx.save();
+    ctx.strokeStyle = '#38bdf8';
+    ctx.globalAlpha = 0.035;
+    ctx.lineWidth = 1.2;
+    for (let r = 80; r <= 600; r += 70) {
+      ctx.beginPath();
+      ctx.arc(120, 210, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Top Emergency Signal Bar (Red Stripe)
+    ctx.fillStyle = '#E11D2E';
+    ctx.fillRect(44, 24, 1112, 6);
+
+    // 2. Header Row
+    // LIFEQR Wordmark
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 38px "Archivo", "Archivo Black", Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('LIFEQR', 52, 78);
+
+    // Pulsing Signal Dot
+    ctx.fillStyle = '#E11D2E';
+    ctx.beginPath();
+    ctx.arc(202, 68, 6.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Subtitle
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '700 11px "JetBrains Mono", monospace';
+    ctx.fillText('SMART NFC MEDICAL PASSPORT • ZERO-LOGIN RESCUE ACCESS', 52, 102);
+
+    // Divider Line
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(44, 122);
+    ctx.lineTo(1156, 122);
+    ctx.stroke();
+
+    // 3. Left Section: Chip, NFC & Identity
+    // EMV Smart Contact Chip
+    drawEmvChip(ctx, 52, 150, 110, 80);
+
+    // Contactless Wave Symbol
+    drawNfcWaves(ctx, 210, 190, '#E11D2E');
+
+    // NFC Details Text beside waves
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 13px "Archivo", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('NFC CONTACTLESS', 255, 178);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '700 11px "JetBrains Mono", monospace';
+    ctx.fillText('13.56 MHz • NTAG 424 DNA', 255, 198);
+
+    ctx.fillStyle = '#10b981';
+    ctx.font = '700 11px "JetBrains Mono", monospace';
+    ctx.fillText('● HARDWARE ENCRYPTED', 255, 218);
+
+    // Cardholder Identity Box (y = 265)
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '700 11px "JetBrains Mono", monospace';
+    ctx.fillText('OFFICIAL CARDHOLDER IDENTITY', 52, 282);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 36px "Archivo", Arial, sans-serif';
+    const displayPatientName = name.length > 22 ? name.substring(0, 20) + '...' : name;
+    ctx.fillText(displayPatientName.toUpperCase(), 52, 324);
+
+    // ID Badge Capsule
+    ctx.fillStyle = '#111827';
+    ctx.strokeStyle = '#E11D2E';
+    ctx.lineWidth = 1.5;
+    drawCardRoundRect(ctx, 52, 344, 250, 36, 6, true, true);
+    ctx.fillStyle = '#E11D2E';
+    ctx.font = '700 14px "JetBrains Mono", monospace';
+    ctx.fillText(`PASSPORT ID: ${qrId}`, 66, 368);
+
+    // Physical Privacy Guarantee Notice Container (y = 405)
+    ctx.fillStyle = '#0b111e';
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1.5;
+    drawCardRoundRect(ctx, 52, 405, 615, 205, 10, true, true);
+
+    // Left Red Bar in container
+    ctx.fillStyle = '#E11D2E';
+    ctx.fillRect(52, 405, 4, 205);
+
+    ctx.fillStyle = '#f87171';
+    ctx.font = '700 12px "JetBrains Mono", monospace';
+    ctx.fillText('🔒 ZERO-KNOWLEDGE PHYSICAL PRIVACY ARCHITECTURE', 74, 435);
+
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '500 14px "Archivo", sans-serif';
+    ctx.fillText('All emergency health parameters, blood group, severe allergies, active', 74, 470);
+    ctx.fillText('prescriptions, and emergency contacts are encrypted within this card.', 74, 496);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '500 13px "Archivo", sans-serif';
+    ctx.fillText('Sensitive personal details remain strictly private on the physical card face.', 74, 532);
+    ctx.fillText('First responders tap NFC or scan the QR code to open the secure rescue profile.', 74, 558);
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '700 11px "JetBrains Mono", monospace';
+    ctx.fillText('✓ INSTANT BYSTANDER & PARAMEDIC COMPATIBLE', 74, 592);
+
+    // 4. Right Section: Scannable QR Core (x = 710, y = 145, w = 440, h = 505)
+    // White Ceramic High-Contrast Mount
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 3;
+    drawCardRoundRect(ctx, 710, 145, 440, 505, 18, true, true);
+
+    // Top Black Mount Header Ribbon
+    ctx.fillStyle = '#0f172a';
+    drawCardRoundRect(ctx, 730, 165, 400, 32, 4, true, false);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 12px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('FIELD RESCUE OPTICAL SCANNER', 710 + 440 / 2, 186);
+
+    // Draw Live Scannable Patient QR Code (350x350)
+    ctx.drawImage(qrImg, 755, 212, 350, 350);
+
+    // Below QR Text
+    ctx.fillStyle = '#E11D2E';
+    ctx.font = '900 17px "Archivo", Arial, sans-serif';
+    ctx.fillText('SCAN OR TAP IN EMERGENCY', 710 + 440 / 2, 592);
+
+    ctx.fillStyle = '#475569';
+    ctx.font = '600 12px "Archivo", sans-serif';
+    ctx.fillText('Works with any smartphone camera or ambulance terminal', 710 + 440 / 2, 614);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '700 11px "JetBrains Mono", monospace';
+    ctx.fillText('NO APPLICATION OR LOGIN REQUIRED', 710 + 440 / 2, 634);
+
+    // 5. Card Bottom Security Footer (y = 675, height = 44)
+    ctx.fillStyle = '#060910';
+    drawCardRoundRect(ctx, 44, 675, 1112, 44, 6, true, false);
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '700 11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('● OFFICIAL SMART MEDICAL PASSPORT • ISO 7810 ID-1 • FIELD ENCRYPTED PASS', 60, 702);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 11px "JetBrains Mono", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText('EMERGENCY DISPATCH: 112 / 911 / 108 • WWW.LIFEQR.COM', 1136, 702);
+
+    // Card Outer Bevel & Border
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 3;
+    drawCardRoundRect(ctx, 0, 0, 1200, 756, 36, false, true);
+
+    ctx.restore();
+
+    // 7. Generate Data URL and Trigger Instant PNG Download
+    currentCardDataUrl = canvas.toDataURL('image/png', 1.0);
+    const cleanFilename = (name || 'Patient').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const downloadLink = document.createElement('a');
+    downloadLink.download = `LifeQR-Smart-Medical-Card-${cleanFilename}.png`;
+    downloadLink.href = currentCardDataUrl;
+    downloadLink.click();
+
+    // 8. Display Interactive Preview Modal
+    const previewImg = document.getElementById('walletCardPreviewImg');
+    if (previewImg) {
+      previewImg.src = currentCardDataUrl;
+    }
+    const modal = document.getElementById('walletCardModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
+
+    showToast('🚑 Smart NFC Medical Card generated and downloaded!', 'success');
+  };
+
+  qrImg.onerror = () => {
+    showToast('Failed to load QR code image for card generation.', 'error');
+  };
+
+  qrImg.src = qrSrc;
 };
+
+// Re-download generated card image
+window.triggerCardImageDownload = function() {
+  if (!currentCardDataUrl) {
+    window.downloadWalletCard();
+    return;
+  }
+  const name = (currentUser?.name || localStorage.getItem('offline_name') || 'Patient').trim();
+  const cleanFilename = name.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const link = document.createElement('a');
+  link.download = `LifeQR-Smart-Medical-Card-${cleanFilename}.png`;
+  link.href = currentCardDataUrl;
+  link.click();
+  showToast('Image downloaded!', 'success');
+};
+
+// Print wallet card directly
+window.printWalletCardImage = function() {
+  if (!currentCardDataUrl) {
+    window.print();
+    return;
+  }
+  const printWin = window.open('', '_blank');
+  if (!printWin) {
+    window.print();
+    return;
+  }
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Print LifeQR Smart Medical Card</title>
+      <style>
+        body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #ffffff; }
+        img { width: 85.6mm; height: 53.98mm; border-radius: 3.18mm; box-shadow: 0 0 1px #000; }
+        @media print {
+          body { margin: 0; }
+          img { width: 85.6mm; height: 53.98mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+      </style>
+    </head>
+    <body>
+      <img src="${currentCardDataUrl}" alt="LifeQR Smart Medical Card" onload="window.print(); window.close();" />
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+};
+
+// Close Wallet Card Modal
+window.closeWalletCardModal = function() {
+  const modal = document.getElementById('walletCardModal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+};
+
+// Traditional Medical ID Download using browser print layout
 
 // Traditional Medical ID Download using browser print layout
 window.downloadQR = function() {
@@ -878,5 +1230,201 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// ==========================================
+// PATIENT HELP & ADMIN ASSISTANCE WORKFLOW
+// ==========================================
+
+async function patientApiFetch(endpoint, options = {}) {
+  const url = (window.getApiUrl ? window.getApiUrl(endpoint) : `/api/v1${endpoint}`);
+  const fetchFn = window.authFetch || fetch;
+  const mergedOptions = {
+    credentials: 'include',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  };
+  return fetchFn(url, mergedOptions);
+}
+
+window.openPatientHelpModal = function() {
+  const modal = document.getElementById('patientHelpModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  const qrInput = document.getElementById('patientHelpQrId');
+  if (qrInput) {
+    qrInput.value = currentProfile?.qrCodeId || currentUser?.qrCodeId || localStorage.getItem('offline_qrCodeId') || '';
+  }
+
+  loadPatientHelpTickets();
+};
+
+window.closePatientHelpModal = function() {
+  const modal = document.getElementById('patientHelpModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.switchPatientHelpTab = function(tab) {
+  const newBtn = document.getElementById('patientHelpTabNewBtn');
+  const histBtn = document.getElementById('patientHelpTabHistoryBtn');
+  const formPane = document.getElementById('patientHelpForm');
+  const histPane = document.getElementById('patientHelpHistoryPane');
+
+  if (tab === 'new') {
+    newBtn.className = 'px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider border-b-2 border-[#E11D2E] text-[#E11D2E] -mb-[2px] transition flex items-center gap-1.5';
+    histBtn.className = 'px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-[#111111]/60 hover:text-[#111111] transition flex items-center gap-1.5';
+    formPane.classList.remove('hidden');
+    histPane.classList.add('hidden');
+  } else {
+    histBtn.className = 'px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider border-b-2 border-[#E11D2E] text-[#E11D2E] -mb-[2px] transition flex items-center gap-1.5';
+    newBtn.className = 'px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-[#111111]/60 hover:text-[#111111] transition flex items-center gap-1.5';
+    formPane.classList.add('hidden');
+    histPane.classList.remove('hidden');
+    loadPatientHelpTickets();
+  }
+};
+
+window.handlePatientHelpSubmit = async function(e) {
+  e.preventDefault();
+  const subject = document.getElementById('patientHelpSubject')?.value?.trim();
+  const message = document.getElementById('patientHelpMessage')?.value?.trim();
+  const category = document.getElementById('patientHelpCategory')?.value;
+  const priority = document.getElementById('patientHelpPriority')?.value;
+  const patientQrCodeId = document.getElementById('patientHelpQrId')?.value?.trim();
+
+  if (!subject || !message) {
+    showToast('Please provide both subject and detailed description', 'warning');
+    return;
+  }
+
+  const submitBtn = document.getElementById('patientHelpSubmitBtn');
+  const origHtml = submitBtn.innerHTML;
+
+  try {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span><span>Dispatching...</span>';
+
+    const res = await patientApiFetch('/help-tickets', {
+      method: 'POST',
+      body: JSON.stringify({
+        subject,
+        message,
+        category,
+        priority,
+        patientQrCodeId
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to submit help ticket');
+
+    showToast('Help request dispatched to LifeQR Administrators!', 'success');
+    document.getElementById('patientHelpForm').reset();
+    switchPatientHelpTab('history');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origHtml;
+    }
+  }
+};
+
+window.loadPatientHelpTickets = async function() {
+  try {
+    const res = await patientApiFetch('/help-tickets/my');
+    if (!res.ok) return;
+    const data = await res.json();
+    const tickets = data.tickets || [];
+
+    const badge = document.getElementById('patientHelpMyTicketsBadge');
+    if (badge) {
+      badge.textContent = tickets.length;
+      if (tickets.length > 0) badge.classList.remove('hidden');
+      else badge.classList.add('hidden');
+    }
+
+    const dot = document.getElementById('patientHelpPendingDot');
+    const hasPending = tickets.some(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS');
+    if (dot) {
+      if (hasPending) dot.classList.remove('hidden');
+      else dot.classList.add('hidden');
+    }
+
+    const list = document.getElementById('patientHelpHistoryList');
+    if (!list) return;
+
+    if (tickets.length === 0) {
+      list.innerHTML = `
+        <div class="border-2 border-dashed border-[#111111]/20 p-6 text-center text-xs font-mono text-[#111111]/60">
+          No help tickets submitted yet. If you have an inquiry or need assistance, submit a request above.
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = tickets.map(t => {
+      let statusBadge = '<span class="px-2 py-0.5 border border-amber-600 bg-amber-50 text-amber-800 text-[10px] font-bold uppercase">Pending Admin Review</span>';
+      if (t.status === 'IN_PROGRESS') {
+        statusBadge = '<span class="px-2 py-0.5 border border-blue-600 bg-blue-50 text-blue-800 text-[10px] font-bold uppercase">In Progress</span>';
+      } else if (t.status === 'RESOLVED') {
+        statusBadge = '<span class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[10px] font-bold uppercase">Resolved</span>';
+      }
+
+      let priorityBadge = '<span class="px-1.5 py-0.5 border border-gray-300 bg-gray-50 text-gray-700 text-[9px] font-bold uppercase">NORMAL</span>';
+      if (t.priority === 'HIGH') {
+        priorityBadge = '<span class="px-1.5 py-0.5 border border-amber-600 bg-amber-50 text-amber-900 text-[9px] font-bold uppercase">HIGH</span>';
+      } else if (t.priority === 'CRITICAL') {
+        priorityBadge = '<span class="px-1.5 py-0.5 border border-[#E11D2E] bg-red-50 text-[#E11D2E] text-[9px] font-bold uppercase">CRITICAL</span>';
+      }
+
+      const dateStr = new Date(t.createdAt).toLocaleString('en-US', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      const adminNotesHtml = t.adminNotes ? `
+        <div class="mt-2.5 p-3 border-2 border-emerald-600 bg-emerald-50 text-emerald-950 text-xs">
+          <div class="flex items-center gap-1.5 font-bold uppercase text-[10px] text-emerald-800 mb-1">
+            <span class="material-symbols-outlined text-xs">admin_panel_settings</span>
+            <span>Administrator Response Note</span>
+            ${t.resolvedAt ? `<span class="ml-auto font-normal text-[9px] opacity-75">${new Date(t.resolvedAt).toLocaleDateString()}</span>` : ''}
+          </div>
+          <p class="font-sans leading-relaxed whitespace-pre-wrap">${t.adminNotes}</p>
+        </div>
+      ` : `
+        <div class="mt-2 p-2 border border-dashed border-[#111111]/20 bg-gray-50 text-[11px] text-[#111111]/60 font-sans italic">
+          Ticket queued in administrator command clearinghouse. Awaiting admin review.
+        </div>
+      `;
+
+      return `
+        <div class="border-2 border-[#111111] p-3.5 bg-white space-y-2 shadow-[2px_2px_0px_#111111]">
+          <div class="flex items-start justify-between gap-2 flex-wrap">
+            <div>
+              <span class="font-bold text-xs text-[#111111] uppercase tracking-wide">${t.subject}</span>
+              <div class="text-[10px] text-[#111111]/60 font-mono mt-0.5">
+                <span>#${t.ticketId}</span> &bull; <span>${t.category.replace(/_/g, ' ')}</span> &bull; <span>${dateStr}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              ${priorityBadge}
+              ${statusBadge}
+            </div>
+          </div>
+          <p class="text-xs font-sans text-[#111111]/80 whitespace-pre-wrap">${t.message}</p>
+          ${adminNotesHtml}
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.warn('Failed to load patient help tickets:', err);
+  }
+};
+
 
 

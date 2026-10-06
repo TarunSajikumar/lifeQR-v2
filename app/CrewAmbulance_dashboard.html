@@ -229,6 +229,13 @@
           <span class="theme-toggle-icon material-symbols-outlined text-sm">dark_mode</span>
           <span class="theme-toggle-label hidden sm:inline">Theme</span>
         </button>
+
+        <!-- Help Button for Admin Assistance -->
+        <button onclick="openCrewHelpModal()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold flex items-center gap-1.5 relative" title="Request Admin Help & Dispatch Support">
+          <span class="material-symbols-outlined text-sm text-[#E11D2E]">help</span>
+          <span class="hidden sm:inline">Help</span>
+          <span id="crewHelpPendingDot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#E11D2E] rounded-full border-2 border-white animate-ping"></span>
+        </button>
         
         <button onclick="logout()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold">
           <span class="material-symbols-outlined text-sm">logout</span>
@@ -386,6 +393,25 @@
                 <div id="patEmergencyContact" class="mb-4"></div>
               </div>
 
+              <!-- Uploaded Diagnostic Reports & Clinical Files -->
+              <div class="pt-4 border-t-2 border-[#111111] space-y-3">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-mono text-xs font-bold uppercase tracking-wider text-[#111111]/70 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[#111111] text-base">folder_open</span> Diagnostic Reports & Uploaded Medical Records
+                  </h4>
+                  <span id="patReportsBadge" class="px-2 py-0.5 border border-[#111111] bg-white text-[10px] font-mono font-bold uppercase text-[#111111]">0 Files</span>
+                </div>
+                <div id="patReportsList" class="space-y-2"></div>
+              </div>
+
+              <!-- Clinical Medical History Timeline -->
+              <div class="pt-4 border-t-2 border-[#111111] space-y-3">
+                <h4 class="font-mono text-xs font-bold uppercase tracking-wider text-[#111111]/70 flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[#111111] text-base">history</span> Clinical Medical History & Recorded Events
+                </h4>
+                <div id="patHistoryList" class="space-y-2"></div>
+              </div>
+
               <!-- Incident Checkpoint Logger -->
               <div class="pt-4 border-t-2 border-[#111111] space-y-3">
                 <h4 class="font-mono text-xs font-bold uppercase tracking-wider text-[#111111]/70 flex items-center gap-1.5">
@@ -520,6 +546,97 @@
     </div>
   </main>
 
+  <!-- Crew Dispatch Help & Admin Support Modal -->
+  <div id="crewHelpModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+    <div class="bg-white border-2 border-[#111111] shadow-[8px_8px_0px_#111111] max-w-2xl w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 bg-[#E11D2E] rounded-full"></span>
+          <div>
+            <h3 class="font-black text-sm uppercase tracking-wider text-[#111111]">LifeQR Crew Dispatch &bull; Admin Support Clearinghouse</h3>
+            <p class="text-[11px] font-mono text-[#111111]/70 font-semibold">Report telemetry outages, request hospital intake override, or seek admin emergency clearance</p>
+          </div>
+        </div>
+        <button onclick="closeCrewHelpModal()" class="p-1 text-[#111111] hover:bg-gray-100 transition" title="Close">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex border-b-2 border-[#111111] gap-2">
+        <button id="crewHelpTabNewBtn" onclick="switchCrewHelpTab('new')" class="px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider border-b-2 border-[#E11D2E] text-[#E11D2E] -mb-[2px] transition flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">edit_note</span>
+          <span>Submit Crew Ticket</span>
+        </button>
+        <button id="crewHelpTabHistoryBtn" onclick="switchCrewHelpTab('history')" class="px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-[#111111]/60 hover:text-[#111111] transition flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">history</span>
+          <span>My Tickets & Admin Notes</span>
+          <span id="crewHelpMyTicketsBadge" class="hidden ml-1 px-1.5 py-0.2 bg-[#E11D2E] text-white text-[10px] font-mono font-bold rounded-full">0</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: New Ticket Form -->
+      <form id="crewHelpForm" onsubmit="handleCrewHelpSubmit(event)" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-mono uppercase font-bold text-[#111111] mb-1">Issue Category</label>
+            <select id="crewHelpCategory" class="w-full p-2.5 text-xs font-mono font-bold border-2 border-[#111111] bg-white">
+              <option value="EMERGENCY_OVERRIDE">Emergency Dispatch / Override Authorization</option>
+              <option value="SYSTEM_TECHNICAL">GPS / Socket Telemetry Disconnect</option>
+              <option value="IDENTITY_MISMATCH">Patient Identity / QR Verification Mismatch</option>
+              <option value="ACCOUNT_VERIFICATION">Crew Responder Credential Issue</option>
+              <option value="GENERAL_ASSISTANCE">General Dispatch Assistance</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-mono uppercase font-bold text-[#111111] mb-1">Priority Level</label>
+            <select id="crewHelpPriority" class="w-full p-2.5 text-xs font-mono font-bold border-2 border-[#111111] bg-white">
+              <option value="NORMAL">Normal — Routine inquiry</option>
+              <option value="HIGH">High — In-transit support required</option>
+              <option value="CRITICAL">Critical — Code Red emergency clearance</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-mono uppercase font-bold text-[#111111] mb-1">Patient QR ID (If relevant to active triage)</label>
+          <input type="text" id="crewHelpPatientId" placeholder="E.g., RAH-D3200470" class="w-full p-2.5 text-xs font-mono uppercase border-2 border-[#111111] bg-white">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-mono uppercase font-bold text-[#111111] mb-1">Subject</label>
+          <input type="text" id="crewHelpSubject" required placeholder="E.g., Immediate hospital trauma bay redirection needed" class="w-full p-2.5 text-xs font-mono border-2 border-[#111111]">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-mono uppercase font-bold text-[#111111] mb-1">Detailed Situation Description</label>
+          <textarea id="crewHelpMessage" rows="4" required placeholder="Specify telemetry readings, patient situation, or administrative action needed..." class="w-full p-2.5 text-xs font-sans border-2 border-[#111111]"></textarea>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t-2 border-[#111111]">
+          <span class="text-[10px] font-mono text-[#111111]/60">Monitored 24/7 by LifeQR Admin Command</span>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeCrewHelpModal()" class="btn-secondary text-xs px-4 py-2 font-mono uppercase tracking-wider font-bold">Cancel</button>
+            <button type="submit" id="crewHelpSubmitBtn" class="btn-primary text-xs px-5 py-2 font-mono uppercase tracking-wider font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+              <span class="material-symbols-outlined text-sm">send</span>
+              <span>Transmit Help Request</span>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Tab 2: Ticket History & Admin Responses -->
+      <div id="crewHelpHistoryPane" class="hidden space-y-3 max-h-80 overflow-y-auto pr-1">
+        <div id="crewHelpHistoryList" class="space-y-3 font-mono text-xs">
+          <!-- Populated dynamically via loadCrewHelpTickets -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Fixed Mobile Bottom Navigation Bar -->
   <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#111111] z-50 px-2 py-2 flex items-center justify-around no-print shadow-[0_-4px_0px_#111111]">
     <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#E11D2E]" aria-label="SOS Dispatch Feed">
@@ -533,6 +650,10 @@
     <button onclick="document.getElementById('mapWrapper')?.scrollIntoView({behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="GPS Location Map">
       <span class="material-symbols-outlined text-lg">map</span>
       <span class="text-[10px] uppercase">GPS Map</span>
+    </button>
+    <button onclick="openCrewHelpModal()" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Help">
+      <span class="material-symbols-outlined text-lg text-[#E11D2E]">help</span>
+      <span class="text-[10px] uppercase">Help</span>
     </button>
     <button onclick="logout()" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Logout">
       <span class="material-symbols-outlined text-lg">logout</span>

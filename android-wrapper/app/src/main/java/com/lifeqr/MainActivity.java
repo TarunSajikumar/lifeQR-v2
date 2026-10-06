@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private SwipeRefreshLayout swipeRefresh;
     private LinearLayout splashContainer;
-    private static final String APP_URL = "http://192.168.100.82:5000"; // Local machine IP for Wi-Fi testing
+    private static final String APP_URL = "http://192.168.100.144:5000"; // Local machine IP for Wi-Fi testing
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override

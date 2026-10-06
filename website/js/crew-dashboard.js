@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Setup form submit listeners
   setupCrewListeners();
+
+  // Load crew help tickets
+  loadCrewHelpTickets();
 });
 
 async function checkVerificationStatus() {
@@ -84,6 +87,11 @@ function initSocketConnection() {
 
     socket.on('trauma-bay-assigned', (data) => {
       showToast(`🏥 TRAUMA BAY ASSIGNED BY ER: ${data.assignedBay} for ${data.patientName}!`, 'success', 10000);
+    });
+
+    socket.on('help-ticket-updated', (data) => {
+      showToast(`LifeQR Dispatch Admin updated ticket ${data.ticketId} (${data.status})`, 'info');
+      loadCrewHelpTickets();
     });
   } catch (e) {
     console.warn('Real-time Socket.IO connection failed. Crew alert broadcast disabled.');
@@ -242,6 +250,62 @@ function renderPatientDetails() {
     }
   }
 
+  // Render Uploaded Reports
+  const reportsList = document.getElementById('patReportsList');
+  const reportsBadge = document.getElementById('patReportsBadge');
+  const reports = activePatient.reports || (activePatient.profile && activePatient.profile.reports) || [];
+  if (reportsBadge) reportsBadge.textContent = `${reports.length} Files`;
+  if (reportsList) {
+    reportsList.innerHTML = '';
+    if (reports.length === 0) {
+      reportsList.innerHTML = `<p class="text-xs text-slate-400 italic p-3 bg-[#111111] border-2 border-[#2e2e2e]">No diagnostic reports or uploaded medical files on record.</p>`;
+    } else {
+      reports.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'p-3 bg-[#111111] border-2 border-[#2e2e2e] flex items-center justify-between gap-3';
+        div.innerHTML = `
+          <div class="truncate mr-2">
+            <div class="flex items-center gap-2 mb-0.5">
+              <span class="px-1.5 py-0.5 bg-red-950/60 border border-[#E11D2E] text-[#E11D2E] text-[9px] font-mono font-bold uppercase">${r.category || 'Clinical'}</span>
+              <span class="text-[10px] text-slate-400 font-mono">${r.uploadedAt ? new Date(r.uploadedAt).toLocaleDateString() : ''}</span>
+            </div>
+            <p class="text-xs font-bold text-white truncate">${r.originalName || r.filename || r.title || 'Medical File'}</p>
+          </div>
+          ${r.url || r.fileUrl ? `
+            <a href="${r.url || r.fileUrl}" target="_blank" class="px-3 py-1 bg-white hover:bg-[#E11D2E] hover:text-white text-[#111111] text-xs font-mono font-bold uppercase tracking-wider transition flex items-center gap-1 shadow-[2px_2px_0px_#000000]">
+              <span class="material-symbols-outlined text-xs">visibility</span> View
+            </a>
+          ` : ''}
+        `;
+        reportsList.appendChild(div);
+      });
+    }
+  }
+
+  // Render Medical History Timeline
+  const historyList = document.getElementById('patHistoryList');
+  const history = activePatient.medicalHistory || (activePatient.profile && activePatient.profile.medicalHistory) || [];
+  if (historyList) {
+    historyList.innerHTML = '';
+    if (history.length === 0) {
+      historyList.innerHTML = `<p class="text-xs text-slate-400 italic p-3 bg-[#111111] border-2 border-[#2e2e2e]">No recorded clinical history entries.</p>`;
+    } else {
+      history.forEach(h => {
+        const div = document.createElement('div');
+        div.className = 'p-3 bg-[#111111] border-l-4 border-l-[#E11D2E] border-2 border-[#2e2e2e] space-y-1';
+        div.innerHTML = `
+          <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
+            <span class="font-bold uppercase text-[#E11D2E]">${h.type || 'Event'}</span>
+            <span>${h.timestamp ? new Date(h.timestamp).toLocaleString() : ''}</span>
+          </div>
+          <p class="text-xs font-bold text-white">${h.title || 'Checkpoint'}</p>
+          ${h.description ? `<p class="text-xs text-slate-300 font-sans">${h.description}</p>` : ''}
+        `;
+        historyList.appendChild(div);
+      });
+    }
+  }
+
   const loc = activePatient.lastLocation || activePatient.location;
   if (loc && loc.lat && loc.lng) {
     renderEmergencyMap(loc.lat, loc.lng);
@@ -352,6 +416,11 @@ function renderEmergencyMap(lat, lng) {
       .openPopup();
   }
 
+  const gmapsBtn = document.getElementById('gmapsNavBtn');
+  if (gmapsBtn && lat && lng) {
+    gmapsBtn.href = `https://maps.google.com/?q=${lat},${lng}`;
+  }
+
   setTimeout(() => {
     if (mapInstance) mapInstance.invalidateSize();
   }, 200);
@@ -371,6 +440,14 @@ function setupCrewListeners() {
         window.searchPatient();
       }
     });
+
+    const urlQrId = new URLSearchParams(window.location.search).get('qrId') || new URLSearchParams(window.location.search).get('id');
+    if (urlQrId) {
+      qrInput.value = urlQrId;
+      setTimeout(() => {
+        window.searchPatient();
+      }, 300);
+    }
   }
 }
 
@@ -490,5 +567,188 @@ window.sendERLiveStream = async function() {
     closeERStreamModal();
   } catch (err) {
     showToast(err.message, 'error');
+  }
+};
+
+// ==========================================
+// CREW DISPATCH HELP & ADMIN SUPPORT WORKFLOW
+// ==========================================
+
+window.openCrewHelpModal = function() {
+  const modal = document.getElementById('crewHelpModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  const patInput = document.getElementById('crewHelpPatientId');
+  if (patInput && !patInput.value && activePatient?.profile?.qrCodeId) {
+    patInput.value = activePatient.profile.qrCodeId;
+  }
+
+  loadCrewHelpTickets();
+};
+
+window.closeCrewHelpModal = function() {
+  const modal = document.getElementById('crewHelpModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.switchCrewHelpTab = function(tab) {
+  const newBtn = document.getElementById('crewHelpTabNewBtn');
+  const histBtn = document.getElementById('crewHelpTabHistoryBtn');
+  const formPane = document.getElementById('crewHelpForm');
+  const histPane = document.getElementById('crewHelpHistoryPane');
+
+  if (tab === 'new') {
+    newBtn.className = 'px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider border-b-2 border-[#E11D2E] text-[#E11D2E] -mb-[2px] transition flex items-center gap-1.5';
+    histBtn.className = 'px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-[#111111]/60 hover:text-[#111111] transition flex items-center gap-1.5';
+    formPane.classList.remove('hidden');
+    histPane.classList.add('hidden');
+  } else {
+    histBtn.className = 'px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider border-b-2 border-[#E11D2E] text-[#E11D2E] -mb-[2px] transition flex items-center gap-1.5';
+    newBtn.className = 'px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider text-[#111111]/60 hover:text-[#111111] transition flex items-center gap-1.5';
+    formPane.classList.add('hidden');
+    histPane.classList.remove('hidden');
+    loadCrewHelpTickets();
+  }
+};
+
+window.handleCrewHelpSubmit = async function(e) {
+  e.preventDefault();
+  const subject = document.getElementById('crewHelpSubject')?.value?.trim();
+  const message = document.getElementById('crewHelpMessage')?.value?.trim();
+  const category = document.getElementById('crewHelpCategory')?.value;
+  const priority = document.getElementById('crewHelpPriority')?.value;
+  const patientQrCodeId = document.getElementById('crewHelpPatientId')?.value?.trim();
+
+  if (!subject || !message) {
+    showToast('Please provide subject and detailed situation description', 'warning');
+    return;
+  }
+
+  const submitBtn = document.getElementById('crewHelpSubmitBtn');
+  const origHtml = submitBtn.innerHTML;
+
+  try {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span><span>Transmitting...</span>';
+
+    const res = await crewApiFetch('/help-tickets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject,
+        message,
+        category,
+        priority,
+        patientQrCodeId
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to submit help ticket');
+
+    showToast('Dispatch Help Request transmitted to System Administrators!', 'success');
+    document.getElementById('crewHelpForm').reset();
+    switchCrewHelpTab('history');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origHtml;
+    }
+  }
+};
+
+window.loadCrewHelpTickets = async function() {
+  try {
+    const res = await crewApiFetch('/help-tickets/my');
+    if (!res.ok) return;
+    const data = await res.json();
+    const tickets = data.tickets || [];
+
+    const badge = document.getElementById('crewHelpMyTicketsBadge');
+    if (badge) {
+      badge.textContent = tickets.length;
+      if (tickets.length > 0) badge.classList.remove('hidden');
+      else badge.classList.add('hidden');
+    }
+
+    const dot = document.getElementById('crewHelpPendingDot');
+    const hasPending = tickets.some(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS');
+    if (dot) {
+      if (hasPending) dot.classList.remove('hidden');
+      else dot.classList.add('hidden');
+    }
+
+    const list = document.getElementById('crewHelpHistoryList');
+    if (!list) return;
+
+    if (tickets.length === 0) {
+      list.innerHTML = `
+        <div class="border-2 border-dashed border-[#111111]/20 p-6 text-center text-xs font-mono text-[#111111]/60">
+          No dispatch tickets submitted yet. If you encounter telemetry blocks or need triage authorization, submit a request above.
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = tickets.map(t => {
+      let statusBadge = '<span class="px-2 py-0.5 border border-amber-600 bg-amber-50 text-amber-800 text-[10px] font-bold uppercase">Pending Dispatch Review</span>';
+      if (t.status === 'IN_PROGRESS') {
+        statusBadge = '<span class="px-2 py-0.5 border border-blue-600 bg-blue-50 text-blue-800 text-[10px] font-bold uppercase">In Progress</span>';
+      } else if (t.status === 'RESOLVED') {
+        statusBadge = '<span class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[10px] font-bold uppercase">Resolved</span>';
+      }
+
+      let priorityBadge = '<span class="px-1.5 py-0.5 border border-gray-300 bg-gray-50 text-gray-700 text-[9px] font-bold uppercase">NORMAL</span>';
+      if (t.priority === 'HIGH') {
+        priorityBadge = '<span class="px-1.5 py-0.5 border border-amber-600 bg-amber-50 text-amber-900 text-[9px] font-bold uppercase">HIGH</span>';
+      } else if (t.priority === 'CRITICAL') {
+        priorityBadge = '<span class="px-1.5 py-0.5 border border-[#E11D2E] bg-red-50 text-[#E11D2E] text-[9px] font-bold uppercase">CRITICAL</span>';
+      }
+
+      const dateStr = new Date(t.createdAt).toLocaleString('en-US', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      const adminNotesHtml = t.adminNotes ? `
+        <div class="mt-2.5 p-3 border-2 border-emerald-600 bg-emerald-50 text-emerald-950 text-xs">
+          <div class="flex items-center gap-1.5 font-bold uppercase text-[10px] text-emerald-800 mb-1">
+            <span class="material-symbols-outlined text-xs">admin_panel_settings</span>
+            <span>Administrator Response Note</span>
+            ${t.resolvedAt ? `<span class="ml-auto font-normal text-[9px] opacity-75">${new Date(t.resolvedAt).toLocaleDateString()}</span>` : ''}
+          </div>
+          <p class="font-sans leading-relaxed whitespace-pre-wrap">${t.adminNotes}</p>
+        </div>
+      ` : `
+        <div class="mt-2 p-2 border border-dashed border-[#111111]/20 bg-gray-50 text-[11px] text-[#111111]/60 font-sans italic">
+          Ticket queued in administrator command clearinghouse. Awaiting admin review.
+        </div>
+      `;
+
+      return `
+        <div class="border-2 border-[#111111] p-3.5 bg-white space-y-2 shadow-[2px_2px_0px_#111111]">
+          <div class="flex items-start justify-between gap-2 flex-wrap">
+            <div>
+              <span class="font-bold text-xs text-[#111111] uppercase tracking-wide">${t.subject}</span>
+              <div class="text-[10px] text-[#111111]/60 font-mono mt-0.5">
+                <span>#${t.ticketId}</span> &bull; <span>${t.category.replace(/_/g, ' ')}</span> &bull; <span>${dateStr}</span>
+                ${t.patientQrCodeId ? ` &bull; Patient: <strong class="text-[#E11D2E]">${t.patientQrCodeId}</strong>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              ${priorityBadge}
+              ${statusBadge}
+            </div>
+          </div>
+          <p class="text-xs font-sans text-[#111111]/80 whitespace-pre-wrap">${t.message}</p>
+          ${adminNotesHtml}
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.warn('Failed to load crew help tickets:', err);
   }
 };
