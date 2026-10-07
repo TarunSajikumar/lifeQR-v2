@@ -1,4 +1,15 @@
 // Emergency Access JS Module (LifeQR Swiss/Editorial Standard)
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+if (typeof window !== 'undefined') window.escapeHtml = escapeHtml;
+
 let currentPatient = null;
 let currentLanguage = 'en';
 
@@ -22,7 +33,7 @@ const translations = {
     allergies: "Severe Allergies",
     medications: "Active Prescriptions & Dosages",
     conditions: "Critical Medical Issues",
-    contacts: "Emergency Contacts (ICE)",
+    contacts: "Emergency Contacts",
     callContact: "Call Now",
     callPatient: "Call Patient",
     openMap: "Open in Maps",
@@ -32,7 +43,7 @@ const translations = {
     address: "Registered Location",
     emergencyBadge: "BYSTANDER RESCUE LIFELINE",
     crewBadge: "PARAMEDIC / AMBULANCE CREW MODE",
-    credentialId: "PASSPORT ID",
+    credentialId: "PERSON ID",
     reports: "Diagnostic Reports & Medical Documents",
     history: "Clinical Medical History Timeline",
     organDonor: "Organ Donor",
@@ -45,7 +56,7 @@ const translations = {
     allergies: "गंभीर एलर्जी",
     medications: "सक्रिय दवाएं और खुराक",
     conditions: "महत्वपूर्ण स्वास्थ्य समस्याएं",
-    contacts: "आपातकालीन संपर्क (ICE)",
+    contacts: "आपातकालीन संपर्क",
     callContact: "कॉल करें",
     callPatient: "मरीज़ को कॉल करें",
     openMap: "मानचित्र में देखें",
@@ -55,7 +66,7 @@ const translations = {
     address: "पंजीकृत पता",
     emergencyBadge: "आपातकालीन जीवन रेखा",
     crewBadge: "एंबुलेंस क्रू / पैरामेडिक मोड",
-    credentialId: "पासपोर्ट पहचान",
+    credentialId: "व्यक्ति आईडी",
     reports: "चिकित्सा रिपोर्ट और दस्तावेज़",
     history: "क्लिनिकल इतिहास समयरेखा",
     organDonor: "अंग दाता",
@@ -78,7 +89,7 @@ const translations = {
     address: "ವಿಳಾಸ",
     emergencyBadge: "ತುರ್ತು ಜೀವರೇಖೆ",
     crewBadge: "ಆಂಬ್ಯುಲೆನ್ಸ್ ಸಿಬ್ಬಂದಿ ಮೋಡ್",
-    credentialId: "ಪಾಸ್ಪೋರ್ಟ್ ಗುರುತು",
+    credentialId: "ವ್ಯಕ್ತಿ ಗುರುತು",
     reports: "ವೈದ್ಯಕೀಯ ವರದಿಗಳು",
     history: "ವೈದ್ಯಕೀಯ ಇತಿಹಾಸ",
     organDonor: "ಅಂಗದಾನಿ",
@@ -101,7 +112,7 @@ const translations = {
     address: "முகவரி",
     emergencyBadge: "அவசர அணுகல்",
     crewBadge: "ஆம்புலன்ஸ் பணியாளர் முறை",
-    credentialId: "பாஸ்போர்ட் எண்",
+    credentialId: "நபர் அடையாள எண்",
     reports: "மருத்துவ அறிக்கைகள்",
     history: "மருத்துவ வரலாறு",
     organDonor: "உறுப்பு தானம்",
@@ -114,7 +125,7 @@ const translations = {
     allergies: "Alergias Severas",
     medications: "Medicamentos Activos y Dosis",
     conditions: "Condiciones Médicas Críticas",
-    contacts: "Contactos de Emergencia (ICE)",
+    contacts: "Contactos de Emergencia",
     callContact: "Llamar",
     callPatient: "Llamar al Paciente",
     openMap: "Ver en Mapas",
@@ -124,7 +135,7 @@ const translations = {
     address: "Ubicación Registrada",
     emergencyBadge: "LÍNEA DE EMERGENCIA",
     crewBadge: "MODO AMBULANCIA / PARAMÉDICO",
-    credentialId: "ID PASAPORTE",
+    credentialId: "ID PERSONA",
     reports: "Informes Médicos y Diagnósticos",
     history: "Historial Clínico Cronológico",
     organDonor: "Donante de Órganos",
@@ -257,6 +268,16 @@ function renderEmergencyDetails() {
   const reports = currentPatient.reports || [];
   const history = currentPatient.medicalHistory || [];
 
+  const ev = currentPatient.emergencyViewSettings || {};
+  const isOrganDonor = ev.organDonor || currentPatient.organDonor;
+  const dnrDirective = ev.dnrDirective && ev.dnrDirective !== 'FULL_CODE' ? ev.dnrDirective : null;
+  const bannerText = ev.emergencyBannerText || '';
+  const maskPhone = ev.bystanderPhoneMasking && !isCrewMode;
+
+  const displayPhone = (maskPhone && phone && phone.length > 5)
+    ? phone.slice(0, 4) + ' ••••• ' + phone.slice(-2)
+    : phone;
+
   // Build ICE Contacts HTML
   let contactsHTML = '';
   if (contacts.length === 0) {
@@ -264,11 +285,14 @@ function renderEmergencyDetails() {
   } else {
     contactsHTML = `<div class="grid sm:grid-cols-2 gap-3">`;
     contacts.forEach((c) => {
+      const pDisplay = (maskPhone && c.phone && c.phone.length > 5)
+        ? c.phone.slice(0, 4) + ' ••••• ' + c.phone.slice(-2)
+        : c.phone;
       contactsHTML += `
         <div class="p-4 border-2 border-[#111111] bg-white flex items-center justify-between gap-3 shadow-[3px_3px_0px_#111111]">
           <div>
-            <p class="font-black text-sm text-[#111111] uppercase tracking-tight">${c.name} <span class="text-xs font-mono text-[#E11D2E]">(${c.relationship || 'ICE Contact'})</span></p>
-            <p class="text-xs font-mono font-bold text-[#111111]/70 mt-0.5">${c.phone}</p>
+            <p class="font-black text-sm text-[#111111] uppercase tracking-tight">${c.name} ${c.relationship ? `<span class="text-xs font-mono text-[#E11D2E]">(${c.relationship})</span>` : ''}</p>
+            <p class="text-xs font-mono font-bold text-[#111111]/70 mt-0.5">${pDisplay}</p>
           </div>
           <a href="tel:${c.phone}" class="btn-call px-4 py-2 text-xs font-mono uppercase tracking-wider font-bold">
             <span class="material-symbols-outlined text-sm">phone</span>
@@ -284,6 +308,13 @@ function renderEmergencyDetails() {
   // Strict requirement: Patient Name, Phone Number, Address, Blood Group, Medical Issues / Severe Allergies, Emergency Contacts
   if (!isCrewMode) {
     container.innerHTML = `
+      ${bannerText ? `
+        <div class="mb-4 p-3 border-2 border-[#111111] bg-amber-100 text-[#111111] font-mono text-xs font-bold flex items-center gap-2 shadow-[2px_2px_0px_#111111]">
+          <span class="material-symbols-outlined text-base text-amber-800">warning</span>
+          <span>${escapeHtml(bannerText)}</span>
+        </div>
+      ` : ''}
+
       <!-- Top Responder Mode Clearance Prompt -->
       <div class="mb-6 p-4 border-2 border-[#111111] bg-[#f9fafb] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[3px_3px_0px_#111111] no-print">
         <div class="flex items-center gap-3">
@@ -318,10 +349,11 @@ function renderEmergencyDetails() {
         <img src="${photo}" alt="Patient Photo" class="w-20 h-20 border-2 border-[#111111] object-cover bg-gray-100 flex-shrink-0 shadow-[4px_4px_0px_#111111]" onerror="this.src='/LifeQR.png'">
         <div class="text-center sm:text-left flex-1">
           <h2 class="font-black text-2xl sm:text-3xl text-[#111111] tracking-tight uppercase">${patientName}</h2>
-          <div class="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-2 font-mono text-xs text-[#111111]/70 font-bold">
+          <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-2 font-mono text-xs text-[#111111]/70 font-bold">
             <span>${t.age}: <strong class="text-[#111111]">${currentPatient.age || 'N/A'}</strong></span>
             <span>&bull;</span>
             <span>${t.gender}: <strong class="text-[#111111] capitalize">${currentPatient.gender || 'N/A'}</strong></span>
+            ${dnrDirective ? `<span class="px-2 py-0.5 border border-purple-700 bg-purple-50 text-purple-900 text-[10px] font-bold uppercase">⚖️ ${dnrDirective.replace(/_/g, ' ')}</span>` : ''}
           </div>
         </div>
         <!-- 4. Blood Group Highlight Box -->
@@ -339,7 +371,7 @@ function renderEmergencyDetails() {
             <p class="text-[10px] font-mono font-bold uppercase text-[#111111]/60 tracking-wider flex items-center gap-1">
               <span class="material-symbols-outlined text-xs">call</span> ${t.phone}
             </p>
-            <p class="font-black text-base text-[#111111] font-mono mt-0.5">${phone}</p>
+            <p class="font-black text-base text-[#111111] font-mono mt-0.5">${displayPhone}</p>
           </div>
           <a href="tel:${phone}" class="btn-primary py-1.5 px-3 text-xs font-mono uppercase font-bold tracking-wider flex items-center gap-1 shadow-[2px_2px_0px_#111111]">
             <span class="material-symbols-outlined text-xs">phone</span> Call
@@ -383,7 +415,7 @@ function renderEmergencyDetails() {
         </div>
       </div>
 
-      <!-- 6. Emergency Contacts (ICE) -->
+      <!-- 6. Emergency Contacts -->
       <div class="pt-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-black text-sm uppercase text-[#111111] tracking-wider flex items-center gap-2">
@@ -461,6 +493,13 @@ function renderEmergencyDetails() {
   }
 
   container.innerHTML = `
+    ${bannerText ? `
+      <div class="mb-4 p-3 border-2 border-[#111111] bg-amber-100 text-[#111111] font-mono text-xs font-bold flex items-center gap-2 shadow-[2px_2px_0px_#111111]">
+        <span class="material-symbols-outlined text-base text-amber-800">warning</span>
+        <span>${escapeHtml(bannerText)}</span>
+      </div>
+    ` : ''}
+
     <!-- Top Active Crew Mode Cleared Bar -->
     <div class="mb-6 p-4 border-2 border-[#10b981] bg-emerald-50 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[3px_3px_0px_#10b981] no-print">
       <div class="flex items-center gap-3">
@@ -516,7 +555,6 @@ function renderEmergencyDetails() {
       <div class="border-2 border-[#E11D2E] bg-red-50 p-4 text-center sm:min-w-[140px] shadow-[4px_4px_0px_#E11D2E]">
         <p class="font-mono text-[10px] font-bold uppercase text-[#E11D2E] tracking-wider">${t.bloodGroup}</p>
         <p class="font-black text-4xl text-[#E11D2E] mt-0.5 leading-none">${bloodGroup}</p>
-        ${currentPatient.organDonor ? `<span class="mt-2 inline-block px-1.5 py-0.5 bg-emerald-600 text-white text-[9px] font-mono font-bold uppercase">Organ Donor</span>` : ''}
       </div>
     </div>
 

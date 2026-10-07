@@ -50,7 +50,7 @@ function ensureDirExists(filePath) {
   }
 }
 
-const EXCLUDE_FROM_SYNC = ['index.html'];
+const EXCLUDE_FROM_SYNC = [];
 
 function isExcluded(fileRelative) {
   if (!fileRelative) return true;

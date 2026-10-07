@@ -182,6 +182,19 @@
       color: #ffffff;
       box-shadow: 3px 3px 0px #000000;
     }
+    [data-theme="dark"] .bg-amber-50 {
+      background-color: #261705 !important;
+    }
+    [data-theme="dark"] .text-amber-900,
+    [data-theme="dark"] .text-amber-950 {
+      color: #fef08a !important;
+    }
+    [data-theme="dark"] .border-amber-500 {
+      border-color: #d97706 !important;
+    }
+    [data-theme="dark"] .bg-red-50 {
+      background-color: #270707 !important;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
@@ -545,7 +558,7 @@
 
               <div>
                 <label class="block font-mono text-[10px] font-bold uppercase mb-1">Phone Number</label>
-                <input type="text" id="fdPhone" class="w-full p-2 font-mono font-bold" placeholder="+91 9876543210">
+                <input type="tel" id="fdPhone" value="+91 " class="w-full p-2 font-mono font-bold" placeholder="+91 9876543210">
               </div>
 
               <div>
@@ -712,6 +725,126 @@
         </div>
       </form>
 
+    </div>
+  </div>
+
+  <!-- Clinical Discharge Confirmation Modal (LifeQR Editorial Modal System) -->
+  <div id="dischargePatientModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-[70] flex items-center justify-center p-4 overflow-y-auto no-print" onclick="if (event.target === this) closeDischargeModal()">
+    <div class="editorial-card max-w-lg w-full p-6 sm:p-7 space-y-4 relative animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between pb-3 border-b-2 border-[#111111] gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-[#111111] text-[#E11D2E] flex items-center justify-center border-2 border-[#111111] shrink-0 font-bold">
+            <span class="material-symbols-outlined text-2xl">meeting_room</span>
+          </div>
+          <div>
+            <h3 class="font-black text-base uppercase tracking-tight text-[#111111]">Discharge Inpatient Record</h3>
+            <p class="text-[10px] font-mono text-[#111111]/60 font-bold uppercase tracking-wider">BED CLEARANCE &bull; CLINICAL DISCHARGE PROTOCOL</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeDischargeModal()" class="p-1 text-[#111111] hover:text-[#E11D2E] hover:bg-gray-100 dark:hover:bg-[#1f1f1f] transition cursor-pointer" title="Dismiss">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Inpatient Summary Card -->
+      <div class="border-2 border-[#111111] p-3.5 bg-[#f9fafb] space-y-2.5">
+        <div class="flex items-center justify-between border-b border-[#111111]/15 pb-2">
+          <div class="flex items-center gap-2">
+            <span id="dischargeAdmissionId" class="px-2 py-0.5 bg-[#111111] text-white font-mono text-[11px] font-bold">ADM-8901</span>
+            <span id="dischargeTriageBadge" class="px-2 py-0.5 border border-[#E11D2E] bg-red-50 text-[#E11D2E] font-mono text-[10px] font-bold uppercase">🔴 CRITICAL</span>
+          </div>
+          <div class="flex items-center gap-1.5 font-mono text-xs font-black text-[#E11D2E]">
+            <span class="text-[10px] font-normal text-[#111111]/60 uppercase">Blood Group:</span>
+            <span id="dischargeBloodGroup" class="text-sm">O+</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 text-xs font-mono">
+          <div>
+            <div class="text-[10px] text-[#111111]/60 font-bold uppercase mb-0.5">Patient Details</div>
+            <div id="dischargePatientName" class="font-sans font-bold text-sm text-[#111111] uppercase tracking-tight">Rahul Sharma</div>
+            <div id="dischargePatientMeta" class="text-[10px] text-[#111111]/70 font-semibold mt-0.5">RAH-D3200470 &bull; 32y &bull; Male</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-[#111111]/60 font-bold uppercase mb-0.5">Allocated Ward &amp; Bed</div>
+            <div id="dischargeWard" class="font-bold text-[#111111] text-xs">Trauma Bay 1 (Resuscitation Alpha)</div>
+            <div id="dischargeBed" class="text-[10px] text-[#E11D2E] font-bold mt-0.5">Bed: TB-01 &bull; Dr: Dr. Amit Sharma</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clinical Discharge Form -->
+      <form id="dischargeForm" onsubmit="confirmDischargeSubmit(event)" class="space-y-3 font-sans text-xs">
+        <div>
+          <label class="block font-mono text-[10px] font-bold uppercase mb-1 text-[#111111]">Discharge Disposition / Clinical Status *</label>
+          <select id="dischargeDisposition" required class="w-full p-2.5 font-mono text-xs font-bold">
+            <option value="Stable & Recovered (Discharged Home)" selected>🟢 Stable &amp; Recovered (Discharged Home)</option>
+            <option value="Transferred to Step-Down Ward / Inpatient Care">🟠 Transferred to Step-Down Ward / Inpatient Care</option>
+            <option value="Transferred to External Specialist Center">🔵 Transferred to External Specialist Center</option>
+            <option value="Discharged with Medication & Outpatient Follow-up">🟣 Discharged with Medication &amp; Follow-up</option>
+            <option value="Left Against Medical Advice (LAMA)">🔴 Left Against Medical Advice (LAMA)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-mono text-[10px] font-bold uppercase mb-1 text-[#111111]">Attending Clinical Notes / Discharge Summary (Optional)</label>
+          <textarea id="dischargeNotes" rows="2" class="w-full p-2.5 font-mono text-xs" placeholder="e.g. Vitals normalized, patient alert, discharge instructions and medications dispensed..."></textarea>
+        </div>
+
+        <!-- Warning Callout Box -->
+        <div class="border-2 border-amber-500 bg-amber-50 p-3 flex items-start gap-2.5">
+          <span class="material-symbols-outlined text-amber-700 text-lg shrink-0 mt-0.5">warning</span>
+          <p class="font-mono text-[11px] text-amber-950 leading-relaxed">
+            Confirming discharge will immediately release <span id="dischargeBedHighlight" class="font-bold underline text-amber-900">Bed TB-01</span>, increment available facility bed capacity in real-time, and log the discharge in the patient's LifeQR clinical audit timeline.
+          </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-2.5 pt-2 border-t-2 border-[#111111]">
+          <button type="button" onclick="closeDischargeModal()" class="btn-secondary flex-1 py-2.5 font-mono uppercase font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+            <span class="material-symbols-outlined text-sm">close</span>
+            <span>Cancel</span>
+          </button>
+          <button type="submit" id="dischargeConfirmBtn" class="btn-primary flex-1 py-2.5 font-mono uppercase font-bold text-xs bg-[#E11D2E] hover:bg-[#111111] text-white flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#111111] cursor-pointer">
+            <span class="material-symbols-outlined text-sm">check_circle</span>
+            <span id="dischargeBtnText">Confirm Discharge</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- General Confirmation Modal (Generic Hospital Operations Modal) -->
+  <div id="hospitalConfirmModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-[75] flex items-center justify-center p-4 overflow-y-auto no-print" onclick="if (event.target === this) closeHospitalConfirmModal()">
+    <div class="editorial-card max-w-md w-full p-6 space-y-4 relative animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-start justify-between pb-3 border-b-2 border-[#111111] gap-3">
+        <div class="flex items-center gap-3">
+          <div id="hospitalConfirmIconWrap" class="w-10 h-10 bg-[#111111] text-[#E11D2E] flex items-center justify-center border-2 border-[#111111] shrink-0 font-bold">
+            <span id="hospitalConfirmIcon" class="material-symbols-outlined text-2xl">help</span>
+          </div>
+          <div>
+            <h3 id="hospitalConfirmTitle" class="font-black text-base uppercase tracking-tight text-[#111111]">Confirm Action</h3>
+            <p id="hospitalConfirmSubtitle" class="text-[10px] font-mono text-[#111111]/60 font-bold uppercase tracking-wider">HOSPITAL COMMAND CONFIRMATION</p>
+          </div>
+        </div>
+        <button id="hospitalConfirmCloseBtn" type="button" class="p-1 text-[#111111] hover:text-[#E11D2E] hover:bg-gray-100 dark:hover:bg-[#1f1f1f] transition cursor-pointer" title="Dismiss">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+      <div id="hospitalConfirmMessage" class="font-mono text-xs text-[#111111] leading-relaxed">
+        Are you sure you want to proceed?
+      </div>
+      <div class="flex gap-2.5 pt-2 border-t-2 border-[#111111]">
+        <button id="hospitalConfirmCancelBtn" type="button" class="btn-secondary flex-1 py-2.5 font-mono uppercase font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+          Cancel
+        </button>
+        <button id="hospitalConfirmOkBtn" type="button" class="btn-primary flex-1 py-2.5 font-mono uppercase font-bold text-xs bg-[#E11D2E] hover:bg-[#111111] text-white flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#111111] cursor-pointer">
+          Confirm
+        </button>
+      </div>
     </div>
   </div>
 

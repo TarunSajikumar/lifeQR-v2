@@ -258,6 +258,10 @@
       
       <!-- Attending Doctor Status & Actions -->
       <div class="flex items-center gap-2 sm:gap-3 font-mono flex-wrap">
+        <a href="hospital_dashboard.html" class="btn-secondary text-xs px-3 py-1.5 uppercase font-mono tracking-wider font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]" title="Hospital &amp; Clinic Operations Command">
+          <span class="material-symbols-outlined text-sm text-[#E11D2E]">local_hospital</span>
+          <span class="hidden sm:inline">Hospital Hub</span>
+        </a>
         <button onclick="openHelpModal()" class="btn-secondary text-xs px-3 py-1.5 uppercase font-mono tracking-wider font-bold text-[#E11D2E] hover:text-white flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]" title="Request Administrator Assistance">
           <span class="material-symbols-outlined text-sm">support_agent</span>
           <span>Help</span>
@@ -298,6 +302,10 @@
 
       <!-- Quick Status Badges -->
       <div class="flex items-center gap-2 font-mono text-xs flex-wrap">
+        <a href="hospital_dashboard.html" class="px-3 py-2 border-2 border-[#111111] bg-white hover:bg-[#111111] hover:text-white transition font-bold text-[#111111] flex items-center gap-1.5 cursor-pointer shadow-[2px_2px_0px_#111111]" title="Open Hospital &amp; Clinic Command Center">
+          <span class="material-symbols-outlined text-sm text-[#E11D2E]">local_hospital</span>
+          <span>Hospital Operations &amp; Beds</span>
+        </a>
         <button onclick="openHelpModal()" class="px-3 py-2 border-2 border-[#111111] bg-white hover:bg-[#111111] hover:text-white transition font-bold text-[#111111] flex items-center gap-1.5 cursor-pointer shadow-[2px_2px_0px_#111111]">
           <span class="material-symbols-outlined text-sm text-[#E11D2E]">support_agent</span>
           <span>Request Admin Help</span>
@@ -312,125 +320,189 @@
     <!-- Verification Status Alert Container -->
     <div id="verificationBannerContainer"></div>
 
-    <!-- Live Patient Waiting Room & Queue -->
-    <div class="mb-8 editorial-card p-6 space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#111111]">
-        <div>
-          <h3 class="font-black text-base uppercase text-[#111111] flex items-center gap-2">
-            <span class="material-symbols-outlined text-[#E11D2E]">group</span>
-            <span>Live OPD Waiting Room &amp; Patient Queue</span>
-            <span id="waitingQueueCountBadge" class="px-2 py-0.5 border border-[#111111] bg-amber-50 text-amber-900 font-mono text-[10px] font-bold uppercase">Loading...</span>
-          </h3>
-          <p class="text-xs text-[#111111]/60 font-mono mt-0.5">Real-time patients waiting for consultation &bull; Click 'Call Patient In' to load patient chart</p>
-        </div>
-        <div class="flex items-center gap-2 font-mono">
-          <button onclick="loadDoctorWaitingQueue()" class="btn-secondary px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
-            <span class="material-symbols-outlined text-sm text-[#E11D2E]">sync</span>
-            <span>Refresh</span>
-          </button>
-          <button onclick="openNewPatientModal()" class="btn-primary px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-sm">person_add</span>
-            <span>+ Create Patient ID</span>
-          </button>
-        </div>
-      </div>
-
-      <div id="doctorWaitingQueueContainer" class="space-y-3">
-        <!-- Rendered dynamically -->
-      </div>
-    </div>
-
-    <div class="grid lg:grid-cols-12 gap-6">
+    <div class="grid lg:grid-cols-12 gap-6 items-start">
       
-      <!-- Search & Authorized Patients List (4 Columns) -->
-      <div class="lg:col-span-4 space-y-6">
+      <!-- LEFT PANEL: Patient Discovery, Queue & Intake Hub (4 Columns) -->
+      <div class="lg:col-span-4 space-y-4">
         
-        <!-- Search Patient Card -->
-        <div class="editorial-card p-6 space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
-            <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
-              <span class="material-symbols-outlined text-[#E11D2E]">search</span>
-              <span>Patient Quick Access</span>
-            </h3>
-            <span class="text-[10px] font-mono font-bold text-[#E11D2E] uppercase">LOOKUP</span>
-          </div>
+        <!-- Tabbed Patient Intake Navigation -->
+        <div class="editorial-card p-4 sm:p-5 space-y-4">
           
-          <div class="space-y-4 font-sans">
-            <div>
-              <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1.5">Enter Patient QR Code ID</label>
-              <div class="flex gap-2">
-                <input 
-                  type="text" 
-                  id="patientQrId" 
-                  placeholder="e.g. RAH-D3200470"
-                  class="flex-1 px-3.5 py-2.5 font-mono text-xs font-bold text-[#E11D2E]"
-                  onkeydown="if(event.key==='Enter') searchPatient()"
-                >
-                <button onclick="searchPatient()" class="btn-primary px-4 py-2.5 text-xs font-mono uppercase tracking-wider font-bold">
-                  Search
+          <!-- Tab Buttons (Queue / Search / Active Cases) -->
+          <div class="flex items-center gap-1 p-1 bg-[#f9fafb] border-2 border-[#111111] font-mono text-[11px] font-bold">
+            <button type="button" onclick="switchLeftPanelTab('queue')" id="leftTabQueueBtn" class="flex-1 py-1.5 px-2 bg-[#111111] text-white uppercase text-center transition flex items-center justify-center gap-1 shadow-[2px_2px_0px_#111111]">
+              <span class="material-symbols-outlined text-xs">group</span>
+              <span>Queue</span>
+              <span id="waitingQueueCountBadge" class="ml-1 px-1.5 py-0.2 bg-[#E11D2E] text-white text-[9px] font-black">...</span>
+            </button>
+            <button type="button" onclick="switchLeftPanelTab('search')" id="leftTabSearchBtn" class="flex-1 py-1.5 px-2 bg-transparent text-[#111111] hover:bg-gray-200 uppercase text-center transition flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-xs">search</span>
+              <span>Search</span>
+            </button>
+            <button type="button" onclick="switchLeftPanelTab('authorized')" id="leftTabAuthBtn" class="flex-1 py-1.5 px-2 bg-transparent text-[#111111] hover:bg-gray-200 uppercase text-center transition flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-xs">folder_shared</span>
+              <span>Cases</span>
+            </button>
+          </div>
+
+          <!-- PANE 1: Live OPD Waiting Queue -->
+          <div id="leftPaneQueue" class="space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b-2 border-[#111111]/20">
+              <div class="flex items-center gap-1.5">
+                <span class="live-dot"></span>
+                <span class="font-mono text-[10px] font-bold uppercase text-[#111111]">Live OPD Queue</span>
+              </div>
+              <div class="flex items-center gap-1.5 font-mono">
+                <button onclick="loadDoctorWaitingQueue()" class="btn-secondary px-2.5 py-1 text-[10px] font-bold uppercase flex items-center gap-1" title="Refresh Waiting Queue">
+                  <span class="material-symbols-outlined text-xs text-[#E11D2E]">sync</span>
+                  <span>Sync</span>
+                </button>
+                <button onclick="openNewPatientModal()" class="btn-primary px-2.5 py-1 text-[10px] font-bold uppercase flex items-center gap-1" title="Create Patient LifeQR ID">
+                  <span class="material-symbols-outlined text-xs">person_add</span>
+                  <span>+ Intake</span>
                 </button>
               </div>
             </div>
 
-            <!-- Quick Demo Patient Button -->
-            <div class="flex items-center justify-between text-[11px] font-mono">
-              <span class="text-gray-500">Demo Patient:</span>
-              <button type="button" onclick="document.getElementById('patientQrId').value='RAH-D3200470'; searchPatient();" class="text-[#E11D2E] font-bold hover:underline">
-                RAH-D3200470 (Rahul Sharma)
+            <div id="doctorWaitingQueueContainer" class="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- PANE 2: Quick Search & Camera Scan -->
+          <div id="leftPaneSearch" class="hidden space-y-3.5">
+            <div class="space-y-3 font-sans">
+              <div>
+                <label class="block text-[10px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">Enter Patient QR Code ID</label>
+                <div class="flex gap-2">
+                  <input 
+                    type="text" 
+                    id="patientQrId" 
+                    placeholder="e.g. RAH-D3200470"
+                    class="flex-1 px-3 py-2 font-mono text-xs font-bold text-[#E11D2E]"
+                    onkeydown="if(event.key==='Enter') searchPatient()"
+                  >
+                  <button onclick="searchPatient()" class="btn-primary px-3.5 py-2 text-xs font-mono uppercase tracking-wider font-bold">
+                    Search
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick Demo Patient Button -->
+              <div class="flex items-center justify-between text-[10px] font-mono p-2 bg-[#f9fafb] border border-[#111111]/20">
+                <span class="text-gray-500">Quick Test:</span>
+                <button type="button" onclick="document.getElementById('patientQrId').value='RAH-D3200470'; searchPatient();" class="text-[#E11D2E] font-bold hover:underline">
+                  Rahul Sharma (RAH-D3200470)
+                </button>
+              </div>
+
+              <!-- Camera QR Scanner Button -->
+              <button onclick="startQRScanner()" class="btn-secondary w-full justify-center text-xs py-2.5 font-mono uppercase tracking-wider font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+                <span class="material-symbols-outlined text-sm text-[#E11D2E]">photo_camera</span>
+                <span>Scan Patient QR Camera / Upload</span>
               </button>
             </div>
-
-            <!-- Camera QR Scanner Button -->
-            <button onclick="startQRScanner()" class="btn-secondary w-full justify-center text-xs py-2.5 font-mono uppercase tracking-wider font-bold">
-              <span class="material-symbols-outlined text-base text-[#E11D2E]">photo_camera</span>
-              <span>Scan Patient QR Camera / Upload</span>
-            </button>
           </div>
+
+          <!-- PANE 3: Authorized Patients List -->
+          <div id="leftPaneAuthorized" class="hidden space-y-2.5">
+            <div class="flex items-center justify-between pb-2 border-b border-[#111111]/20 font-mono text-[10px]">
+              <span class="font-bold uppercase text-[#111111]/70">Authorized Clinic Cases</span>
+              <button onclick="loadAuthorizedPatients()" class="text-[#E11D2E] font-bold hover:underline flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-xs">sync</span>
+                <span>Refresh</span>
+              </button>
+            </div>
+            <div id="authorizedPatientsList" class="space-y-2 max-h-[520px] overflow-y-auto pr-1 font-sans">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
         </div>
 
-        <!-- Authorized Patients List Card -->
-        <div class="editorial-card p-6 space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
-            <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
-              <span class="material-symbols-outlined text-[#111111]">folder_shared</span>
-              <span>Authorized Patients</span>
-            </h3>
-            <span class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">ACTIVE CASES</span>
+        <!-- Attending Station Status Card -->
+        <div class="editorial-card p-4 space-y-2 font-mono text-xs bg-[#f9fafb]">
+          <div class="flex items-center justify-between border-b border-[#111111]/20 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="live-dot"></span>
+              <span class="font-bold text-[10px] uppercase text-[#111111]">Attending Physician Station</span>
+            </div>
+            <span class="text-[9px] font-bold px-1.5 py-0.2 bg-emerald-100 text-emerald-800 border border-emerald-700">ONLINE</span>
           </div>
-          
-          <div id="authorizedPatientsList" class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1 font-sans">
-            <!-- Rendered dynamically -->
+          <div class="flex items-center justify-between pt-0.5">
+            <div>
+              <p class="font-black text-xs uppercase text-[#111111]" id="attendingStationName">Consultation Room 102</p>
+              <p class="text-[10px] text-gray-600">Level 3 Clinical Clearance &bull; AES-256</p>
+            </div>
+            <button onclick="openHelpModal()" class="btn-secondary px-2.5 py-1 text-[10px] uppercase font-bold flex items-center gap-1 text-[#E11D2E]" title="Help &amp; Admin Support">
+              <span class="material-symbols-outlined text-xs">support_agent</span>
+              <span>Help</span>
+            </button>
           </div>
         </div>
 
       </div>
 
-      <!-- Patient Details Display Panel (8 Columns) -->
-      <div class="lg:col-span-8">
+      <!-- RIGHT PANEL: Clinical Consultation & Inpatient Hub (8 Columns) -->
+      <div class="lg:col-span-8 space-y-5">
         
         <!-- Empty / Unselected State Prompt -->
-        <div id="patientDetailsEmptyPrompt" class="editorial-card p-12 text-center space-y-4">
-          <div class="w-16 h-16 border-2 border-[#111111] bg-[#f9fafb] text-[#E11D2E] flex items-center justify-center mx-auto shadow-[3px_3px_0px_#111111]">
+        <div id="patientDetailsEmptyPrompt" class="editorial-card p-8 sm:p-12 text-center space-y-5">
+          <div class="w-16 h-16 border-2 border-[#111111] bg-red-50 text-[#E11D2E] flex items-center justify-center mx-auto shadow-[4px_4px_0px_#111111]">
             <span class="material-symbols-outlined text-3xl">medical_information</span>
           </div>
-          <div class="max-w-md mx-auto space-y-1">
-            <h3 class="font-black text-lg text-[#111111] uppercase tracking-tight">No Patient Record Selected</h3>
-            <p class="text-xs text-[#111111]/70 font-sans font-medium">Search with a LifeQR Code ID (e.g. <strong class="font-mono text-[#E11D2E]">RAH-D3200470</strong>), scan a patient badge, or call a patient from the waiting room.</p>
+          <div class="max-w-md mx-auto space-y-1.5">
+            <h3 class="font-black text-xl text-[#111111] uppercase tracking-tight">Physician Consultation Workspace</h3>
+            <p class="text-xs text-[#111111]/70 font-sans font-medium">Select a patient from the OPD Waiting Queue on the left, search a LifeQR ID, or launch a quick demo chart to start consultation.</p>
           </div>
-          <div class="pt-2 flex items-center justify-center gap-2 text-xs font-mono font-bold text-[#E11D2E] uppercase tracking-wider">
-            <span class="material-symbols-outlined text-sm">qr_code_scanner</span>
-            <span>Real-time clinical consultation ready</span>
+          <div class="flex flex-wrap items-center justify-center gap-2.5 pt-2 font-mono text-xs">
+            <button type="button" onclick="callNextWaitingPatient()" class="btn-primary px-4 py-2 uppercase font-bold tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+              <span class="material-symbols-outlined text-sm">campaign</span>
+              <span>Call Next Waiting Patient</span>
+            </button>
+            <button type="button" onclick="document.getElementById('patientQrId').value='RAH-D3200470'; searchPatient();" class="btn-secondary px-4 py-2 uppercase font-bold tracking-wider flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-[#E11D2E]">person</span>
+              <span>Load Rahul Sharma (O+)</span>
+            </button>
+            <button type="button" onclick="startQRScanner()" class="btn-secondary px-4 py-2 uppercase font-bold tracking-wider flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">qr_code_scanner</span>
+              <span>Scan Badge</span>
+            </button>
           </div>
         </div>
 
-        <div id="patientDetailsPanel" class="hidden space-y-6">
+        <div id="patientDetailsPanel" class="hidden space-y-5">
           
           <!-- Skeleton State -->
           <div id="patientSkeleton" class="editorial-card h-96 animate-pulse hidden"></div>
 
           <!-- Patient Profile Info -->
-          <div id="patientContent" class="hidden space-y-6">
-            
+          <div id="patientContent" class="hidden space-y-5">
+
+            <!-- Workstation Section Jump Bar -->
+            <div class="sticky top-20 z-30 flex items-center gap-1.5 p-1.5 bg-white border-2 border-[#111111] shadow-[3px_3px_0px_#111111] font-mono text-[11px] font-bold overflow-x-auto no-scrollbar">
+              <button type="button" onclick="scrollToDoctorSection('clinicalConsultationSection')" class="doctor-jump-btn px-3 py-1.5 bg-[#111111] text-white uppercase flex items-center gap-1.5 hover:bg-[#E11D2E] transition flex-shrink-0">
+                <span class="material-symbols-outlined text-xs">stethoscope</span>
+                <span>1. Consultation &amp; Rx</span>
+              </button>
+              <button type="button" onclick="scrollToDoctorSection('hospitalAdmissionSection')" class="doctor-jump-btn px-3 py-1.5 bg-[#f9fafb] text-[#111111] uppercase flex items-center gap-1.5 hover:bg-red-50 hover:text-[#E11D2E] transition flex-shrink-0 border border-[#111111]/20">
+                <span class="material-symbols-outlined text-xs text-[#E11D2E]">local_hospital</span>
+                <span>2. Hospital Admission</span>
+              </button>
+              <button type="button" onclick="scrollToDoctorSection('aiClinicalSuite')" class="doctor-jump-btn px-3 py-1.5 bg-[#f9fafb] text-[#111111] uppercase flex items-center gap-1.5 hover:bg-purple-50 hover:text-purple-700 transition flex-shrink-0 border border-[#111111]/20">
+                <span class="material-symbols-outlined text-xs text-purple-700">psychology</span>
+                <span>3. AI Copilot</span>
+              </button>
+              <button type="button" onclick="scrollToDoctorSection('doctorDecisionTreeContainer')" class="doctor-jump-btn px-3 py-1.5 bg-[#f9fafb] text-[#111111] uppercase flex items-center gap-1.5 hover:bg-gray-100 transition flex-shrink-0 border border-[#111111]/20">
+                <span class="material-symbols-outlined text-xs">account_tree</span>
+                <span>4. Decision Tree</span>
+              </button>
+              <button type="button" onclick="scrollToDoctorSection('patientMedicalHistoryCard')" class="doctor-jump-btn px-3 py-1.5 bg-[#f9fafb] text-[#111111] uppercase flex items-center gap-1.5 hover:bg-gray-100 transition flex-shrink-0 border border-[#111111]/20">
+                <span class="material-symbols-outlined text-xs">history</span>
+                <span>5. History &amp; Reports</span>
+              </button>
+            </div>
+
             <!-- Patient Profile Identity Card -->
             <div class="editorial-card p-6 sm:p-7 space-y-5">
               
@@ -509,58 +581,6 @@
                 </div>
               </div>
 
-            </div>
-
-            <!-- ==================== AI CLINICAL INTELLIGENCE & PATIENT ANALYSIS SUITE ==================== -->
-            <div id="aiClinicalSuite" class="editorial-card p-6 sm:p-7 space-y-5 bg-white border-2 border-[#111111]">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#111111]">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-9 h-9 bg-[#111111] text-[#E11D2E] flex items-center justify-center flex-shrink-0 border-2 border-[#111111]">
-                    <span class="material-symbols-outlined text-xl">psychology</span>
-                  </div>
-                  <div>
-                    <h3 class="font-black text-base uppercase tracking-tight text-[#111111] flex items-center gap-2 flex-wrap">
-                      <span>AI Clinical Patient Analysis &amp; Diagnostic Copilot</span>
-                      <span class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[9px] font-mono font-bold uppercase tracking-wider">Neural Clinical Mesh</span>
-                    </h3>
-                    <p class="text-xs font-mono text-[#111111]/60 mt-0.5">Automated clinical risk scoring, allergy contraindications, differential diagnosis &amp; Rx safety</p>
-                  </div>
-                </div>
-
-                <!-- AI Quick Tools -->
-                <div class="flex items-center gap-2 font-mono flex-wrap">
-                  <button type="button" onclick="runAiPatientSummary()" class="btn-primary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1 shadow-[2px_2px_0px_#111111]">
-                    <span class="material-symbols-outlined text-sm text-[#E11D2E]">auto_awesome</span>
-                    <span>Full Analysis</span>
-                  </button>
-                  <button type="button" onclick="runAiDifferential()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1">
-                    <span class="material-symbols-outlined text-sm text-blue-700">diagnostics</span>
-                    <span>Differential</span>
-                  </button>
-                  <button type="button" onclick="openAiScribeModal()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1">
-                    <span class="material-symbols-outlined text-sm text-purple-700">mic</span>
-                    <span>AI Scribe</span>
-                  </button>
-                  <button type="button" onclick="checkPrescriptionSafety()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1 text-[#E11D2E]">
-                    <span class="material-symbols-outlined text-sm">health_and_safety</span>
-                    <span>Rx Safety</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- AI Dynamic Output Container (Styled in Swiss Editorial) -->
-              <div id="aiClinicalOutputContainer" class="p-5 border-2 border-[#111111] bg-[#f9fafb] space-y-4">
-                <div class="flex items-center justify-between pb-2 border-b border-[#111111]/20">
-                  <span class="font-mono text-xs font-bold uppercase text-[#111111] flex items-center gap-1.5">
-                    <span class="live-dot"></span>
-                    <span>Clinical Neural Analysis Ready</span>
-                  </span>
-                  <span class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">AES-256 Validated</span>
-                </div>
-                <p class="text-xs text-[#111111]/80 font-sans leading-relaxed font-medium">
-                  Click <strong>"Full Analysis"</strong> above to evaluate this patient's blood compatibility, lethal drug contraindications, active prescription interactions, and emergency trauma triage timeline.
-                </p>
-              </div>
             </div>
 
             <!-- ==================== REAL-WORLD CLINICAL CONSULTATION & DIGITAL RX SUITE ==================== -->
@@ -742,7 +762,131 @@
 
             </div>
 
+            <!-- Hospital Inpatient Admission & Emergency Bed Allocation -->
+            <div id="hospitalAdmissionSection" class="editorial-card p-6 sm:p-7 space-y-5">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#111111]">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 border-2 border-[#111111] bg-red-50 text-[#E11D2E] flex items-center justify-center font-bold flex-shrink-0">
+                    <span class="material-symbols-outlined text-xl">local_hospital</span>
+                  </div>
+                  <div>
+                    <h3 class="font-black text-sm uppercase text-[#111111]">Hospital Inpatient Admission &amp; Bed Allocation</h3>
+                    <p class="text-[11px] font-mono text-[#111111]/70">Directly admit patient into emergency trauma bay, intensive care unit, or hospital inpatient ward</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 font-mono text-xs">
+                  <span id="hospitalBedAvailabilityBadge" class="px-2.5 py-1 border border-emerald-600 bg-emerald-50 text-emerald-800 font-bold uppercase text-[10px]">Beds Available: 12 / 30</span>
+                  <a href="hospital_dashboard.html" target="_blank" class="btn-secondary px-3 py-1 text-[10px] uppercase font-bold flex items-center gap-1" title="Open Hospital Command Center">
+                    <span>Hospital Hub</span>
+                    <span class="material-symbols-outlined text-xs">open_in_new</span>
+                  </a>
+                </div>
+              </div>
 
+              <div class="grid sm:grid-cols-3 gap-3 font-sans text-xs">
+                <div>
+                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Target Hospital Facility</label>
+                  <select id="admitHospitalFacility" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111] bg-white">
+                    <option value="Metro City Central Emergency & Level 1 Trauma Center">Metro City Central Emergency &amp; Trauma Center</option>
+                    <option value="Apollo LifeQR Emergency Critical Care Hub">Apollo LifeQR Emergency Center</option>
+                    <option value="Central Municipal Trauma & Surgical Wing">Central Municipal Trauma Wing</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Ward / Care Unit *</label>
+                  <select id="admitHospitalWard" onchange="updateSuggestedBed(this.value)" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111] bg-white">
+                    <option value="Trauma Bay 1 (Resuscitation Alpha)">Trauma Bay 1 (Resuscitation Alpha - Critical)</option>
+                    <option value="Trauma Bay 2 (Resuscitation Beta)">Trauma Bay 2 (Resuscitation Beta)</option>
+                    <option value="ICU Wing Alpha">ICU Wing Alpha (Intensive Care)</option>
+                    <option value="General Medical Ward 2" selected>General Medical Ward 2 (Inpatient)</option>
+                    <option value="Cardiology Step-down Unit">Cardiology Step-down Unit</option>
+                    <option value="Day Care / ER Observation">Day Care / ER Observation</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Allocated Bed / Bay Number *</label>
+                  <input type="text" id="admitHospitalBed" class="w-full p-2.5 font-mono text-xs font-bold border-2 border-[#111111] bg-white" placeholder="e.g. GW-12" value="GW-12">
+                </div>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-3 font-sans text-xs">
+                <div>
+                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Triage Urgency Level *</label>
+                  <select id="admitHospitalTriage" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111] bg-white">
+                    <option value="CRITICAL">🔴 CRITICAL (Immediate Resuscitation Required)</option>
+                    <option value="URGENT" selected>🟠 URGENT (Bedded Inpatient Care Required)</option>
+                    <option value="SEMI_URGENT">🟡 SEMI-URGENT (Stable / Observation Ward)</option>
+                    <option value="ROUTINE">🟢 ROUTINE (Elective Inpatient Workup)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Admitting Clinical Rationale / Reason</label>
+                  <input type="text" id="admitHospitalReason" placeholder="e.g. Unstable acute dyspnea, continuous telemetry, IV protocol" class="w-full p-2.5 text-xs font-medium border-2 border-[#111111] bg-white">
+                </div>
+              </div>
+
+              <div class="flex flex-col sm:flex-row items-center justify-between pt-3 border-t-2 border-[#111111] font-mono text-xs gap-3">
+                <span class="text-[11px] text-[#111111]/70 font-semibold">
+                  Instantly transmits admission protocol to Hospital Command &amp; ER Trauma Bay dispatch.
+                </span>
+                <button type="button" onclick="admitPatientToHospital()" class="btn-primary px-6 py-2.5 uppercase font-bold text-xs flex items-center gap-2 justify-center shadow-[2px_2px_0px_#111111]">
+                  <span class="material-symbols-outlined text-sm">how_to_reg</span>
+                  <span>Admit Patient to Hospital</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- ==================== AI CLINICAL INTELLIGENCE & PATIENT ANALYSIS SUITE ==================== -->
+            <div id="aiClinicalSuite" class="editorial-card p-6 sm:p-7 space-y-5 bg-white border-2 border-[#111111]">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#111111]">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 bg-[#111111] text-[#E11D2E] flex items-center justify-center flex-shrink-0 border-2 border-[#111111]">
+                    <span class="material-symbols-outlined text-xl">psychology</span>
+                  </div>
+                  <div>
+                    <h3 class="font-black text-base uppercase tracking-tight text-[#111111] flex items-center gap-2 flex-wrap">
+                      <span>AI Clinical Patient Analysis &amp; Diagnostic Copilot</span>
+                      <span class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[9px] font-mono font-bold uppercase tracking-wider">Neural Clinical Mesh</span>
+                    </h3>
+                    <p class="text-xs font-mono text-[#111111]/60 mt-0.5">Automated clinical risk scoring, allergy contraindications, differential diagnosis &amp; Rx safety</p>
+                  </div>
+                </div>
+
+                <!-- AI Quick Tools -->
+                <div class="flex items-center gap-2 font-mono flex-wrap">
+                  <button type="button" onclick="runAiPatientSummary()" class="btn-primary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1 shadow-[2px_2px_0px_#111111]">
+                    <span class="material-symbols-outlined text-sm text-[#E11D2E]">auto_awesome</span>
+                    <span>Full Analysis</span>
+                  </button>
+                  <button type="button" onclick="runAiDifferential()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm text-blue-700">diagnostics</span>
+                    <span>Differential</span>
+                  </button>
+                  <button type="button" onclick="openAiScribeModal()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm text-purple-700">mic</span>
+                    <span>AI Scribe</span>
+                  </button>
+                  <button type="button" onclick="checkPrescriptionSafety()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-bold tracking-wider flex items-center gap-1 text-[#E11D2E]">
+                    <span class="material-symbols-outlined text-sm">health_and_safety</span>
+                    <span>Rx Safety</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- AI Dynamic Output Container (Styled in Swiss Editorial) -->
+              <div id="aiClinicalOutputContainer" class="p-5 border-2 border-[#111111] bg-[#f9fafb] space-y-4">
+                <div class="flex items-center justify-between pb-2 border-b border-[#111111]/20">
+                  <span class="font-mono text-xs font-bold uppercase text-[#111111] flex items-center gap-1.5">
+                    <span class="live-dot"></span>
+                    <span>Clinical Neural Analysis Ready</span>
+                  </span>
+                  <span class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">AES-256 Validated</span>
+                </div>
+                <p class="text-xs text-[#111111]/80 font-sans leading-relaxed font-medium">
+                  Click <strong>"Full Analysis"</strong> above to evaluate this patient's blood compatibility, lethal drug contraindications, active prescription interactions, and emergency trauma triage timeline.
+                </p>
+              </div>
+            </div>
 
             <!-- Doctor 26-Stage Decision Tree Suite -->
             <div id="doctorDecisionTreeContainer" class="editorial-card p-6 sm:p-7 space-y-5">
@@ -810,7 +954,8 @@
             </div>
 
             <!-- Medical History & Reports -->
-            <div id="authorizedDetailsContainer" class="grid md:grid-cols-2 gap-6 hidden">
+            <div id="patientMedicalHistoryCard" class="space-y-4">
+              <div id="authorizedDetailsContainer" class="grid md:grid-cols-2 gap-6 hidden">
               
               <!-- Timeline history -->
               <div class="editorial-card p-6 space-y-4">
@@ -871,6 +1016,7 @@
                 </div>
               </div>
 
+              </div>
             </div>
 
           </div>
@@ -930,7 +1076,7 @@
           </div>
           <div>
             <label class="block font-mono text-[10px] font-bold uppercase mb-1">Phone</label>
-            <input type="text" id="docNewPhone" class="w-full p-2 font-mono font-bold" placeholder="+91 9876543210">
+            <input type="tel" id="docNewPhone" value="+91 " class="w-full p-2 font-mono font-bold" placeholder="+91 9876543210">
           </div>
         </div>
 

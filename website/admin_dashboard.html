@@ -147,6 +147,19 @@
     [data-theme="dark"] .border-\[\#111111\] {
       border-color: #262626 !important;
     }
+    [data-theme="dark"] #adminConfirmModal .bg-white {
+      background: #141414 !important;
+      color: #ffffff !important;
+      border-color: #333333 !important;
+      box-shadow: 8px 8px 0px #000000 !important;
+    }
+    [data-theme="dark"] #adminConfirmWarningBox {
+      background: #2a1b0a !important;
+      border-color: #f59e0b !important;
+    }
+    [data-theme="dark"] #adminConfirmWarning {
+      color: #fef3c7 !important;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
@@ -894,6 +907,26 @@
           </div>
         </div>
 
+        <!-- SECTION 4: Security Access Audit Log & Emergency Scan History (Admin Clearance) -->
+        <div id="adminUserAuditSection" class="border-2 border-[#111111] p-4 bg-white space-y-3">
+          <div class="flex items-center justify-between border-b-2 border-[#111111] pb-2 flex-wrap gap-2">
+            <h4 class="font-black text-xs uppercase font-mono text-[#111111] flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-[#E11D2E]">history</span>
+              <span>4. Security Access Audit Log &amp; Emergency Scans</span>
+            </h4>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 border border-[#111111] bg-[#111111] text-white text-[9px] font-mono font-bold uppercase tracking-wider">Admin Clearance</span>
+              <span id="adminUserAuditCountBadge" class="text-[10px] font-mono text-gray-500 font-bold uppercase">0 Events</span>
+            </div>
+          </div>
+          <p class="text-xs text-[#111111]/70 font-sans font-medium">
+            Administrative audit trail of emergency QR scans, responder triage access, and security authentication events.
+          </p>
+          <div id="adminUserAuditList" class="space-y-2 font-mono text-xs max-h-56 overflow-y-auto">
+            <!-- Dynamically populated activities and audit logs -->
+          </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="flex items-center justify-between pt-2 border-t-2 border-[#111111] font-mono text-xs flex-wrap gap-2">
           <span class="text-[10px] text-gray-500">All modifications are logged to immutable security audit trail.</span>
@@ -909,6 +942,162 @@
         </div>
 
       </form>
+
+  <!-- Emergency Medical View Simulator & Live Preview Modal -->
+  <div id="adminEmergencyPreviewModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto no-print">
+    <div class="bg-white border-2 border-[#111111] shadow-[8px_8px_0px_#111111] max-w-2xl w-full p-5 sm:p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[96vh] flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111] flex-wrap gap-2">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-[#E11D2E] text-white flex items-center justify-center border-2 border-[#111111] font-bold shadow-[2px_2px_0px_#111111]">
+            <span class="material-symbols-outlined text-2xl">emergency</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-black text-base uppercase tracking-tight text-[#111111]">Emergency View Simulator</h3>
+              <span id="adminEvPreviewRoleBadge" class="px-2 py-0.5 border border-[#E11D2E] bg-red-50 text-[#E11D2E] text-[10px] font-mono font-bold uppercase">ZERO-LOGIN BADGE</span>
+            </div>
+            <p class="text-xs font-mono text-[#111111]/60">Simulates how bystanders &amp; paramedics view this patient's emergency card</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <!-- External Link Button -->
+          <a id="adminEvPreviewExternalLink" href="/emergency_access.html" target="_blank" class="btn-secondary px-3 py-1.5 text-xs font-mono font-bold uppercase flex items-center gap-1" title="Open full emergency page in separate browser tab">
+            <span class="material-symbols-outlined text-sm">open_in_new</span>
+            <span class="hidden sm:inline">Open Live URL</span>
+          </a>
+          <button onclick="closeEmergencyLivePreview()" class="p-1 text-[#111111] hover:bg-gray-100 transition" title="Close Preview">
+            <span class="material-symbols-outlined text-2xl">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mode Selector Toolbar -->
+      <div class="p-2.5 border-2 border-[#111111] bg-[#f9fafb] flex items-center justify-between gap-3 flex-wrap text-xs font-mono">
+        <div class="flex items-center gap-2">
+          <span class="text-gray-500 font-bold uppercase text-[10px]">Simulation Mode:</span>
+          <div class="inline-flex border-2 border-[#111111] overflow-hidden">
+            <button type="button" id="adminEvModeBystanderBtn" onclick="setEmergencyPreviewMode('bystander')" class="px-3 py-1 text-xs font-bold uppercase bg-[#111111] text-white transition flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs">phone_android</span> Bystander Phone
+            </button>
+            <button type="button" id="adminEvModeCrewBtn" onclick="setEmergencyPreviewMode('crew')" class="px-3 py-1 text-xs font-bold uppercase bg-white text-[#111111] hover:bg-gray-100 transition flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs text-[#E11D2E]">ambulance</span> Paramedic Crew
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] text-gray-500">Language:</span>
+          <select id="adminEvPreviewLangSelect" onchange="changeEmergencyPreviewLang(this.value)" class="p-1 text-xs font-bold border-2 border-[#111111] bg-white font-mono">
+            <option value="en">English (EN)</option>
+            <option value="hi">हिंदी (HI)</option>
+            <option value="kn">ಕನ್ನಡ (KN)</option>
+            <option value="ta">தமிழ் (TA)</option>
+            <option value="es">Español (ES)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Phone Bezel Container (Centered Simulator) -->
+      <div class="flex-1 overflow-y-auto py-2 flex justify-center bg-gray-100 border-2 border-[#111111] p-4">
+        <div class="w-full max-w-[380px] bg-white border-4 border-[#111111] rounded-[24px] shadow-[6px_6px_0px_#111111] overflow-hidden flex flex-col font-sans text-xs">
+          
+          <!-- Mobile Status Bar -->
+          <div class="bg-[#111111] text-white px-4 py-1.5 flex items-center justify-between text-[10px] font-mono">
+            <span>9:41</span>
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-xs">signal_cellular_alt</span>
+              <span class="material-symbols-outlined text-xs">wifi</span>
+              <span class="material-symbols-outlined text-xs">battery_charging_full</span>
+            </div>
+          </div>
+
+          <!-- Simulator Header -->
+          <div id="adminEvPreviewHeaderBanner" class="bg-[#E11D2E] text-white px-3 py-2 flex items-center justify-between text-[10px] font-mono font-bold tracking-wider">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-xs">emergency</span>
+              <span>LIFEQR EMERGENCY</span>
+            </div>
+            <span id="adminEvPreviewStatusPill" class="px-1.5 py-0.2 bg-white text-[#E11D2E] text-[9px] uppercase font-bold">BYSTANDER</span>
+          </div>
+
+          <!-- Scrollable Phone Canvas Body -->
+          <div id="adminEvPreviewCanvas" class="p-4 space-y-4 max-h-[500px] overflow-y-auto bg-white">
+            <!-- Dynamically populated preview content -->
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-2 border-t-2 border-[#111111] flex items-center justify-between gap-2 flex-wrap font-mono text-xs">
+        <span class="text-[10px] text-gray-500">Live preview updates automatically when you change parameters in the Profile editor.</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeEmergencyLivePreview()" class="btn-secondary px-4 py-2 uppercase font-bold">
+            Close Preview
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- High-Priority Confirmation & Action Dialog (Custom LifeQR Modal replacing native browser confirm/prompt) -->
+  <div id="adminConfirmModal" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+    <div class="bg-white border-2 border-[#111111] shadow-[8px_8px_0px_#111111] max-w-lg w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150 relative">
+      
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between pb-3 border-b-2 border-[#111111] gap-3">
+        <div class="flex items-center gap-3">
+          <div id="adminConfirmIconWrap" class="w-10 h-10 bg-[#111111] text-[#E11D2E] flex items-center justify-center border-2 border-[#111111] shrink-0 font-bold">
+            <span id="adminConfirmIcon" class="material-symbols-outlined text-2xl">sync_saved_locally</span>
+          </div>
+          <div>
+            <h3 id="adminConfirmTitle" class="font-black text-base uppercase tracking-tight text-[#111111]">Regenerate Patient QR</h3>
+            <p id="adminConfirmSubtitle" class="text-[10px] font-mono text-[#111111]/60 font-bold uppercase tracking-wider">SECURITY ROTATION &amp; OVERRIDE</p>
+          </div>
+        </div>
+        <button id="adminConfirmCloseBtn" type="button" class="p-1 text-[#111111] hover:bg-gray-100 transition" title="Dismiss">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Modal Message Body -->
+      <div class="space-y-3 font-mono text-xs text-[#111111]">
+        <div id="adminConfirmMessage" class="text-xs font-mono font-medium text-gray-800 leading-relaxed">
+          Are you sure you want to regenerate this patient's QR code?
+        </div>
+
+        <!-- Warning Callout Box -->
+        <div id="adminConfirmWarningBox" class="border-2 border-amber-500 bg-amber-50 p-3 space-y-1">
+          <div class="flex items-center gap-1.5 text-amber-900 font-bold text-[11px] uppercase tracking-wider">
+            <span class="material-symbols-outlined text-base">warning</span>
+            <span>Warning: Link Invalidation</span>
+          </div>
+          <p id="adminConfirmWarning" class="text-amber-950 text-xs font-mono">
+            Previous QR links and printed badges will be rotated and will cease to open this medical profile.
+          </p>
+        </div>
+
+        <!-- Optional Input Container (for prompt-style reasons/notes) -->
+        <div id="adminConfirmInputWrap" class="hidden space-y-1.5 pt-1">
+          <label id="adminConfirmInputLabel" class="block font-mono text-[10px] font-bold uppercase text-[#111111]">Notes / Justification</label>
+          <input type="text" id="adminConfirmInput" class="w-full p-2.5 text-xs font-mono border-2 border-[#111111]" placeholder="Type your note...">
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-end gap-2.5 pt-3 border-t-2 border-[#111111] font-mono text-xs">
+        <button type="button" id="adminConfirmCancelBtn" class="btn-secondary px-4 py-2 uppercase font-bold text-xs tracking-wider">
+          Cancel
+        </button>
+        <button type="button" id="adminConfirmOkBtn" class="btn-primary px-5 py-2 uppercase font-bold text-xs tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+          <span class="material-symbols-outlined text-sm">refresh</span>
+          <span>Regenerate QR</span>
+        </button>
+      </div>
 
     </div>
   </div>

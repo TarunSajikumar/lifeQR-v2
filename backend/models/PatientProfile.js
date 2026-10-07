@@ -45,6 +45,51 @@ const patientProfileSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  emergencyViewSettings: {
+    themeColor: {
+      type: String,
+      default: '#E11D2E'
+    },
+    showAllergiesBanner: {
+      type: Boolean,
+      default: true
+    },
+    showBloodGroupLarge: {
+      type: Boolean,
+      default: true
+    },
+    showMedicationsPublicly: {
+      type: Boolean,
+      default: true
+    },
+    organDonor: {
+      type: Boolean,
+      default: false
+    },
+    dnrDirective: {
+      type: String,
+      enum: ['FULL_CODE', 'DNR', 'ADVANCE_DIRECTIVE', 'COMFORT_CARE'],
+      default: 'FULL_CODE'
+    },
+    emergencyBannerText: {
+      type: String,
+      default: ''
+    },
+    preferredLanguage: {
+      type: String,
+      default: 'en'
+    },
+    bystanderPhoneMasking: {
+      type: Boolean,
+      default: false
+    }
+  },
+  organDonor: {
+    type: Boolean,
+    default: false
+  },
+  insuranceProvider: String,
+  insurancePolicyNumber: String,
   reports: [
     {
       filename: String,

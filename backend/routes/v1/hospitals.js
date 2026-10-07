@@ -4,6 +4,7 @@ const Hospital = require('../../models/Hospital');
 const User = require('../../models/User');
 const Doctor = require('../../models/Doctor');
 const PatientProfile = require('../../models/PatientProfile');
+const { resolvePatientProfile } = require('../../utils/patientResolver');
 const { authenticateToken } = require('../../middleware/auth');
 const { logEvent } = require('../../services/securityLogger');
 
@@ -217,6 +218,70 @@ router.post('/admissions', async (req, res) => {
       runtimeBeds.traumaBaysAvailable = Math.max(0, runtimeBeds.traumaBaysAvailable - 1);
     }
 
+    let patientProfile = null;
+    if (qrCodeId) {
+      patientProfile = await resolvePatientProfile(qrCodeId);
+      if (!patientProfile) {
+        patientProfile = await PatientProfile.findOne({
+          $or: [{ qrCodeId }, { aliases: qrCodeId }]
+        });
+      }
+    }
+    if (!patientProfile && patientName) {
+      const userMatch = await User.findOne({
+        name: new RegExp(`^${patientName.trim()}$`, 'i')
+      });
+      if (userMatch) {
+        patientProfile = await PatientProfile.findOne({ userId: userMatch._id });
+      }
+    }
+
+    if (patientProfile) {
+      if (!patientProfile.medicalHistory) patientProfile.medicalHistory = [];
+      patientProfile.medicalHistory.unshift({
+        recordType: 'admission',
+        title: `Hospital Admission: ${ward}`,
+        description: `Admitted to ${ward} (Bed: ${newAdmission.bedNumber}) under ${newAdmission.attendingDoctor}. Urgency: ${triageLevel}`,
+        diagnosis: req.body.diagnosis || 'Hospital Inpatient Admission',
+        treatment: `Inpatient Care [Ward: ${ward}, Bed: ${newAdmission.bedNumber}]`,
+        notes: req.body.notes || `Admitted under triage protocol ${triageLevel}`,
+        hospitalName: req.body.facilityName || 'Metro City Central Emergency & Level 1 Trauma Center',
+        doctorOrHospital: req.body.facilityName || 'Metro City Central Hospital',
+        recordDate: new Date(),
+        author: {
+          name: newAdmission.attendingDoctor,
+          role: 'hospital',
+          specialization: 'Emergency & Inpatient Medicine'
+        }
+      });
+
+      if (!patientProfile.activities) patientProfile.activities = [];
+      patientProfile.activities.unshift({
+        type: 'Hospital Admission',
+        description: `Admitted to ${ward} (Bed ${newAdmission.bedNumber}) at Metro City Central Hospital`,
+        timestamp: new Date(),
+        metadata: {
+          admissionId: newAdmission.id,
+          ward: newAdmission.ward,
+          bedNumber: newAdmission.bedNumber,
+          attendingDoctor: newAdmission.attendingDoctor,
+          triageLevel: newAdmission.triageLevel,
+          status: 'admitted'
+        }
+      });
+
+      await patientProfile.save();
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('hospital:er').emit('patient-admitted', newAdmission);
+      io.to('doctor:all').emit('patient-admitted', newAdmission);
+      if (patientProfile && patientProfile.userId) {
+        io.to(`patient:${patientProfile.userId}`).emit('patient-admitted', newAdmission);
+      }
+    }
+
     logEvent('HOSPITAL_PATIENT_ADMITTED', { admissionId: newAdmission.id, patientName, ward });
 
     res.status(201).json({
@@ -242,15 +307,72 @@ router.put('/admissions/:id/discharge', async (req, res) => {
       return res.status(404).json({ error: 'Admission record not found' });
     }
 
+    const { disposition, notes } = req.body || {};
+
     admission.status = 'discharged';
     admission.dischargedAt = new Date().toISOString();
+    if (disposition) admission.disposition = disposition;
+    if (notes) admission.dischargeNotes = notes;
     runtimeBeds.occupied = Math.max(0, runtimeBeds.occupied - 1);
 
     if (admission.ward.includes('Trauma')) {
       runtimeBeds.traumaBaysAvailable = Math.min(runtimeBeds.traumaBaysTotal, runtimeBeds.traumaBaysAvailable + 1);
+    } else if (admission.ward.includes('ICU')) {
+      runtimeBeds.icuAvailable = Math.min(runtimeBeds.icuTotal, runtimeBeds.icuAvailable + 1);
+    } else {
+      runtimeBeds.generalAvailable = Math.min(runtimeBeds.generalTotal, runtimeBeds.generalAvailable + 1);
     }
 
-    logEvent('HOSPITAL_PATIENT_DISCHARGED', { admissionId: id, patientName: admission.patientName });
+    if (admission.qrCodeId) {
+      const patientProfile = await PatientProfile.findOne({
+        $or: [{ qrCodeId: admission.qrCodeId }, { aliases: admission.qrCodeId }]
+      });
+      if (patientProfile) {
+        if (!patientProfile.activities) patientProfile.activities = [];
+        patientProfile.activities.unshift({
+          type: 'Hospital Discharge',
+          description: `Discharged from ${admission.ward} (Bed ${admission.bedNumber})${disposition ? ` - ${disposition}` : ''}`,
+          timestamp: new Date(),
+          metadata: {
+            admissionId: id,
+            ward: admission.ward,
+            bedNumber: admission.bedNumber,
+            disposition: disposition || 'Stable & Discharged',
+            dischargeNotes: notes || '',
+            status: 'discharged'
+          }
+        });
+
+        if (!patientProfile.medicalHistory) patientProfile.medicalHistory = [];
+        patientProfile.medicalHistory.unshift({
+          recordType: 'discharge',
+          title: `Hospital Discharge: ${admission.ward}`,
+          description: `Discharged from ${admission.ward} (Bed: ${admission.bedNumber}). Disposition: ${disposition || 'Stable & Discharged'}.`,
+          diagnosis: `Discharged from Inpatient Admission ${id}`,
+          treatment: notes || `Discharged in stable condition. Bed freed.`,
+          notes: notes || `Discharge disposition: ${disposition || 'Stable'}`,
+          hospitalName: 'Metro City Central Emergency & Level 1 Trauma Center',
+          doctorOrHospital: 'Metro City Central Hospital',
+          recordDate: new Date(),
+          author: {
+            name: admission.attendingDoctor || 'Hospital Operations Staff',
+            role: 'hospital',
+            specialization: 'Inpatient Medicine'
+          }
+        });
+
+        await patientProfile.save();
+      }
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to('hospital:er').emit('patient-discharged', admission);
+      io.to('doctor:all').emit('patient-discharged', admission);
+      io.to('crew:all').emit('bed-updated', runtimeBeds);
+    }
+
+    logEvent('HOSPITAL_PATIENT_DISCHARGED', { admissionId: id, patientName: admission.patientName, disposition, notes });
 
     res.json({
       message: 'Patient discharged successfully',
@@ -386,5 +508,8 @@ router.get('/nearby', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to find nearby hospitals' });
   }
 });
+
+router.runtimeAdmissions = runtimeAdmissions;
+router.runtimeBeds = runtimeBeds;
 
 module.exports = router;

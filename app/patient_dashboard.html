@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#ffffff">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="LifeQR.png" type="image/png">
-  <title>Patient Command Vault | LifeQR</title>
+  <title>Patient Health Dashboard | LifeQR</title>
   
   <!-- Fonts & Material Symbols -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -184,21 +184,6 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between">
 
-  <!-- Live Telemetry Status Bar -->
-  <div class="bg-[#111111] text-white py-2.5 px-6 sm:px-10 text-xs font-mono no-print">
-    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap text-[11px]">
-      <div class="flex items-center gap-2.5">
-        <span class="live-dot"></span>
-        <span class="uppercase tracking-widest text-white font-bold">PATIENT COMMAND VAULT ACTIVE &bull; AES-256 GCM</span>
-      </div>
-      <div class="flex items-center gap-6">
-        <span class="hidden sm:inline text-white/60">SOCKET.IO LIVE TELEMETRY STREAM</span>
-        <a href="emergency_access.html" class="text-[#E11D2E] hover:text-white font-bold uppercase tracking-wider flex items-center gap-1">
-          <span>VIEW LIVE QR SCANNER</span> &rarr;
-        </a>
-      </div>
-    </div>
-  </div>
 
   <!-- Header Navigation -->
   <header class="sticky top-0 z-40 px-6 sm:px-10 py-4 rule-b bg-white no-print shadow-xs">
@@ -247,36 +232,19 @@
       <div>
         <div class="inline-flex items-center gap-2 px-3 py-1 border-2 border-[#111111] bg-[#f9fafb] text-[11px] font-mono font-bold uppercase tracking-widest text-[#E11D2E] mb-2">
           <span class="material-symbols-outlined text-sm">shield_person</span>
-          <span>PATIENT COMMAND VAULT</span>
+          <span>EMERGENCY MEDICAL PROFILE</span>
         </div>
-        <h1 class="font-black text-3xl sm:text-4xl text-[#111111] tracking-tight uppercase">Patient Command Portal</h1>
-        <p class="text-xs sm:text-sm text-[#111111]/70 font-sans font-medium mt-1">Manage encrypted medical lifeline, active emergency contacts, and clinical records.</p>
+        <h1 class="font-black text-3xl sm:text-4xl text-[#111111] tracking-tight uppercase">Patient Health Dashboard</h1>
+        <p class="text-xs sm:text-sm text-[#111111]/70 font-sans font-medium mt-1">Manage your emergency profile, medical details, and emergency contacts.</p>
       </div>
 
       <!-- Emergency SOS Trigger Button -->
       <div class="flex items-center gap-3">
         <button onclick="triggerEmergencySOS()" class="btn-danger text-xs sm:text-sm px-6 py-3 uppercase font-mono tracking-wider font-bold shadow-[4px_4px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5">
           <span class="material-symbols-outlined text-base animate-pulse">sos</span>
-          <span>Broadcast 1-Tap SOS</span>
+          <span>Emergency SOS</span>
         </button>
       </div>
-    </div>
-
-    <!-- Quick Action Banner -->
-    <div class="mb-8 editorial-card-sm p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print bg-[#f9fafb]">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 border-2 border-[#111111] bg-white flex items-center justify-center text-[#E11D2E] flex-shrink-0">
-          <span class="material-symbols-outlined text-2xl">vital_signs</span>
-        </div>
-        <div>
-          <p class="text-[10px] font-mono font-bold uppercase tracking-widest text-[#E11D2E]">Golden Hour Readiness</p>
-          <p class="text-xs sm:text-sm font-bold text-[#111111]">Ensure blood group, drug allergies, and active medications are up to date for emergency medics.</p>
-        </div>
-      </div>
-      <button onclick="document.getElementById('profileForm').scrollIntoView({behavior:'smooth'})" class="btn-primary text-xs px-4 py-2 uppercase font-mono tracking-wider font-bold whitespace-nowrap self-start sm:self-auto">
-        <span>Edit Profile</span>
-        <span class="material-symbols-outlined text-xs">edit</span>
-      </button>
     </div>
 
     <!-- Skeletons Loader State -->
@@ -341,7 +309,7 @@
         <div class="editorial-card p-6 space-y-4">
           <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
             <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[#E11D2E] text-lg">contact_phone</span> ICE Contacts
+              <span class="material-symbols-outlined text-[#E11D2E] text-lg">contact_phone</span> Emergency Contacts
             </h3>
             <span class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">1-Tap Direct Call</span>
           </div>
@@ -350,15 +318,17 @@
           </div>
         </div>
 
-        <!-- Pending Doctor Access Requests -->
-        <div class="editorial-card p-6 space-y-4">
+        <!-- Doctor & Hospital History & Clinical Encounters -->
+        <div id="doctorHistoryCard" class="editorial-card p-6 space-y-4">
           <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
             <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[#111111] text-lg">lock_open</span> Doctor Authorizations
+              <span class="material-symbols-outlined text-[#E11D2E] text-lg">local_hospital</span>
+              <span>Doctor &amp; Hospital History</span>
             </h3>
+            <span id="doctorHistoryCountBadge" class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">0 Records</span>
           </div>
-          <div id="doctorAccessRequests" class="space-y-2.5">
-            <!-- Rendered dynamically -->
+          <div id="doctorHistoryContainer" class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+            <!-- Rendered dynamically: Consultations, Hospital Admissions, Clinical Encounters, Authorized Doctors -->
           </div>
         </div>
 
@@ -367,20 +337,147 @@
       <!-- Right Detailed Profile & History Column (8 Cols) -->
       <div class="lg:col-span-8 space-y-6">
         
-        <!-- Profile Form Card -->
-        <div class="editorial-card p-6 sm:p-8 space-y-6 no-print">
+        <!-- SECTION 1: Normal Medical Profile View (Read-Only Overview shown first) -->
+        <div id="profileNormalViewCard" class="editorial-card p-6 sm:p-8 space-y-6 no-print">
           
-          <div class="flex items-center gap-4 pb-5 border-b-2 border-[#111111]">
-            <div class="relative w-16 h-16 border-2 border-[#111111] bg-gray-100 flex-shrink-0 shadow-[3px_3px_0px_#111111]">
-              <img id="userProfilePhoto" src="" class="w-full h-full object-cover">
-              <label for="profilePhotoInput" class="absolute bottom-0 inset-x-0 bg-[#111111] text-white text-[9px] font-mono font-bold text-center cursor-pointer py-0.5 uppercase tracking-wider hover:bg-[#E11D2E] transition">Edit</label>
-              <input type="file" id="profilePhotoInput" class="hidden" accept="image/*" onchange="uploadProfilePhoto()">
+          <!-- Header with Profile Photo, Name, and Quick Edit Button -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b-2 border-[#111111] gap-4">
+            <div class="flex items-center gap-4">
+              <div onclick="openPhotoUploadModal()" class="relative w-16 h-16 border-2 border-[#111111] bg-gray-100 flex-shrink-0 shadow-[3px_3px_0px_#111111] cursor-pointer group" title="Upload profile photo or select from gallery">
+                <img id="normalUserProfilePhoto" src="https://www.w3schools.com/howto/img_avatar.png" class="w-full h-full object-cover" alt="Profile Photo">
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                  <span class="material-symbols-outlined text-white text-base">photo_camera</span>
+                </div>
+                <div class="absolute bottom-0 inset-x-0 bg-[#111111] text-white text-[9px] font-mono font-bold text-center py-0.5 uppercase tracking-wider group-hover:bg-[#E11D2E] transition flex items-center justify-center gap-0.5">
+                  <span class="material-symbols-outlined text-[10px]">edit</span>
+                  <span>EDIT</span>
+                </div>
+              </div>
+              <input type="file" id="profilePhotoInput" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="uploadProfilePhoto(this.files[0])">
+              <input type="file" id="profileCameraInput" accept="image/jpeg,image/png,image/jpg" capture="user" class="hidden" onchange="uploadProfilePhoto(this.files[0])">
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h2 id="normalProfileName" class="font-black text-xl sm:text-2xl text-[#111111] tracking-tight uppercase">Loading Patient...</h2>
+                  <span id="normalPublicBadge" class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[10px] font-mono font-bold uppercase">PUBLIC QR ACTIVE</span>
+                </div>
+                <p id="normalProfileMeta" class="text-xs text-[#111111]/70 font-mono font-medium mt-0.5">- Yrs &bull; - &bull; Phone: -</p>
+              </div>
             </div>
-            <div>
-              <h2 class="font-black text-xl sm:text-2xl text-[#111111] tracking-tight uppercase">Encrypted Health Profile</h2>
-              <p class="text-xs text-[#111111]/70 font-sans font-medium">Field-critical medical information for attending emergency crews</p>
+            <button type="button" onclick="toggleEditProfile(true)" class="btn-primary text-xs px-4 py-2 uppercase font-mono tracking-wider font-bold whitespace-nowrap self-start sm:self-auto flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+              <span class="material-symbols-outlined text-sm">edit</span>
+              <span>Edit Profile</span>
+            </button>
+          </div>
+
+          <!-- Key Vitals Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <!-- Blood Group -->
+            <div class="border-2 border-[#111111] bg-[#f9fafb] p-3.5 flex items-center justify-between">
+              <div>
+                <p class="text-[9px] font-mono font-bold uppercase tracking-wider text-[#111111]/70">Blood Group</p>
+                <p id="normalBloodGroupDisplay" class="font-black text-2xl sm:text-3xl text-[#E11D2E] tracking-tight">--</p>
+              </div>
+              <div class="w-8 h-8 border-2 border-[#111111] bg-white flex items-center justify-center text-[#E11D2E]">
+                <span class="material-symbols-outlined text-base">bloodtype</span>
+              </div>
+            </div>
+
+            <!-- Emergency Phone -->
+            <div class="border-2 border-[#111111] bg-[#f9fafb] p-3.5 flex items-center justify-between">
+              <div>
+                <p class="text-[9px] font-mono font-bold uppercase tracking-wider text-[#111111]/70">Emergency Phone</p>
+                <p id="normalPhoneDisplay" class="font-mono font-bold text-xs text-[#111111] mt-1 break-all">--</p>
+              </div>
+              <div class="w-8 h-8 border-2 border-[#111111] bg-white flex items-center justify-center text-[#111111]">
+                <span class="material-symbols-outlined text-base">call</span>
+              </div>
+            </div>
+
+            <!-- Emergency City / State -->
+            <div class="border-2 border-[#111111] bg-[#f9fafb] p-3.5 flex items-center justify-between">
+              <div>
+                <p class="text-[9px] font-mono font-bold uppercase tracking-wider text-[#111111]/70">Emergency Location</p>
+                <p id="normalLocationDisplay" class="font-mono font-bold text-xs text-[#111111] mt-1 truncate max-w-[140px]">--</p>
+              </div>
+              <div class="w-8 h-8 border-2 border-[#111111] bg-white flex items-center justify-center text-[#111111]">
+                <span class="material-symbols-outlined text-base">location_on</span>
+              </div>
             </div>
           </div>
+
+          <!-- Clinical Conditions Section -->
+          <div class="space-y-4 font-mono">
+            <!-- Known Allergies -->
+            <div class="border-2 border-[#111111] p-3.5 bg-red-50/40 space-y-1.5">
+              <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#E11D2E]">
+                <span class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-sm">warning</span>
+                  <span>Known Severe Allergies</span>
+                </span>
+                <span class="text-gray-500 font-normal">CRITICAL DISPATCH</span>
+              </div>
+              <div id="normalAllergiesContainer" class="flex flex-wrap gap-1.5 pt-0.5">
+                <span class="text-xs text-gray-500 italic">No allergies listed</span>
+              </div>
+            </div>
+
+            <!-- Active Medications -->
+            <div class="border-2 border-[#111111] p-3.5 bg-white space-y-1.5 shadow-[2px_2px_0px_#111111]">
+              <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#111111]">
+                <span class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-sm text-[#111111]">medication</span>
+                  <span>Current Active Medications</span>
+                </span>
+                <span class="text-gray-500 font-normal">DAILY REGIMEN</span>
+              </div>
+              <div id="normalMedicationsContainer" class="flex flex-wrap gap-1.5 pt-0.5">
+                <span class="text-xs text-gray-500 italic">No active medications listed</span>
+              </div>
+            </div>
+
+            <!-- Chronic Conditions -->
+            <div class="border-2 border-[#111111] p-3.5 bg-white space-y-1.5 shadow-[2px_2px_0px_#111111]">
+              <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#111111]">
+                <span class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-sm text-[#111111]">clinical_notes</span>
+                  <span>Chronic Health Conditions</span>
+                </span>
+                <span class="text-gray-500 font-normal">HISTORY</span>
+              </div>
+              <div id="normalHealthIssuesContainer" class="flex flex-wrap gap-1.5 pt-0.5">
+                <span class="text-xs text-gray-500 italic">No chronic conditions listed</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Residential / Full Address -->
+          <div class="border-2 border-[#111111] p-3 bg-[#f9fafb] text-xs font-mono space-y-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[#111111]/70 block">Residential Address</span>
+            <p id="normalFullAddressDisplay" class="font-bold text-[#111111]">--</p>
+          </div>
+
+
+        </div>
+
+  <!-- Edit Medical Profile Pop-up Modal -->
+  <div id="profileEditSection" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto no-print" onclick="if (event.target === this) toggleEditProfile(false)">
+    <div class="bg-white border-2 border-[#111111] shadow-[8px_8px_0px_#111111] max-w-3xl w-full p-6 sm:p-8 space-y-6 my-auto max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150" onclick="event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-4 border-b-2 border-[#111111] gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 border-2 border-[#111111] bg-[#111111] text-[#E11D2E] flex items-center justify-center flex-shrink-0 font-bold shadow-[2px_2px_0px_#111111]">
+            <span class="material-symbols-outlined text-xl">edit_document</span>
+          </div>
+          <div>
+            <h2 class="font-black text-xl sm:text-2xl text-[#111111] tracking-tight uppercase">Edit Medical Profile</h2>
+            <p class="text-xs text-[#111111]/70 font-sans font-medium">Update vitals, contraindications, and emergency contacts</p>
+          </div>
+        </div>
+        <button type="button" onclick="toggleEditProfile(false)" class="p-1.5 text-[#111111] hover:bg-[#E11D2E] hover:text-white border-2 border-[#111111] transition flex items-center justify-center shadow-[2px_2px_0px_#111111]" title="Close Pop-up">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
 
           <form id="profileForm" class="space-y-4">
             <div class="grid md:grid-cols-2 gap-4">
@@ -394,7 +491,7 @@
               </div>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-4">
+            <div class="grid md:grid-cols-3 gap-3">
               <div>
                 <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">Age</label>
                 <input type="number" id="profileAge" name="age" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-mono font-bold text-[#111111]">
@@ -413,9 +510,6 @@
                   <option value="O-">O- (O Negative)</option>
                 </select>
               </div>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] mb-1">Gender</label>
                 <select id="profileGender" name="gender" class="w-full px-3.5 py-2.5 border-2 border-[#111111] text-xs font-bold text-[#111111]">
@@ -424,10 +518,6 @@
                   <option value="female">Female</option>
                   <option value="other">Other</option>
                 </select>
-              </div>
-              <div class="flex items-center gap-2.5 mt-2 sm:mt-5 bg-[#f9fafb] p-3 border-2 border-[#111111]">
-                <input type="checkbox" id="publicProfileToggle" class="w-4 h-4 text-[#111111] border-2 border-[#111111] focus:ring-0">
-                <label for="publicProfileToggle" class="text-xs font-bold text-[#111111] font-mono uppercase tracking-wider">Enable Public Emergency QR Profile</label>
               </div>
             </div>
 
@@ -466,7 +556,7 @@
             <!-- Emergency Contacts Setup in Profile -->
             <div class="pt-4 border-t-2 border-[#111111] space-y-3">
               <h4 class="font-mono text-xs font-bold text-[#111111] uppercase tracking-wider flex items-center gap-1">
-                <span class="material-symbols-outlined text-base text-[#E11D2E]">contact_phone</span> Emergency Contacts Setup (ICE)
+                <span class="material-symbols-outlined text-base text-[#E11D2E]">contact_phone</span> Emergency Contacts Setup
               </h4>
               <div class="space-y-2.5">
                 <div class="grid md:grid-cols-3 gap-2.5 p-3 border-2 border-[#111111] bg-[#f9fafb]">
@@ -487,8 +577,12 @@
               </div>
             </div>
 
-            <div class="pt-2">
-              <button type="submit" id="saveProfileBtn" class="btn-primary px-6 py-3 text-xs font-mono uppercase tracking-wider font-bold">
+            <!-- Action Buttons Footer -->
+            <div class="pt-4 border-t-2 border-[#111111] flex items-center justify-between flex-wrap gap-3">
+              <button type="button" onclick="toggleEditProfile(false)" class="btn-secondary px-5 py-2.5 text-xs font-mono uppercase tracking-wider font-bold">
+                Cancel
+              </button>
+              <button type="submit" id="saveProfileBtn" class="btn-primary px-7 py-2.5 text-xs font-mono uppercase tracking-wider font-bold flex items-center gap-2 shadow-[3px_3px_0px_#111111]">
                 <span>Save Medical Profile Changes</span>
                 <span class="material-symbols-outlined text-sm">check</span>
               </button>
@@ -496,6 +590,7 @@
 
           </form>
         </div>
+      </div>
 
         <!-- History & Reports Dual Panel -->
         <div class="grid md:grid-cols-2 gap-6">
@@ -558,17 +653,20 @@
 
         </div>
 
-        <!-- Security Audit Log -->
-        <div class="editorial-card p-6 space-y-4 no-print">
-          <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
-            <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
-              <span class="material-symbols-outlined text-[#111111]">history</span>
-              <span>Security Access Audit Log</span>
-            </h3>
-            <span class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">Audit Trail</span>
+        <!-- Security Audit Log (Restricted: Administrators Only) -->
+        <div id="securityAuditLogCard" class="editorial-card p-6 space-y-4 no-print hidden">
+          <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111] flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#111111]">history</span>
+                <span>Security Access Audit Log</span>
+              </h3>
+              <span class="px-2 py-0.5 border border-[#111111] bg-[#111111] text-white text-[9px] font-mono font-bold uppercase tracking-wider">Admin Clearance Only</span>
+            </div>
+            <span class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">Security Audit Trail</span>
           </div>
           <div id="activitiesList" class="space-y-2.5 font-mono text-xs">
-            <!-- Rendered dynamically -->
+            <!-- Rendered dynamically for administrators only -->
           </div>
           <div id="activitiesPagination" class="flex justify-between items-center mt-3 text-xs font-mono"></div>
         </div>
@@ -706,6 +804,151 @@
     </div>
   </div>
 
+  <!-- Profile Photo Upload Modal (Gallery Permission & Camera) -->
+  <div id="photoUploadModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print" onclick="if (event.target === this) closePhotoUploadModal()">
+    <div class="bg-white border-2 border-[#111111] shadow-[8px_8px_0px_#111111] max-w-sm w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2.5 h-2.5 bg-[#E11D2E] rounded-full"></span>
+          <div>
+            <h3 class="font-black text-sm uppercase tracking-wider text-[#111111]">Update Profile Photo</h3>
+            <p class="text-[10px] font-mono text-[#111111]/70">Field Emergency ID &bull; Badge Display</p>
+          </div>
+        </div>
+        <button type="button" onclick="closePhotoUploadModal()" class="p-1 text-[#111111] hover:bg-gray-100 transition" title="Close">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Current Photo Preview -->
+      <div class="flex items-center gap-3.5 p-3 border-2 border-[#111111] bg-[#f9fafb]">
+        <div class="w-14 h-14 border-2 border-[#111111] bg-gray-200 overflow-hidden flex-shrink-0 shadow-[2px_2px_0px_#111111]">
+          <img id="photoModalPreview" src="https://www.w3schools.com/howto/img_avatar.png" class="w-full h-full object-cover" alt="Current Avatar">
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-bold text-[#111111] uppercase font-mono">Patient Photo ID</p>
+          <p class="text-[11px] text-[#111111]/70 font-sans">Choose gallery upload or take a live camera photo.</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2 pt-1 font-mono">
+        <button type="button" onclick="triggerGalleryPicker()" class="btn-primary w-full justify-center text-xs py-3 uppercase tracking-wider font-bold shadow-[2px_2px_0px_#111111] flex items-center gap-2">
+          <span class="material-symbols-outlined text-base">photo_library</span>
+          <span>Open Gallery / Choose Photo</span>
+        </button>
+
+        <button type="button" onclick="triggerCameraPicker()" class="btn-secondary w-full justify-center text-xs py-3 uppercase tracking-wider font-bold shadow-[2px_2px_0px_#111111] flex items-center gap-2">
+          <span class="material-symbols-outlined text-base text-[#E11D2E]">photo_camera</span>
+          <span>Take Live Photo (Camera)</span>
+        </button>
+      </div>
+
+      <!-- Uploading Status -->
+      <div id="photoUploadStatus" class="hidden text-center text-xs font-mono font-bold text-[#E11D2E] py-2 bg-red-50 border border-[#E11D2E]">
+        <span class="inline-block animate-spin mr-1">⏳</span> Uploading and saving profile photo...
+      </div>
+
+      <div class="pt-2 border-t-2 border-[#111111] flex justify-between items-center text-[10px] font-mono text-[#111111]/60">
+        <span>JPEG or PNG &bull; Max 2MB</span>
+        <button type="button" onclick="closePhotoUploadModal()" class="text-[#111111] hover:text-[#E11D2E] font-bold uppercase underline">Cancel</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Image Cropper Modal (1080x1080 Square Enforcement) -->
+  <div id="photoCropModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto no-print" onclick="if (event.target === this) cancelCropModal()">
+    <div class="bg-white border-2 border-[#111111] shadow-[8px_8px_0px_#111111] max-w-md w-full p-5 sm:p-6 space-y-4 my-auto max-h-[95vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150" onclick="event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 bg-[#E11D2E] rounded-full"></span>
+          <div>
+            <h3 class="font-black text-sm uppercase tracking-wider text-[#111111]">Crop Profile Photo &bull; 1080&times;1080</h3>
+            <p class="text-[11px] font-mono text-[#111111]/70 font-semibold">Square format required for Medical QR Passports</p>
+          </div>
+        </div>
+        <button type="button" onclick="cancelCropModal()" class="p-1 text-[#111111] hover:bg-gray-100 transition" title="Cancel Crop">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+
+      <!-- Dimension Notice Banner -->
+      <div id="cropDimensionNotice" class="p-2.5 border-2 border-[#111111] bg-amber-50 text-[11px] font-mono font-bold text-[#111111] flex items-center justify-between gap-2 shadow-[2px_2px_0px_#111111]">
+        <div class="flex items-center gap-1.5 truncate">
+          <span class="material-symbols-outlined text-base text-amber-700">aspect_ratio</span>
+          <span id="cropDimensionText">Original: -- &times; --px</span>
+        </div>
+        <span class="px-2 py-0.5 bg-[#111111] text-white text-[9px] uppercase tracking-wider font-mono flex-shrink-0">1080&times;1080 Crop</span>
+      </div>
+
+      <!-- Interactive Square Cropping Viewport Area -->
+      <div class="space-y-1">
+        <div class="relative w-full aspect-square max-w-[320px] mx-auto border-2 border-[#111111] bg-[#111111] overflow-hidden select-none touch-none shadow-[4px_4px_0px_#111111]" id="cropViewportContainer" style="cursor: grab;">
+          <canvas id="cropPreviewCanvas" class="w-full h-full block"></canvas>
+          
+          <!-- 3x3 Grid Overlay & Framing Guide -->
+          <div class="absolute inset-0 pointer-events-none border border-white/50 grid grid-cols-3 grid-rows-3">
+            <div class="border-r border-b border-white/20"></div>
+            <div class="border-r border-b border-white/20"></div>
+            <div class="border-b border-white/20"></div>
+            <div class="border-r border-b border-white/20"></div>
+            <div class="border-r border-b border-white/20"></div>
+            <div class="border-b border-white/20"></div>
+            <div class="border-r border-b border-white/20"></div>
+            <div class="border-r border-b border-white/20"></div>
+            <div></div>
+          </div>
+          <div class="absolute bottom-2 right-2 bg-black/80 text-white text-[9px] font-mono font-bold px-2 py-0.5 pointer-events-none rounded">
+            1:1 SQUARE (1080&times;1080)
+          </div>
+        </div>
+        <p class="text-[10px] font-mono text-[#111111]/60 text-center pt-1">Drag image to position &bull; Use slider or scroll to zoom</p>
+      </div>
+
+      <!-- Crop Controls (Zoom, Rotate, Reset) -->
+      <div class="space-y-2 pt-1 font-mono">
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="adjustCropZoom(-0.1)" class="w-8 h-8 border-2 border-[#111111] bg-white text-[#111111] font-bold flex items-center justify-center hover:bg-gray-100 transition shadow-[2px_2px_0px_#111111]" title="Zoom Out">
+            <span class="material-symbols-outlined text-sm">remove</span>
+          </button>
+          <input type="range" id="cropZoomSlider" min="0.5" max="3" step="0.01" value="1" oninput="onCropZoomInput(this.value)" class="flex-1 accent-[#E11D2E] h-2 bg-gray-200 rounded cursor-pointer">
+          <button type="button" onclick="adjustCropZoom(0.1)" class="w-8 h-8 border-2 border-[#111111] bg-white text-[#111111] font-bold flex items-center justify-center hover:bg-gray-100 transition shadow-[2px_2px_0px_#111111]" title="Zoom In">
+            <span class="material-symbols-outlined text-sm">add</span>
+          </button>
+          <button type="button" onclick="rotateCropImage()" class="px-2.5 h-8 border-2 border-[#111111] bg-white text-[#111111] text-xs font-bold flex items-center gap-1 hover:bg-gray-100 transition shadow-[2px_2px_0px_#111111]" title="Rotate 90° Clockwise">
+            <span class="material-symbols-outlined text-sm">rotate_right</span>
+            <span class="text-[10px]">90&deg;</span>
+          </button>
+          <button type="button" onclick="resetCropPosition()" class="px-2.5 h-8 border-2 border-[#111111] bg-white text-[#111111] text-xs font-bold flex items-center gap-1 hover:bg-gray-100 transition shadow-[2px_2px_0px_#111111]" title="Center & Reset">
+            <span class="material-symbols-outlined text-sm">center_focus_strong</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Processing indicator inside crop modal -->
+      <div id="cropProcessStatus" class="hidden text-center text-xs font-mono font-bold text-[#E11D2E] py-2 bg-red-50 border border-[#E11D2E]">
+        <span class="inline-block animate-spin mr-1">⏳</span> Cropping to 1080&times;1080 and saving...
+      </div>
+
+      <!-- Action Buttons Footer -->
+      <div class="pt-3 border-t-2 border-[#111111] flex items-center justify-between gap-3">
+        <button type="button" onclick="cancelCropModal()" class="btn-secondary px-4 py-2.5 text-xs font-mono uppercase font-bold">
+          Cancel
+        </button>
+        <button type="button" id="applyCropBtn" onclick="applyAndUploadCrop()" class="btn-primary px-5 py-2.5 text-xs font-mono uppercase font-bold flex items-center gap-1.5 shadow-[3px_3px_0px_#111111]">
+          <span class="material-symbols-outlined text-sm">crop</span>
+          <span>Crop &amp; Save (1080&times;1080)</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Fixed Mobile Bottom Navigation Bar -->
   <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#111111] z-50 px-2 py-2 shadow-2xl flex items-center justify-around no-print">
     <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="flex flex-col items-center gap-0.5 text-xs font-mono font-bold text-[#111111]" aria-label="Profile">
@@ -732,7 +975,7 @@
 
   <!-- Footer -->
   <footer class="rule py-8 px-6 text-center text-xs font-mono text-[#111111]/60 no-print mt-12">
-    <p>&copy; 2025&ndash;2026 LifeQR &bull; SECURE PATIENT COMMAND VAULT</p>
+    <p>&copy; 2025&ndash;2026 LifeQR &bull; SECURE PATIENT HEALTH PORTAL</p>
   </footer>
 
 </body>

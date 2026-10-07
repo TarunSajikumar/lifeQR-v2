@@ -444,6 +444,19 @@ router.put('/users/:id/profile', authenticateToken, requireAdmin, async (req, re
           patProfile.healthIssues = Array.isArray(rawHI) ? rawHI.join(', ') : String(rawHI).trim();
         }
         if (patData.publicProfile !== undefined) patProfile.publicProfile = !!patData.publicProfile;
+        if (patData.emergencyViewSettings !== undefined) {
+          const currentEv = patProfile.emergencyViewSettings ? (patProfile.emergencyViewSettings.toObject ? patProfile.emergencyViewSettings.toObject() : patProfile.emergencyViewSettings) : {};
+          patProfile.emergencyViewSettings = {
+            ...currentEv,
+            ...patData.emergencyViewSettings
+          };
+          if (patData.emergencyViewSettings.organDonor !== undefined) {
+            patProfile.organDonor = !!patData.emergencyViewSettings.organDonor;
+          }
+        }
+        if (patData.organDonor !== undefined) patProfile.organDonor = !!patData.organDonor;
+        if (patData.insuranceProvider !== undefined) patProfile.insuranceProvider = String(patData.insuranceProvider).trim();
+        if (patData.insurancePolicyNumber !== undefined) patProfile.insurancePolicyNumber = String(patData.insurancePolicyNumber).trim();
 
         if (Array.isArray(patData.emergencyContacts)) {
           patProfile.emergencyContacts = patData.emergencyContacts.map((c, idx) => ({

@@ -104,7 +104,18 @@ async function buildEmergencyProfileDTO(profile, user) {
     insuranceProvider: profile?.insuranceProvider || '',
     insurancePolicyNumber: profile?.insurancePolicyNumber || '',
     criticalWarnings: [],
-    organDonor: profile?.organDonor || false,
+    organDonor: profile?.emergencyViewSettings?.organDonor || profile?.organDonor || false,
+    emergencyViewSettings: profile?.emergencyViewSettings || {
+      themeColor: '#E11D2E',
+      showAllergiesBanner: true,
+      showBloodGroupLarge: true,
+      showMedicationsPublicly: true,
+      organDonor: profile?.organDonor || false,
+      dnrDirective: 'FULL_CODE',
+      emergencyBannerText: '',
+      preferredLanguage: 'en',
+      bystanderPhoneMasking: false
+    },
     lastUpdatedAt: profile?.updatedAt || profile?.createdAt || null
   };
 }

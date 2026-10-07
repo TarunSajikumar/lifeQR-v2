@@ -158,14 +158,92 @@ function filterAdmissions(query) {
 }
 
 /**
- * Discharge Patient
+ * Discharge Patient State & Modal Handlers
  */
-async function dischargePatient(admissionId) {
-  if (!confirm(`Are you sure you want to discharge admission record ${admissionId}?`)) return;
+let pendingDischargeId = null;
+
+function dischargePatient(admissionId) {
+  const adm = activeAdmissions.find(a => a.id === admissionId) || {
+    id: admissionId,
+    patientName: 'Admitted Patient',
+    qrCodeId: 'LQR-RECORD',
+    age: '30',
+    gender: 'Patient',
+    bloodGroup: 'N/A',
+    ward: 'Inpatient Bay',
+    bedNumber: 'Allocated Bed',
+    attendingDoctor: 'Attending Staff',
+    triageLevel: 'STABLE'
+  };
+
+  pendingDischargeId = admissionId;
+
+  // Populate modal elements
+  const idEl = document.getElementById('dischargeAdmissionId');
+  const nameEl = document.getElementById('dischargePatientName');
+  const metaEl = document.getElementById('dischargePatientMeta');
+  const bloodEl = document.getElementById('dischargeBloodGroup');
+  const wardEl = document.getElementById('dischargeWard');
+  const bedEl = document.getElementById('dischargeBed');
+  const bedHighlightEl = document.getElementById('dischargeBedHighlight');
+  const triageBadgeEl = document.getElementById('dischargeTriageBadge');
+  const notesEl = document.getElementById('dischargeNotes');
+  const dispositionEl = document.getElementById('dischargeDisposition');
+
+  if (idEl) idEl.textContent = adm.id;
+  if (nameEl) nameEl.textContent = adm.patientName;
+  if (metaEl) metaEl.textContent = `${adm.qrCodeId || 'LQR-N/A'} • ${adm.age ? adm.age + 'y' : ''} • ${adm.gender || ''}`;
+  if (bloodEl) bloodEl.textContent = adm.bloodGroup || 'N/A';
+  if (wardEl) wardEl.textContent = adm.ward;
+  if (bedEl) bedEl.textContent = `Bed: ${adm.bedNumber || 'Assigned'} • Dr: ${adm.attendingDoctor || 'On Duty'}`;
+  if (bedHighlightEl) bedHighlightEl.textContent = `Bed ${adm.bedNumber || 'Assigned'} (${adm.ward})`;
+
+  if (triageBadgeEl) {
+    if (adm.triageLevel === 'CRITICAL') {
+      triageBadgeEl.className = 'px-2 py-0.5 border border-[#E11D2E] bg-red-50 text-[#E11D2E] font-mono text-[10px] font-bold uppercase';
+      triageBadgeEl.textContent = '🔴 CRITICAL';
+    } else if (adm.triageLevel === 'URGENT') {
+      triageBadgeEl.className = 'px-2 py-0.5 border border-amber-500 bg-amber-50 text-amber-800 font-mono text-[10px] font-bold uppercase';
+      triageBadgeEl.textContent = '🟠 URGENT';
+    } else {
+      triageBadgeEl.className = 'px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 font-mono text-[10px] font-bold uppercase';
+      triageBadgeEl.textContent = '🟢 STABLE';
+    }
+  }
+
+  if (notesEl) notesEl.value = '';
+  if (dispositionEl) dispositionEl.selectedIndex = 0;
+
+  const modal = document.getElementById('dischargePatientModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+}
+
+function closeDischargeModal() {
+  const modal = document.getElementById('dischargePatientModal');
+  if (modal) modal.classList.add('hidden');
+  pendingDischargeId = null;
+}
+
+async function confirmDischargeSubmit(e) {
+  if (e) e.preventDefault();
+  if (!pendingDischargeId) return;
+
+  const admissionId = pendingDischargeId;
+  const disposition = document.getElementById('dischargeDisposition')?.value || 'Stable & Recovered (Discharged Home)';
+  const notes = document.getElementById('dischargeNotes')?.value || '';
+  const confirmBtn = document.getElementById('dischargeConfirmBtn');
+  const btnText = document.getElementById('dischargeBtnText');
+
+  if (confirmBtn) confirmBtn.disabled = true;
+  if (btnText) btnText.textContent = 'Discharging...';
 
   try {
-    const res = await window.authFetch(`/api/v1/hospitals/admissions/${admissionId}/discharge`, {
-      method: 'PUT'
+    const res = await window.authFetch(`/api/v1/hospitals/admissions/${encodeURIComponent(admissionId)}/discharge`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ disposition, notes })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to discharge patient');
@@ -173,14 +251,82 @@ async function dischargePatient(admissionId) {
     if (typeof showToast === 'function') {
       showToast(`Patient discharged successfully. Bed freed.`, 'success');
     }
+    closeDischargeModal();
     await loadHospitalMetrics();
     await loadAdmissionsList();
   } catch (err) {
     if (typeof showToast === 'function') {
       showToast(err.message, 'error');
     }
+  } finally {
+    if (confirmBtn) confirmBtn.disabled = false;
+    if (btnText) btnText.textContent = 'Confirm Discharge';
   }
 }
+
+/**
+ * Universal Hospital Confirmation Dialog Helper
+ */
+let hospitalConfirmResolver = null;
+
+window.hospitalConfirmDialog = function(options = {}) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('hospitalConfirmModal');
+    if (!modal) {
+      return resolve(window.confirm(options.message || 'Are you sure you want to proceed?'));
+    }
+
+    const titleEl = document.getElementById('hospitalConfirmTitle');
+    const subEl = document.getElementById('hospitalConfirmSubtitle');
+    const msgEl = document.getElementById('hospitalConfirmMessage');
+    const iconEl = document.getElementById('hospitalConfirmIcon');
+    const okBtn = document.getElementById('hospitalConfirmOkBtn');
+    const cancelBtn = document.getElementById('hospitalConfirmCancelBtn');
+    const closeBtn = document.getElementById('hospitalConfirmCloseBtn');
+
+    if (titleEl) titleEl.textContent = options.title || 'Confirm Action';
+    if (subEl) subEl.textContent = options.subtitle || 'HOSPITAL COMMAND CONFIRMATION';
+    if (msgEl) msgEl.innerHTML = options.message || 'Are you sure you want to proceed?';
+    if (iconEl) iconEl.textContent = options.icon || 'help';
+
+    if (okBtn) okBtn.textContent = options.confirmText || 'Confirm';
+    if (cancelBtn) cancelBtn.textContent = options.cancelText || 'Cancel';
+
+    hospitalConfirmResolver = resolve;
+
+    const cleanup = (val) => {
+      modal.classList.add('hidden');
+      if (hospitalConfirmResolver) {
+        hospitalConfirmResolver(val);
+        hospitalConfirmResolver = null;
+      }
+    };
+
+    if (okBtn) okBtn.onclick = () => cleanup(true);
+    if (cancelBtn) cancelBtn.onclick = () => cleanup(false);
+    if (closeBtn) closeBtn.onclick = () => cleanup(false);
+
+    modal.classList.remove('hidden');
+  });
+};
+
+function closeHospitalConfirmModal() {
+  const modal = document.getElementById('hospitalConfirmModal');
+  if (modal) modal.classList.add('hidden');
+  if (hospitalConfirmResolver) {
+    hospitalConfirmResolver(false);
+    hospitalConfirmResolver = null;
+  }
+}
+
+// Global Escape listener for modals
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeDischargeModal();
+    closeAdmitModal();
+    closeHospitalConfirmModal();
+  }
+});
 
 /**
  * Open Fast Admission Modal
@@ -277,19 +423,23 @@ function renderBedMatrix() {
   const container = document.getElementById('bedMatrixGrid');
   if (!container) return;
 
+  const isRahulAdmitted = activeAdmissions.some(a => (a.id === 'ADM-8901' || a.patientName === 'Rahul Sharma') && a.status === 'admitted');
+  const isPriyaAdmitted = activeAdmissions.some(a => (a.id === 'ADM-8902' || a.patientName === 'Priya Patel') && a.status === 'admitted');
+  const isAnilAdmitted = activeAdmissions.some(a => (a.id === 'ADM-8903' || a.patientName === 'Anil Kumar') && a.status === 'admitted');
+
   const bays = [
-    { name: 'Bay 1 - Resuscitation Alpha', code: 'TB-01', type: 'Trauma Bay', occupied: true, patient: 'Rahul Sharma' },
+    { name: 'Bay 1 - Resuscitation Alpha', code: 'TB-01', type: 'Trauma Bay', occupied: isRahulAdmitted, patient: 'Rahul Sharma' },
     { name: 'Bay 2 - Surgical Trauma', code: 'TB-02', type: 'Trauma Bay', occupied: false },
     { name: 'Bay 3 - Cardiac Care', code: 'TB-03', type: 'Trauma Bay', occupied: true, patient: 'Reserved / Cath Lab' },
     { name: 'Bay 4 - Fast Track', code: 'TB-04', type: 'Trauma Bay', occupied: false },
     { name: 'ICU Bed 1', code: 'ICU-01', type: 'ICU', occupied: true, patient: 'Patient A. Roy' },
     { name: 'ICU Bed 2', code: 'ICU-02', type: 'ICU', occupied: false },
-    { name: 'ICU Bed 3', code: 'ICU-03', type: 'ICU', occupied: true, patient: 'Priya Patel' },
+    { name: 'ICU Bed 3', code: 'ICU-03', type: 'ICU', occupied: isPriyaAdmitted, patient: 'Priya Patel' },
     { name: 'ICU Bed 4', code: 'ICU-04', type: 'ICU', occupied: false },
     { name: 'General Bed 1', code: 'GW-01', type: 'General', occupied: true, patient: 'Patient D. V.' },
     { name: 'General Bed 2', code: 'GW-02', type: 'General', occupied: false },
     { name: 'General Bed 3', code: 'GW-03', type: 'General', occupied: false },
-    { name: 'General Bed 4', code: 'GW-04', type: 'General', occupied: true, patient: 'Anil Kumar' }
+    { name: 'General Bed 4', code: 'GW-04', type: 'General', occupied: isAnilAdmitted, patient: 'Anil Kumar' }
   ];
 
   container.innerHTML = bays.map(b => {
@@ -615,4 +765,38 @@ window.lookupQrForFrontDesk = async function() {
     showToast(err.message, 'error');
   }
 };
+
+function setupSocketListeners() {
+  if (typeof io !== 'undefined') {
+    try {
+      const socket = io({ withCredentials: true });
+      socket.on('connect', () => {
+        socket.emit('join-room', 'hospital:er');
+      });
+      socket.on('patient-admitted', (admission) => {
+        if (typeof showToast === 'function') {
+          showToast(`🏥 New Inpatient Admitted: ${admission.patientName} (${admission.ward})`, 'info');
+        }
+        loadHospitalMetrics(true);
+        loadAdmissionsList(true);
+      });
+      socket.on('patient-discharged', (admission) => {
+        if (typeof showToast === 'function') {
+          showToast(`Bed Freed: ${admission.patientName} discharged from ${admission.ward}`, 'info');
+        }
+        loadHospitalMetrics(true);
+        loadAdmissionsList(true);
+      });
+      socket.on('patient-queued', (item) => {
+        if (typeof showToast === 'function') {
+          showToast(`Lobby Token #${item.tokenNumber}: ${item.patientName}`, 'info');
+        }
+        loadHospitalMetrics(true);
+        loadClinicQueue();
+      });
+    } catch (e) {
+      console.warn('Hospital Socket setup error:', e);
+    }
+  }
+}
 

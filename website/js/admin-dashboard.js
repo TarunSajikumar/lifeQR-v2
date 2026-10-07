@@ -277,6 +277,12 @@ function renderAdminUsersTable() {
       <td class="p-3 text-center">${ticketBadge}</td>
       <td class="p-3 text-right">
         <div class="flex items-center justify-end gap-1.5 font-mono">
+          ${u.role === 'patient' ? `
+            <button onclick="openEmergencyLivePreview('${u._id}')" class="btn-secondary text-[10px] px-2 py-1 uppercase font-bold flex items-center gap-1 text-[#E11D2E]" title="Test & Preview Emergency View">
+              <span class="material-symbols-outlined text-xs">emergency</span>
+              <span class="hidden xl:inline">Emergency View</span>
+            </button>
+          ` : ''}
           <button onclick="openAdminUserProfile('${u._id}')" class="btn-primary text-[10px] px-2.5 py-1 uppercase font-bold tracking-wider flex items-center gap-1 shadow-[1px_1px_0px_#111111]" title="Inspect, Edit, and Fix User Profile">
             <span class="material-symbols-outlined text-xs text-[#E11D2E]">edit_square</span>
             <span>Manage &amp; Fix</span>
@@ -560,9 +566,156 @@ window.closeAiModal = function() {
   if (modal) modal.classList.add('hidden');
 };
 
+// ============================================================
+// SYSTEM CONFIRMATION & PROMPT DIALOG (Editorial Modal System)
+// ============================================================
+
+window.adminConfirmDialog = function(options = {}) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('adminConfirmModal');
+    if (!modal) {
+      return resolve(window.confirm(options.message || 'Are you sure you want to proceed?'));
+    }
+
+    const titleEl = document.getElementById('adminConfirmTitle');
+    const subEl = document.getElementById('adminConfirmSubtitle');
+    const msgEl = document.getElementById('adminConfirmMessage');
+    const warningEl = document.getElementById('adminConfirmWarning');
+    const warningBox = document.getElementById('adminConfirmWarningBox');
+    const iconEl = document.getElementById('adminConfirmIcon');
+    const iconWrap = document.getElementById('adminConfirmIconWrap');
+    const inputWrap = document.getElementById('adminConfirmInputWrap');
+    const inputLabel = document.getElementById('adminConfirmInputLabel');
+    const inputEl = document.getElementById('adminConfirmInput');
+    const okBtn = document.getElementById('adminConfirmOkBtn');
+    const cancelBtn = document.getElementById('adminConfirmCancelBtn');
+    const closeBtn = document.getElementById('adminConfirmCloseBtn');
+
+    if (titleEl) titleEl.textContent = options.title || 'Action Confirmation';
+    if (subEl) subEl.textContent = options.subtitle || 'ADMINISTRATIVE OVERRIDE';
+    if (msgEl) msgEl.innerHTML = options.message || 'Are you sure you want to proceed with this action?';
+
+    if (warningBox && warningEl) {
+      if (options.warning) {
+        warningEl.innerHTML = options.warning;
+        warningBox.classList.remove('hidden');
+      } else {
+        warningBox.classList.add('hidden');
+      }
+    }
+
+    if (inputWrap) {
+      if (options.showInput) {
+        inputWrap.classList.remove('hidden');
+        if (inputLabel) inputLabel.textContent = options.inputLabel || 'Notes / Justification';
+        if (inputEl) {
+          inputEl.value = options.inputValue || '';
+          inputEl.placeholder = options.inputPlaceholder || 'Type note here...';
+        }
+      } else {
+        inputWrap.classList.add('hidden');
+      }
+    }
+
+    if (iconEl) iconEl.textContent = options.icon || 'warning';
+    if (iconWrap) {
+      if (options.iconBg) {
+        iconWrap.className = `w-10 h-10 ${options.iconBg} ${options.iconColor || 'text-white'} flex items-center justify-center border-2 border-[#111111] shrink-0 font-bold`;
+      } else {
+        iconWrap.className = 'w-10 h-10 bg-[#111111] text-[#E11D2E] flex items-center justify-center border-2 border-[#111111] shrink-0 font-bold';
+      }
+    }
+
+    if (okBtn) {
+      const okIcon = options.confirmIcon || 'check_circle';
+      const okText = options.confirmText || 'Confirm Action';
+      okBtn.innerHTML = `<span class="material-symbols-outlined text-sm">${okIcon}</span><span>${okText}</span>`;
+      if (options.confirmClass) {
+        okBtn.className = options.confirmClass;
+      } else {
+        okBtn.className = 'btn-primary px-5 py-2 uppercase font-bold text-xs tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]';
+      }
+    }
+
+    if (cancelBtn) {
+      cancelBtn.textContent = options.cancelText || 'Cancel';
+    }
+
+    const cleanup = () => {
+      modal.classList.add('hidden');
+      window.removeEventListener('keydown', keyHandler);
+      if (okBtn) okBtn.onclick = null;
+      if (cancelBtn) cancelBtn.onclick = null;
+      if (closeBtn) closeBtn.onclick = null;
+      modal.onclick = null;
+    };
+
+    const handleConfirm = () => {
+      const val = options.showInput ? (inputEl ? inputEl.value : '') : true;
+      cleanup();
+      resolve(val);
+    };
+
+    const handleCancel = () => {
+      cleanup();
+      resolve(options.showInput ? null : false);
+    };
+
+    const keyHandler = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancel();
+      } else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+        if (document.activeElement !== cancelBtn) {
+          e.preventDefault();
+          handleConfirm();
+        }
+      }
+    };
+
+    if (okBtn) okBtn.onclick = handleConfirm;
+    if (cancelBtn) cancelBtn.onclick = handleCancel;
+    if (closeBtn) closeBtn.onclick = handleCancel;
+
+    modal.onclick = (e) => {
+      if (e.target === modal) handleCancel();
+    };
+
+    window.addEventListener('keydown', keyHandler);
+    modal.classList.remove('hidden');
+
+    setTimeout(() => {
+      if (options.showInput && inputEl) {
+        inputEl.focus();
+      } else if (okBtn) {
+        okBtn.focus();
+      }
+    }, 50);
+  });
+};
+
+window.adminPromptDialog = function(options = {}) {
+  return window.adminConfirmDialog({
+    ...options,
+    showInput: true
+  });
+};
+
 window.applyAiApprove = async function() {
   if (!currentInspectedUser) return;
-  if (!confirm(`Confirm AI-cleared approval for ${currentInspectedUser.name}?`)) return;
+  const confirmed = await adminConfirmDialog({
+    title: 'Confirm AI-Cleared Approval',
+    subtitle: 'PRACTITIONER VERIFICATION',
+    icon: 'verified',
+    iconBg: 'bg-emerald-700',
+    iconColor: 'text-white',
+    message: `Approve and verify credentials for <strong>${currentInspectedUser.name}</strong> based on AI Sentinel clearance?`,
+    warning: 'The practitioner will be granted official verified clinical status immediately.',
+    confirmText: 'Approve Practitioner',
+    confirmIcon: 'verified',
+    confirmClass: 'bg-emerald-700 hover:bg-emerald-800 text-white font-mono font-bold text-xs uppercase px-5 py-2.5 border-2 border-[#111111] flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]'
+  });
+  if (!confirmed) return;
   closeAiModal();
   await updateVerification(currentInspectedUser.id, 'VERIFIED', 'Verified by Admin via AI Sentinel clearance');
 };
@@ -581,9 +734,19 @@ window.autoRejectMissingCredentials = async function() {
     return;
   }
 
-  if (!confirm(`Are you sure you want AI Sentinel to auto-reject ${missingCount} account(s) that have 0 uploaded credentials?`)) {
-    return;
-  }
+  const confirmed = await adminConfirmDialog({
+    title: 'Batch Reject Uncredentialed Accounts',
+    subtitle: 'AI SENTINEL AUTO-TRIAGE',
+    icon: 'rule',
+    iconBg: 'bg-[#E11D2E]',
+    iconColor: 'text-white',
+    message: `Are you sure you want AI Sentinel to auto-reject <strong>${missingCount} account(s)</strong> that have 0 uploaded credentials?`,
+    warning: 'Affected practitioners will be marked as REVOKED and notified to upload official license certificates.',
+    confirmText: `Auto-Reject (${missingCount})`,
+    confirmIcon: 'block',
+    confirmClass: 'bg-[#E11D2E] hover:bg-red-700 text-white font-mono font-bold text-xs uppercase px-5 py-2.5 border-2 border-[#111111] flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]'
+  });
+  if (!confirmed) return;
 
   try {
     const res = await fetch('/api/v1/admin/ai-batch-reject-missing', {
@@ -603,12 +766,36 @@ window.autoRejectMissingCredentials = async function() {
 };
 
 window.approveVerification = async function(userId) {
-  if (!confirm('Are you sure you want to approve this professional practitioner?')) return;
+  const confirmed = await adminConfirmDialog({
+    title: 'Approve Healthcare Practitioner',
+    subtitle: 'OFFICIAL CREDENTIAL VERIFICATION',
+    icon: 'verified_user',
+    iconBg: 'bg-emerald-700',
+    iconColor: 'text-white',
+    message: 'Are you sure you want to approve this professional practitioner for full clinical portal access?',
+    confirmText: 'Approve Practitioner',
+    confirmIcon: 'check_circle',
+    confirmClass: 'bg-emerald-700 hover:bg-emerald-800 text-white font-mono font-bold text-xs uppercase px-5 py-2.5 border-2 border-[#111111] flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]'
+  });
+  if (!confirmed) return;
   updateVerification(userId, 'VERIFIED', 'Verified by Admin');
 };
 
 window.rejectVerification = async function(userId) {
-  const note = prompt('Reason for rejection:');
+  const note = await adminPromptDialog({
+    title: 'Revoke Practitioner Application',
+    subtitle: 'CREDENTIAL AUDIT REJECTION',
+    icon: 'block',
+    iconBg: 'bg-[#E11D2E]',
+    iconColor: 'text-white',
+    message: 'Specify the reason for revoking or rejecting this practitioner\'s credentials. The practitioner will receive this notification.',
+    warning: 'The practitioner\'s verification status will be changed to REVOKED.',
+    inputLabel: 'Reason for Rejection',
+    inputPlaceholder: 'e.g. Unclear medical license badge / Expired council certificate',
+    confirmText: 'Revoke Credentials',
+    confirmIcon: 'close',
+    confirmClass: 'bg-[#E11D2E] hover:bg-red-700 text-white font-mono font-bold text-xs uppercase px-5 py-2.5 border-2 border-[#111111] flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]'
+  });
   if (note === null) return;
   updateVerification(userId, 'REVOKED', note || 'Documents incomplete or invalid');
 };
@@ -1130,14 +1317,22 @@ window.openAdminUserProfile = async function(userId, sourceTicketId = null) {
     if (qBar) {
       let qHtml = `<div>Member Since: <strong>${new Date(user.createdAt).toLocaleDateString()}</strong></div>`;
       if (user.role === 'patient') {
+        const qrId = profile?.qrCodeId || user.roleDetails?.qrCodeId || '';
+        const evUrl = qrId ? `/emergency_access.html?id=${encodeURIComponent(qrId)}` : '/emergency_access.html';
         qHtml += `
           <div class="flex items-center gap-2 flex-wrap">
             <button type="button" onclick="adminRegenerateUserQR('${user.id}')" class="btn-secondary px-3 py-1 font-bold text-xs uppercase text-[#E11D2E] flex items-center gap-1">
               <span class="material-symbols-outlined text-sm">cached</span> Regenerate Patient QR
             </button>
-            <a href="/emergency_access.html" target="_blank" class="btn-secondary px-3 py-1 font-bold text-xs uppercase flex items-center gap-1">
+            <a href="${evUrl}" target="_blank" class="btn-secondary px-3 py-1 font-bold text-xs uppercase flex items-center gap-1" title="Open patient emergency profile in new tab">
               <span class="material-symbols-outlined text-sm">open_in_new</span> Test Emergency View
             </a>
+            <button type="button" onclick="openEmergencyLivePreview('${user.id}')" class="btn-secondary px-3 py-1 font-bold text-xs uppercase text-blue-700 flex items-center gap-1" title="Open interactive mobile phone HUD preview">
+              <span class="material-symbols-outlined text-sm">visibility</span> Live Preview
+            </button>
+            <button type="button" onclick="scrollToEmergencyCustomization()" class="btn-secondary px-3 py-1 font-bold text-xs uppercase text-purple-700 flex items-center gap-1 border-purple-600 bg-purple-50/60 hover:bg-purple-600 hover:text-white transition" title="Jump to Emergency View Customization controls">
+              <span class="material-symbols-outlined text-sm">tune</span> Customize Emergency View
+            </button>
           </div>
         `;
       } else if (user.role === 'doctor' || user.role === 'crew') {
@@ -1200,6 +1395,68 @@ window.openAdminUserProfile = async function(userId, sourceTicketId = null) {
         resNoteInput.value = `Issue resolved: Updated ${user.role} profile parameters in response to ticket #${sourceTicketId}.`;
       } else {
         resNoteInput.value = '';
+      }
+    }
+
+    // Render Section 4: Security Access Audit Log & Emergency Scans (Admin Clearance)
+    const auditListEl = document.getElementById('adminUserAuditList');
+    const auditCountBadge = document.getElementById('adminUserAuditCountBadge');
+    if (auditListEl) {
+      const activities = (profile && Array.isArray(profile.activities)) ? profile.activities : [];
+      const auditLogs = Array.isArray(data.auditLogs) ? data.auditLogs : [];
+      const totalEvents = activities.length + auditLogs.length;
+
+      if (auditCountBadge) {
+        auditCountBadge.textContent = `${totalEvents} ${totalEvents === 1 ? 'Event' : 'Events'}`;
+      }
+
+      if (totalEvents === 0) {
+        auditListEl.innerHTML = `
+          <div class="p-4 border-2 border-dashed border-[#111111]/20 text-center bg-[#f9fafb]">
+            <p class="text-xs font-mono text-gray-500 uppercase font-bold">No security scan events or access logs recorded yet.</p>
+          </div>
+        `;
+      } else {
+        let eventsHtml = '';
+        // Render emergency QR scans and patient activity records
+        activities.forEach(act => {
+          eventsHtml += `
+            <div class="p-3 border-2 border-[#111111] bg-white flex items-start gap-3 shadow-[2px_2px_0px_#111111]">
+              <div class="w-8 h-8 border-2 border-[#111111] bg-red-50 text-[#E11D2E] flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-sm">history</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <span class="font-black text-xs text-[#111111] uppercase tracking-tight">${escapeHtml(act.title || 'Security Event')}</span>
+                  <span class="px-2 py-0.5 border border-[#E11D2E] bg-red-50 text-[#E11D2E] text-[9px] font-mono font-bold uppercase tracking-wider">${escapeHtml(act.type || 'Emergency Scan')}</span>
+                </div>
+                <p class="text-xs text-[#111111]/80 mt-1 font-sans font-medium">${escapeHtml(act.description || 'Medical profile was accessed by emergency responder.')}</p>
+                <span class="text-[10px] font-mono text-gray-500 block mt-1.5 uppercase font-bold">${new Date(act.timestamp).toLocaleString()}</span>
+              </div>
+            </div>
+          `;
+        });
+
+        // Render system audit log events
+        auditLogs.forEach(al => {
+          eventsHtml += `
+            <div class="p-3 border-2 border-[#111111]/40 bg-gray-50/70 flex items-start gap-3">
+              <div class="w-8 h-8 border-2 border-[#111111] bg-white text-gray-700 flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-sm">security</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <span class="font-bold text-xs text-[#111111] uppercase font-mono">${escapeHtml(al.action || 'Audit Event')}</span>
+                  <span class="text-[9px] font-mono text-gray-500 font-bold">${al.ipAddress || 'SYSTEM'}</span>
+                </div>
+                <p class="text-xs text-gray-700 mt-1 font-sans">${escapeHtml(al.details ? (typeof al.details === 'string' ? al.details : JSON.stringify(al.details)) : 'Action recorded in security audit registry')}</p>
+                <span class="text-[10px] font-mono text-gray-500 block mt-1.5 uppercase font-bold">${new Date(al.timestamp || al.createdAt).toLocaleString()}</span>
+              </div>
+            </div>
+          `;
+        });
+
+        auditListEl.innerHTML = eventsHtml;
       }
     }
 
@@ -1303,6 +1560,102 @@ function renderRoleSpecificForm(role, profile, user) {
             </button>
           </div>
         ` : ''}
+
+        <!-- Emergency View Customization & Public Display Options -->
+        <div id="adminEmergencyViewCustomizationSection" class="border-2 border-purple-900 bg-purple-50/20 p-4 space-y-4">
+          <div class="flex items-center justify-between border-b border-purple-900/20 pb-2 flex-wrap gap-2">
+            <h4 class="font-black text-xs uppercase font-mono text-purple-950 flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm text-purple-700">tune</span>
+              <span>3. Emergency View Customization &amp; First Responder Display</span>
+            </h4>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="openEmergencyLivePreview('${user.id || user._id}')" class="btn-secondary px-2.5 py-1 text-[10px] font-mono font-bold uppercase flex items-center gap-1 text-purple-900 bg-white hover:bg-purple-100">
+                <span class="material-symbols-outlined text-xs">visibility</span> Preview Badge
+              </button>
+              <a href="${profile?.qrCodeId ? `/emergency_access.html?id=${encodeURIComponent(profile.qrCodeId)}` : '/emergency_access.html'}" target="_blank" class="btn-secondary px-2.5 py-1 text-[10px] font-mono font-bold uppercase flex items-center gap-1 text-[#E11D2E] bg-white hover:bg-red-50">
+                <span class="material-symbols-outlined text-xs">open_in_new</span> Test Webpage
+              </a>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Emergency Badge Theme</label>
+              <select id="adminPatEvThemeColor" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111] bg-white">
+                <option value="#E11D2E" ${profile?.emergencyViewSettings?.themeColor === '#E11D2E' || !profile?.emergencyViewSettings?.themeColor ? 'selected' : ''}>Crimson Red (Standard LifeQR)</option>
+                <option value="#111111" ${profile?.emergencyViewSettings?.themeColor === '#111111' ? 'selected' : ''}>Tactical Black (High Contrast)</option>
+                <option value="#D97706" ${profile?.emergencyViewSettings?.themeColor === '#D97706' ? 'selected' : ''}>Caution Amber (High Visibility)</option>
+                <option value="#059669" ${profile?.emergencyViewSettings?.themeColor === '#059669' ? 'selected' : ''}>Medical Emerald (Clinical)</option>
+                <option value="#2563EB" ${profile?.emergencyViewSettings?.themeColor === '#2563EB' ? 'selected' : ''}>Trauma Blue (ER Matrix)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Severe Allergy Callout</label>
+              <select id="adminPatEvAllergyBanner" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111] bg-white">
+                <option value="true" ${profile?.emergencyViewSettings?.showAllergiesBanner !== false ? 'selected' : ''}>Flashing High-Risk Banner (Recommended)</option>
+                <option value="false" ${profile?.emergencyViewSettings?.showAllergiesBanner === false ? 'selected' : ''}>Standard Inline Text</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Large Blood Group Display</label>
+              <select id="adminPatEvBloodGroupLarge" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111] bg-white">
+                <option value="true" ${profile?.emergencyViewSettings?.showBloodGroupLarge !== false ? 'selected' : ''}>Prominent Rh Box (Standard)</option>
+                <option value="false" ${profile?.emergencyViewSettings?.showBloodGroupLarge === false ? 'selected' : ''}>Compact Blood Group</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Resuscitation / DNR Directive</label>
+              <select id="adminPatEvDnrDirective" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111] bg-white">
+                <option value="FULL_CODE" ${!profile?.emergencyViewSettings?.dnrDirective || profile?.emergencyViewSettings?.dnrDirective === 'FULL_CODE' ? 'selected' : ''}>Full Resuscitation (Full Code)</option>
+                <option value="DNR" ${profile?.emergencyViewSettings?.dnrDirective === 'DNR' ? 'selected' : ''}>Do Not Resuscitate (DNR / DNAR)</option>
+                <option value="ADVANCE_DIRECTIVE" ${profile?.emergencyViewSettings?.dnrDirective === 'ADVANCE_DIRECTIVE' ? 'selected' : ''}>Advance Directive on File</option>
+                <option value="COMFORT_CARE" ${profile?.emergencyViewSettings?.dnrDirective === 'COMFORT_CARE' ? 'selected' : ''}>Comfort Measures Only</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Organ Donor Badge</label>
+              <select id="adminPatEvOrganDonor" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111] bg-white">
+                <option value="false" ${!profile?.emergencyViewSettings?.organDonor && !profile?.organDonor ? 'selected' : ''}>No / Unspecified</option>
+                <option value="true" ${profile?.emergencyViewSettings?.organDonor || profile?.organDonor ? 'selected' : ''}>Registered Organ Donor (Show Badge)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Medications Public Visibility</label>
+              <select id="adminPatEvMedMasking" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111] bg-white">
+                <option value="false" ${profile?.emergencyViewSettings?.showMedicationsPublicly !== false ? 'selected' : ''}>Display Publicly on Scan</option>
+                <option value="true" ${profile?.emergencyViewSettings?.showMedicationsPublicly === false ? 'selected' : ''}>Mask for Bystanders (Require Paramedic PIN)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Bystander Phone Privacy</label>
+              <select id="adminPatEvPhoneMasking" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111] bg-white">
+                <option value="false" ${!profile?.emergencyViewSettings?.bystanderPhoneMasking ? 'selected' : ''}>Show Full Phone Numbers</option>
+                <option value="true" ${profile?.emergencyViewSettings?.bystanderPhoneMasking ? 'selected' : ''}>Mask Phone Digits (1-Tap Call Only)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] font-bold uppercase mb-1">Default Translation Language</label>
+              <select id="adminPatEvLanguage" class="w-full p-2.5 text-xs font-bold border-2 border-[#111111] bg-white">
+                <option value="en" ${!profile?.emergencyViewSettings?.preferredLanguage || profile?.emergencyViewSettings?.preferredLanguage === 'en' ? 'selected' : ''}>English (EN)</option>
+                <option value="hi" ${profile?.emergencyViewSettings?.preferredLanguage === 'hi' ? 'selected' : ''}>Hindi (हिंदी)</option>
+                <option value="kn" ${profile?.emergencyViewSettings?.preferredLanguage === 'kn' ? 'selected' : ''}>Kannada (ಕನ್ನಡ)</option>
+                <option value="ta" ${profile?.emergencyViewSettings?.preferredLanguage === 'ta' ? 'selected' : ''}>Tamil (தமிழ்)</option>
+                <option value="es" ${profile?.emergencyViewSettings?.preferredLanguage === 'es' ? 'selected' : ''}>Spanish (Español)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Urgent Emergency Banner Notice (Shown at Top of Badge)</label>
+            <textarea id="adminPatEvBannerText" rows="2" class="w-full p-2.5 text-xs font-sans border-2 border-[#111111] bg-white" placeholder="E.g. 'Patient has an implanted cardiac defibrillator. Call EMS 112 immediately. Do not administer Penicillin derivatives.'">${profile?.emergencyViewSettings?.emergencyBannerText || ''}</textarea>
+          </div>
+        </div>
       </div>
     `;
 
@@ -1482,7 +1835,29 @@ window.handleAdminProfileSave = async function(e) {
       }
     });
 
-    payload.patientDetails = { age, bloodGroup, publicProfile, allergies, healthIssues, medications, emergencyContacts };
+    const emergencyViewSettings = {
+      themeColor: document.getElementById('adminPatEvThemeColor')?.value || '#E11D2E',
+      showAllergiesBanner: document.getElementById('adminPatEvAllergyBanner')?.value === 'true',
+      showBloodGroupLarge: document.getElementById('adminPatEvBloodGroupLarge')?.value !== 'false',
+      showMedicationsPublicly: document.getElementById('adminPatEvMedMasking')?.value !== 'true',
+      organDonor: document.getElementById('adminPatEvOrganDonor')?.value === 'true',
+      dnrDirective: document.getElementById('adminPatEvDnrDirective')?.value || 'FULL_CODE',
+      emergencyBannerText: document.getElementById('adminPatEvBannerText')?.value?.trim() || '',
+      preferredLanguage: document.getElementById('adminPatEvLanguage')?.value || 'en',
+      bystanderPhoneMasking: document.getElementById('adminPatEvPhoneMasking')?.value === 'true'
+    };
+
+    payload.patientDetails = { 
+      age, 
+      bloodGroup, 
+      publicProfile, 
+      allergies, 
+      healthIssues, 
+      medications, 
+      emergencyContacts,
+      emergencyViewSettings,
+      organDonor: emergencyViewSettings.organDonor
+    };
   } else if (role === 'doctor') {
     const specialization = document.getElementById('adminDocSpec')?.value;
     const licenseNumber = document.getElementById('adminDocLic')?.value;
@@ -1534,7 +1909,19 @@ window.handleAdminProfileSave = async function(e) {
 };
 
 window.adminRegenerateUserQR = async function(userId) {
-  if (!confirm('Are you sure you want to regenerate this patient\'s QR code? Previous QR links will be rotated.')) return;
+  const confirmed = await adminConfirmDialog({
+    title: 'Regenerate Patient QR Code',
+    subtitle: 'SECURITY ROTATION & INVALIDATION',
+    icon: 'sync_saved_locally',
+    message: 'Are you sure you want to regenerate this patient\'s QR code? A new unique cryptographic identifier and badge URL will be issued immediately.',
+    warning: '<strong>WARNING:</strong> Previous QR badge links and printed physical cards will immediately cease to resolve and cannot be reused.',
+    confirmText: 'Regenerate Patient QR',
+    confirmIcon: 'refresh',
+    confirmClass: 'bg-[#111111] hover:bg-neutral-850 text-white font-mono font-bold text-xs uppercase px-5 py-2.5 border-2 border-[#111111] flex items-center gap-1.5 shadow-[2px_2px_0px_#E11D2E]',
+    cancelText: 'Cancel'
+  });
+  if (!confirmed) return;
+
   try {
     const res = await fetch(`/api/v1/admin/users/${userId}/regenerate-qr`, {
       method: 'POST',
@@ -1549,4 +1936,332 @@ window.adminRegenerateUserQR = async function(userId) {
   } catch (err) {
     showToast(err.message, 'error');
   }
+};
+
+// ============================================================
+// EMERGENCY VIEW CUSTOMIZATION & LIVE SIMULATOR (Admin)
+// ============================================================
+
+let currentEvPreviewMode = 'bystander';
+let currentEvPreviewLang = 'en';
+let currentEvPreviewData = null;
+
+window.scrollToEmergencyCustomization = function() {
+  const sec = document.getElementById('adminEmergencyViewCustomizationSection');
+  if (sec) {
+    sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    sec.classList.add('ring-4', 'ring-[#E11D2E]', 'transition-all');
+    setTimeout(() => {
+      sec.classList.remove('ring-4', 'ring-[#E11D2E]');
+    }, 2000);
+  } else {
+    showToast('Emergency View Customization is available in Patient profiles', 'info');
+  }
+};
+
+window.openEmergencyLivePreview = async function(userIdOrQrId) {
+  try {
+    const modal = document.getElementById('adminEmergencyPreviewModal');
+    if (!modal) return;
+
+    let patientData = null;
+
+    // Check if open in user profile modal
+    if (currentInspectedUserForProfile && currentInspectedUserForProfile.user && (currentInspectedUserForProfile.user.id === userIdOrQrId || currentInspectedUserForProfile.user._id === userIdOrQrId)) {
+      const u = currentInspectedUserForProfile.user;
+      const p = currentInspectedUserForProfile.profile || {};
+      
+      // Read current un-saved field inputs if user is currently editing
+      const liveName = document.getElementById('adminProfName')?.value || u.name;
+      const livePhone = document.getElementById('adminProfPhone')?.value || u.phone;
+      const liveAddress = document.getElementById('adminProfAddress')?.value || u.address;
+      const liveBlood = document.getElementById('adminPatBloodGroup')?.value || p.bloodGroup;
+      const liveAge = document.getElementById('adminPatAge')?.value || p.age;
+      const liveAllergies = document.getElementById('adminPatAllergies')?.value || p.allergies;
+      const liveHealth = document.getElementById('adminPatHealthIssues')?.value || p.healthIssues;
+      const liveMeds = document.getElementById('adminPatMedications')?.value || p.medications;
+
+      const liveContacts = [];
+      const contactRows = document.querySelectorAll('#adminPatContactsContainer .patient-contact-row');
+      contactRows.forEach((row, i) => {
+        const cName = row.querySelector('.contact-name')?.value?.trim();
+        const cPhone = row.querySelector('.contact-phone')?.value?.trim();
+        const cRel = row.querySelector('.contact-rel')?.value?.trim();
+        if (cName || cPhone) {
+          liveContacts.push({ name: cName, phone: cPhone, relationship: cRel, priority: i + 1 });
+        }
+      });
+
+      const liveEvSettings = {
+        themeColor: document.getElementById('adminPatEvThemeColor')?.value || p.emergencyViewSettings?.themeColor || '#E11D2E',
+        showAllergiesBanner: document.getElementById('adminPatEvAllergyBanner')?.value === 'true' || (p.emergencyViewSettings?.showAllergiesBanner !== false),
+        showBloodGroupLarge: document.getElementById('adminPatEvBloodGroupLarge')?.value !== 'false',
+        showMedicationsPublicly: document.getElementById('adminPatEvMedMasking')?.value !== 'true',
+        organDonor: document.getElementById('adminPatEvOrganDonor')?.value === 'true' || !!p.organDonor,
+        dnrDirective: document.getElementById('adminPatEvDnrDirective')?.value || p.emergencyViewSettings?.dnrDirective || 'FULL_CODE',
+        emergencyBannerText: document.getElementById('adminPatEvBannerText')?.value?.trim() || p.emergencyViewSettings?.emergencyBannerText || '',
+        preferredLanguage: document.getElementById('adminPatEvLanguage')?.value || p.emergencyViewSettings?.preferredLanguage || 'en',
+        bystanderPhoneMasking: document.getElementById('adminPatEvPhoneMasking')?.value === 'true' || !!p.emergencyViewSettings?.bystanderPhoneMasking
+      };
+
+      patientData = {
+        name: liveName,
+        phone: livePhone,
+        address: liveAddress,
+        bloodGroup: liveBlood,
+        age: liveAge,
+        gender: document.getElementById('adminProfGender')?.value || u.gender,
+        allergies: liveAllergies,
+        healthIssues: liveHealth,
+        medications: liveMeds,
+        emergencyContacts: liveContacts.length ? liveContacts : (p.emergencyContacts || []),
+        qrCodeId: p.qrCodeId || 'EMG-PREVIEW',
+        qrCode: p.qrCode || '',
+        organDonor: liveEvSettings.organDonor,
+        emergencyViewSettings: liveEvSettings
+      };
+    } else {
+      // Fetch fresh profile by userId
+      showToast('Loading patient emergency telemetry...', 'info');
+      const res = await fetch(`/api/v1/admin/users/${userIdOrQrId}/profile`, { credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load profile for preview');
+      
+      const u = data.user;
+      const p = data.profile || {};
+      patientData = {
+        name: u.name,
+        phone: u.phone,
+        address: [u.address, u.city, u.state].filter(Boolean).join(', ') || 'Address on file',
+        bloodGroup: p.bloodGroup,
+        age: p.age,
+        gender: u.gender,
+        allergies: p.allergies,
+        healthIssues: p.healthIssues,
+        medications: p.medications,
+        emergencyContacts: p.emergencyContacts || [],
+        qrCodeId: p.qrCodeId || 'EMG-PREVIEW',
+        qrCode: p.qrCode || '',
+        organDonor: p.organDonor || false,
+        emergencyViewSettings: p.emergencyViewSettings || {}
+      };
+    }
+
+    currentEvPreviewData = patientData;
+    currentEvPreviewLang = patientData.emergencyViewSettings?.preferredLanguage || 'en';
+    const langSel = document.getElementById('adminEvPreviewLangSelect');
+    if (langSel) langSel.value = currentEvPreviewLang;
+
+    // Update external link
+    const extLink = document.getElementById('adminEvPreviewExternalLink');
+    if (extLink) {
+      extLink.href = `/emergency_access.html?id=${encodeURIComponent(patientData.qrCodeId || '')}`;
+    }
+
+    renderEmergencyPreviewContent();
+    modal.classList.remove('hidden');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};
+
+window.closeEmergencyLivePreview = function() {
+  const modal = document.getElementById('adminEmergencyPreviewModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.setEmergencyPreviewMode = function(mode) {
+  currentEvPreviewMode = mode;
+  const btnBystander = document.getElementById('adminEvModeBystanderBtn');
+  const btnCrew = document.getElementById('adminEvModeCrewBtn');
+  const pill = document.getElementById('adminEvPreviewStatusPill');
+
+  if (mode === 'bystander') {
+    if (btnBystander) btnBystander.className = 'px-3 py-1 text-xs font-bold uppercase bg-[#111111] text-white transition flex items-center gap-1';
+    if (btnCrew) btnCrew.className = 'px-3 py-1 text-xs font-bold uppercase bg-white text-[#111111] hover:bg-gray-100 transition flex items-center gap-1';
+    if (pill) {
+      pill.textContent = 'BYSTANDER';
+      pill.className = 'px-1.5 py-0.2 bg-white text-[#E11D2E] text-[9px] uppercase font-bold';
+    }
+  } else {
+    if (btnBystander) btnBystander.className = 'px-3 py-1 text-xs font-bold uppercase bg-white text-[#111111] hover:bg-gray-100 transition flex items-center gap-1';
+    if (btnCrew) btnCrew.className = 'px-3 py-1 text-xs font-bold uppercase bg-[#111111] text-white transition flex items-center gap-1';
+    if (pill) {
+      pill.textContent = 'PARAMEDIC UNLOCKED';
+      pill.className = 'px-1.5 py-0.2 bg-white text-emerald-800 text-[9px] uppercase font-bold';
+    }
+  }
+
+  renderEmergencyPreviewContent();
+};
+
+window.changeEmergencyPreviewLang = function(lang) {
+  currentEvPreviewLang = lang;
+  renderEmergencyPreviewContent();
+};
+
+window.renderEmergencyPreviewContent = function() {
+  const canvas = document.getElementById('adminEvPreviewCanvas');
+  if (!canvas || !currentEvPreviewData) return;
+
+  const p = currentEvPreviewData;
+  const ev = p.emergencyViewSettings || {};
+  const isCrew = currentEvPreviewMode === 'crew';
+  const themeColor = ev.themeColor || '#E11D2E';
+
+  // Apply theme banner
+  const bannerHeader = document.getElementById('adminEvPreviewHeaderBanner');
+  if (bannerHeader) bannerHeader.style.backgroundColor = isCrew ? '#111111' : themeColor;
+
+  const maskPhone = ev.bystanderPhoneMasking && !isCrew;
+  const displayPhone = (maskPhone && p.phone && p.phone.length > 5)
+    ? p.phone.slice(0, 4) + ' ••••• ' + p.phone.slice(-2)
+    : (p.phone || '+91 9876543210');
+
+  let bannerHtml = '';
+  if (ev.emergencyBannerText) {
+    bannerHtml = `
+      <div class="p-2.5 border-2 border-[#111111] bg-amber-100 text-[#111111] font-mono text-[11px] font-bold flex items-center gap-2 shadow-[2px_2px_0px_#111111]">
+        <span class="material-symbols-outlined text-sm text-amber-800">warning</span>
+        <span>${escapeHtml(ev.emergencyBannerText)}</span>
+      </div>
+    `;
+  }
+
+  const dnrBadge = (ev.dnrDirective && ev.dnrDirective !== 'FULL_CODE')
+    ? `<span class="px-1.5 py-0.5 border border-purple-700 bg-purple-50 text-purple-900 font-mono text-[9px] font-bold uppercase">⚖️ ${ev.dnrDirective.replace(/_/g, ' ')}</span>`
+    : '';
+
+  const organBadge = '';
+
+  // Allergies display
+  const allergiesStr = Array.isArray(p.allergies) ? p.allergies.join(', ') : (p.allergies || 'None Reported');
+  const allergyCardClass = (ev.showAllergiesBanner !== false && allergiesStr.toLowerCase() !== 'none' && allergiesStr.toLowerCase() !== 'none reported')
+    ? 'border-2 border-[#E11D2E] bg-red-50 text-[#111111] shadow-[2px_2px_0px_#E11D2E]'
+    : 'border-2 border-[#111111] bg-gray-50 text-[#111111]';
+
+  // Contacts
+  const contacts = p.emergencyContacts || [];
+  let contactsListHtml = '';
+  if (contacts.length === 0) {
+    contactsListHtml = '<p class="text-[10px] font-mono text-gray-500 italic">No emergency contacts registered.</p>';
+  } else {
+    contactsListHtml = contacts.map(c => {
+      const pNum = (maskPhone && c.phone && c.phone.length > 5)
+        ? c.phone.slice(0, 4) + ' ••••• ' + c.phone.slice(-2)
+        : (c.phone || '-');
+      return `
+        <div class="p-2.5 border-2 border-[#111111] bg-white flex items-center justify-between gap-2 shadow-[2px_2px_0px_#111111]">
+          <div>
+            <strong class="text-xs uppercase text-[#111111] block">${escapeHtml(c.name || 'Contact')}</strong>
+            <span class="text-[10px] font-mono text-gray-600">${escapeHtml(c.relationship || 'Emergency')} &bull; ${pNum}</span>
+          </div>
+          <button type="button" class="btn-primary px-2.5 py-1 text-[10px] uppercase font-bold font-mono flex items-center gap-1 shadow-[1px_1px_0px_#111111]">
+            <span class="material-symbols-outlined text-xs">phone</span> Call
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Medications
+  let medsHtml = '';
+  if (!isCrew && ev.showMedicationsPublicly === false) {
+    medsHtml = `
+      <div class="p-2.5 border border-dashed border-[#111111]/40 bg-gray-50 text-[10px] font-mono text-gray-600 italic">
+        🔒 Active prescriptions on file. Masked for public bystander safety. (Requires Paramedic PIN clearance).
+      </div>
+    `;
+  } else {
+    const medsStr = Array.isArray(p.medications) ? p.medications.join(', ') : (p.medications || 'None Reported');
+    medsHtml = `<p class="font-bold text-xs text-[#111111] leading-relaxed">${escapeHtml(medsStr)}</p>`;
+  }
+
+  const conditionsStr = Array.isArray(p.healthIssues) ? p.healthIssues.join(', ') : (p.healthIssues || 'None Reported');
+
+  canvas.innerHTML = `
+    ${bannerHtml}
+
+    <!-- Hero Card -->
+    <div class="p-3 border-2 border-[#111111] bg-white flex items-start gap-3 shadow-[3px_3px_0px_#111111]">
+      <img src="${p.qrCode || '/LifeQR.png'}" class="w-14 h-14 border border-[#111111] object-contain flex-shrink-0 bg-gray-50">
+      <div class="flex-1 min-w-0">
+        <h3 class="font-black text-sm uppercase text-[#111111] truncate">${escapeHtml(p.name)}</h3>
+        <div class="flex items-center gap-1.5 flex-wrap text-[10px] font-mono text-gray-600 mt-0.5">
+          <span>Age: <strong>${p.age || 'N/A'}</strong></span>
+          <span>&bull;</span>
+          <span class="capitalize">${p.gender || 'N/A'}</span>
+          ${organBadge}
+          ${dnrBadge}
+        </div>
+        <p class="text-[10px] font-mono text-gray-500 truncate mt-1">ID: <strong class="text-[#E11D2E]">${p.qrCodeId}</strong></p>
+      </div>
+      <div class="text-center p-2 border-2 border-[#E11D2E] bg-red-50 flex-shrink-0 min-w-[55px]">
+        <span class="text-[9px] font-mono font-bold uppercase text-[#E11D2E] block">BLOOD</span>
+        <strong class="font-black text-xl text-[#E11D2E] leading-none">${p.bloodGroup || 'N/A'}</strong>
+      </div>
+    </div>
+
+    <!-- Phone & Address -->
+    <div class="grid grid-cols-2 gap-2 text-[10px] font-mono">
+      <div class="p-2 border border-[#111111] bg-gray-50">
+        <span class="text-gray-500 uppercase block">Emergency Phone:</span>
+        <strong class="text-[#111111] text-[11px]">${displayPhone}</strong>
+      </div>
+      <div class="p-2 border border-[#111111] bg-gray-50">
+        <span class="text-gray-500 uppercase block">Registered Loc:</span>
+        <strong class="text-[#111111] truncate block" title="${escapeHtml(p.address || '')}">${escapeHtml(p.address || 'On file')}</strong>
+      </div>
+    </div>
+
+    <!-- Allergies -->
+    <div class="p-2.5 ${allergyCardClass}">
+      <div class="flex items-center gap-1 font-mono text-[10px] font-bold uppercase text-[#E11D2E] mb-1">
+        <span class="material-symbols-outlined text-xs">warning</span>
+        <span>High-Risk Severe Allergies</span>
+      </div>
+      <p class="font-black text-xs text-[#111111]">${escapeHtml(allergiesStr)}</p>
+    </div>
+
+    <!-- Conditions -->
+    <div class="p-2.5 border-2 border-[#111111] bg-white shadow-[2px_2px_0px_#111111]">
+      <div class="flex items-center gap-1 font-mono text-[10px] font-bold uppercase text-gray-600 mb-1">
+        <span class="material-symbols-outlined text-xs">monitor_heart</span>
+        <span>Critical Chronic Conditions</span>
+      </div>
+      <p class="font-bold text-xs text-[#111111]">${escapeHtml(conditionsStr)}</p>
+    </div>
+
+    <!-- Medications -->
+    <div class="p-2.5 border-2 border-[#111111] bg-white shadow-[2px_2px_0px_#111111]">
+      <div class="flex items-center justify-between font-mono text-[10px] font-bold uppercase text-gray-600 mb-1">
+        <span class="flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs">medication</span>
+          <span>Active Medications &amp; Dosages</span>
+        </span>
+        ${isCrew ? '<span class="text-emerald-800 text-[9px]">Paramedic Unlocked</span>' : ''}
+      </div>
+      ${medsHtml}
+    </div>
+
+    <!-- Emergency Contacts -->
+    <div class="space-y-1.5">
+      <div class="flex items-center justify-between font-mono text-[10px] font-bold uppercase text-[#111111]">
+        <span>Emergency Contacts</span>
+        <span class="text-gray-500">1-Tap Dial</span>
+      </div>
+      ${contactsListHtml}
+    </div>
+
+    ${isCrew ? `
+      <!-- Crew-Only Section -->
+      <div class="p-2.5 border-2 border-emerald-700 bg-emerald-50 text-[10px] font-mono space-y-1.5">
+        <div class="font-bold uppercase text-emerald-900 flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs">medical_services</span>
+          <span>Paramedic Clinical Records Clearance</span>
+        </div>
+        <p class="text-emerald-800">All EHR history, SOAP consultation notes, and hospital trauma bay handovers authorized for this patient.</p>
+      </div>
+    ` : ''}
+  `;
 };

@@ -133,3 +133,23 @@
   3. Created and executed `backend/migrate-qr-ips.js`, which backfilled all 7 missing patient profiles with legacy vitals and regenerated QR codes for all 21 patient accounts pointing to the active host IP (`http://192.168.100.144:5000/emergency_access.html?id=...`).
   4. Updated `APP_URL` in `android-wrapper/app/src/main/java/com/lifeqr/MainActivity.java` to `http://192.168.100.144:5000`.
 - **Status**: Resolved.
+
+## Issue 021: Doctor "Create Patient ID" Endpoint Failing with ReferenceError: cleanEmail is not defined
+- **Symptom**: When creating a new patient from the Doctor Clinical Workstation (`+ Create Patient ID` in [doctor_dashboard.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/doctor_dashboard.html)), the action failed and the new patient was not added to the OPD waiting queue.
+- **Root Cause**: In [backend/routes/v1/doctorAccess.js](file:///c:/Users/tarun/Downloads/lifeqr-complete/backend/routes/v1/doctorAccess.js), `POST /create-patient` referenced `cleanEmail` on line 496 before defining it, throwing an unhandled `ReferenceError: cleanEmail is not defined` and aborting patient creation. Additionally, `setupDoctorSocketQueue` in `doctor-dashboard.js` did not join `doctor:all` room, preventing real-time queue synchronization.
+- **Fix**: Defined `cleanEmail` with fallback generation (`patient_<timestamp>_<random>@lifeqr.local`), synchronized `UserSecurity` collection, updated `setupDoctorSocketQueue()` to join `doctor:all` room on connection, and updated doctor name formatting to prevent duplicate `Dr. Dr.` prefix.
+- **Status**: Resolved.
+
+## Issue 022: Patient Avatar "Edit" Button Inactive Due to Missing File Input & Android WebView File Chooser Unhandled
+- **Symptom**: Clicking the patient profile picture avatar or the bottom "EDIT" badge in [patient_dashboard.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/patient_dashboard.html) had no effect; no gallery permission prompt or photo picker opened.
+- **Root Cause**:
+  1. In [patient_dashboard.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/patient_dashboard.html), `<label for="profilePhotoInput">Edit</label>` referenced a non-existent `<input id="profilePhotoInput">`.
+  2. In [patient-dashboard.js](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/js/patient-dashboard.js), `uploadProfilePhoto()` only updated `userProfilePhoto` instead of the active DOM element `normalUserProfilePhoto`, and was not wired to an `onchange` handler.
+  3. In the Android wrapper [MainActivity.java](file:///c:/Users/tarun/Downloads/lifeqr-complete/android-wrapper/app/src/main/java/com/lifeqr/MainActivity.java), `WebChromeClient` omitted `onShowFileChooser()`, causing Android WebView to drop file chooser requests silently.
+- **Fix**:
+  1. Added hidden `<input type="file" id="profilePhotoInput">` and camera capture `<input type="file" id="profileCameraInput">` to [patient_dashboard.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/patient_dashboard.html).
+  2. Implemented the Swiss Editorial `#photoUploadModal` with "Open Gallery / Choose Photo" and "Take Live Photo (Camera)" actions, instant local image preview, and synchronized cache-busting image reload across the dashboard.
+  3. Implemented `onShowFileChooser` and `onActivityResult` in [MainActivity.java](file:///c:/Users/tarun/Downloads/lifeqr-complete/android-wrapper/app/src/main/java/com/lifeqr/MainActivity.java) along with `READ_MEDIA_IMAGES` and `READ_EXTERNAL_STORAGE` permissions in `AndroidManifest.xml`.
+  4. Synchronized `app/` and `website/` via `scripts/sync-frontend.js`.
+- **Status**: Resolved.
+

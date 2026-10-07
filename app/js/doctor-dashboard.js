@@ -32,17 +32,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   const nameEl = document.getElementById('userName');
   if (nameEl) nameEl.textContent = currentUser.name;
 
+  // Update attending station card if present
+  const stationNameEl = document.getElementById('attendingStationName');
+  if (stationNameEl && currentUser.name) {
+    const formattedDoctor = currentUser.name.startsWith('Dr.') ? currentUser.name : `Dr. ${currentUser.name}`;
+    stationNameEl.textContent = `${formattedDoctor} &bull; Room 102`;
+  }
+
   // Check account verification status
   await checkVerificationStatus();
 
   // Load list of authorized patients
   await loadAuthorizedPatients();
 
+  // Load live OPD waiting queue & badge
+  await loadDoctorWaitingQueue(true);
+
+  // Auto-refresh waiting queue every 10 seconds
+  setInterval(() => {
+    loadDoctorWaitingQueue(true);
+  }, 10000);
+
   // Handle forms
   setupDoctorListeners();
 
   // Check pending help tickets
   loadDoctorHelpTickets();
+
+  // Load hospital bed telemetry
+  loadDoctorHospitalBedMetrics();
 });
 
 async function checkVerificationStatus() {
@@ -270,10 +288,10 @@ function renderPatientDetails() {
   if (contactEl) {
     if (activePatient.emergencyContacts && activePatient.emergencyContacts.length > 0) {
       const c = activePatient.emergencyContacts[0];
-      contactEl.textContent = `${c.name || 'ICE'} (${c.phone || c.relationship || 'Emergency'})`;
-      contactEl.title = `${c.name} - ${c.phone} (${c.relationship || 'ICE Contact'})`;
+      contactEl.textContent = `${c.name || 'Emergency Contact'} (${c.phone || c.relationship || 'Emergency'})`;
+      contactEl.title = `${c.name} - ${c.phone} (${c.relationship || 'Emergency Contact'})`;
     } else {
-      contactEl.textContent = activePatient.phone || 'Registered ICE Contact';
+      contactEl.textContent = activePatient.phone || 'Registered Emergency Contact';
     }
   }
 
@@ -420,6 +438,38 @@ async function loadPatientReports(qrCodeId) {
 }
 
 function setupDoctorListeners() {
+  // Default +91 number formatting and behavior for new patient registration
+  const docPhoneInput = document.getElementById('docNewPhone');
+  if (docPhoneInput) {
+    if (!docPhoneInput.value || !docPhoneInput.value.trim()) {
+      docPhoneInput.value = '+91 ';
+    }
+    docPhoneInput.addEventListener('focus', () => {
+      if (!docPhoneInput.value || !docPhoneInput.value.trim()) {
+        docPhoneInput.value = '+91 ';
+      }
+    });
+    docPhoneInput.addEventListener('input', () => {
+      const val = docPhoneInput.value;
+      if (!val.startsWith('+91')) {
+        const digits = val.replace(/[^0-9]/g, '');
+        if (digits.startsWith('91')) {
+          docPhoneInput.value = '+91 ' + digits.slice(2);
+        } else if (digits.length > 0) {
+          docPhoneInput.value = '+91 ' + digits;
+        } else {
+          docPhoneInput.value = '+91 ';
+        }
+      }
+    });
+    docPhoneInput.addEventListener('keydown', (e) => {
+      // Prevent deleting the '+91 ' prefix
+      if ((e.key === 'Backspace' || e.key === 'Delete') && (docPhoneInput.value === '+91 ' || docPhoneInput.value === '+91')) {
+        e.preventDefault();
+      }
+    });
+  }
+
   const form = document.getElementById('addTreatmentForm');
   if (!form) return;
 
@@ -1350,13 +1400,85 @@ async function loadDoctorWaitingQueue(silent = false) {
   }
 }
 
+window.switchLeftPanelTab = function(tab) {
+  const tabs = ['queue', 'search', 'authorized'];
+  tabs.forEach(t => {
+    const pane = document.getElementById(t === 'queue' ? 'leftPaneQueue' : (t === 'search' ? 'leftPaneSearch' : 'leftPaneAuthorized'));
+    const btn = document.getElementById(t === 'queue' ? 'leftTabQueueBtn' : (t === 'search' ? 'leftTabSearchBtn' : 'leftTabAuthBtn'));
+    
+    if (t === tab) {
+      if (pane) pane.classList.remove('hidden');
+      if (btn) {
+        btn.className = 'flex-1 py-1.5 px-2 bg-[#111111] text-white uppercase text-center transition flex items-center justify-center gap-1 shadow-[2px_2px_0px_#111111]';
+      }
+    } else {
+      if (pane) pane.classList.add('hidden');
+      if (btn) {
+        btn.className = 'flex-1 py-1.5 px-2 bg-transparent text-[#111111] hover:bg-gray-200 uppercase text-center transition flex items-center justify-center gap-1';
+      }
+    }
+  });
+
+  if (tab === 'queue') {
+    loadDoctorWaitingQueue(true);
+  } else if (tab === 'authorized') {
+    loadAuthorizedPatients();
+  }
+};
+
+window.scrollToDoctorSection = function(sectionId) {
+  let el = document.getElementById(sectionId);
+  if (!el && sectionId === 'patientMedicalHistoryCard') {
+    el = document.getElementById('authorizedDetailsContainer');
+  }
+  if (!el) return;
+
+  // Highlight active button in jump bar
+  document.querySelectorAll('.doctor-jump-btn').forEach(btn => {
+    btn.classList.remove('bg-[#111111]', 'text-white');
+    btn.classList.add('bg-[#f9fafb]', 'text-[#111111]');
+  });
+  if (window.event && window.event.currentTarget && window.event.currentTarget.classList.contains('doctor-jump-btn')) {
+    window.event.currentTarget.classList.remove('bg-[#f9fafb]', 'text-[#111111]');
+    window.event.currentTarget.classList.add('bg-[#111111]', 'text-white');
+  }
+
+  const offset = 85;
+  const elementPosition = el.getBoundingClientRect().top;
+  const offsetPosition = elementPosition + window.pageYOffset - offset;
+  window.scrollTo({
+    top: offsetPosition,
+    behavior: 'smooth'
+  });
+};
+
+window.callNextWaitingPatient = async function() {
+  if (!doctorQueue || doctorQueue.length === 0) {
+    await loadDoctorWaitingQueue(true);
+  }
+
+  const nextWaiting = (doctorQueue || []).find(q => q.status === 'waiting');
+  if (nextWaiting) {
+    await callPatientIn(nextWaiting.tokenNumber, nextWaiting.qrCodeId);
+  } else {
+    const inConsult = (doctorQueue || []).find(q => q.status === 'in_consultation');
+    if (inConsult) {
+      showToast(`Token #${inConsult.tokenNumber} (${inConsult.patientName}) is currently active in consultation.`, 'info');
+      await callPatientIn(inConsult.tokenNumber, inConsult.qrCodeId);
+    } else {
+      showToast('No patients currently in OPD waiting queue. Register a new intake or search by LifeQR ID.', 'info');
+      switchLeftPanelTab('queue');
+    }
+  }
+};
+
 function renderWaitingQueue(queue, nowCalling) {
   const container = document.getElementById('doctorWaitingQueueContainer');
   const badgeCount = document.getElementById('waitingQueueCountBadge');
   if (!container) return;
 
   const activeWaiting = queue.filter(q => q.status === 'waiting' || q.status === 'in_consultation');
-  if (badgeCount) badgeCount.textContent = `${activeWaiting.length} Waiting Outside`;
+  if (badgeCount) badgeCount.textContent = activeWaiting.length;
 
   if (activeWaiting.length === 0) {
     container.innerHTML = `
@@ -1371,39 +1493,43 @@ function renderWaitingQueue(queue, nowCalling) {
 
   container.innerHTML = activeWaiting.map(item => {
     const isCalling = item.status === 'in_consultation';
-    const borderCls = isCalling ? 'border-2 border-[#E11D2E] bg-red-50/40 shadow-[4px_4px_0px_#E11D2E]' : 'border-2 border-[#111111] bg-white shadow-[4px_4px_0px_#111111]';
+    const borderCls = isCalling 
+      ? 'border-2 border-[#E11D2E] bg-red-50/50 shadow-[3px_3px_0px_#E11D2E]' 
+      : 'border-2 border-[#111111] bg-white shadow-[3px_3px_0px_#111111] hover:shadow-[4px_4px_0px_#111111]';
     const statusBadge = isCalling 
-      ? '<span class="px-2 py-0.5 border border-[#E11D2E] bg-[#E11D2E] text-white font-mono text-[10px] font-black uppercase animate-pulse">IN CONSULTATION</span>'
-      : '<span class="px-2 py-0.5 border border-[#111111] bg-amber-50 text-amber-900 font-mono text-[10px] font-bold uppercase">WAITING</span>';
+      ? '<span class="px-1.5 py-0.5 border border-[#E11D2E] bg-[#E11D2E] text-white font-mono text-[9px] font-black uppercase animate-pulse">IN CONSULT</span>'
+      : '<span class="px-1.5 py-0.5 border border-[#111111] bg-amber-50 text-amber-900 font-mono text-[9px] font-bold uppercase">WAITING</span>';
 
     return `
-      <div class="p-4 ${borderCls} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
-        <div class="flex items-start gap-3">
-          <div class="w-10 h-10 border-2 border-[#111111] bg-[#111111] text-white flex flex-col items-center justify-center font-mono flex-shrink-0">
-            <span class="text-[9px] font-bold uppercase leading-none text-white/60">TKN</span>
-            <span class="text-base font-black leading-none">${item.tokenNumber}</span>
-          </div>
-          <div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <h4 class="font-black text-sm uppercase text-[#111111]">${item.patientName}</h4>
-              ${statusBadge}
-              <span class="px-1.5 py-0.2 border border-[#111111] font-mono text-[10px] font-bold text-[#E11D2E]">${item.bloodGroup}</span>
+      <div class="p-3.5 ${borderCls} space-y-2.5 transition-all">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 border-2 border-[#111111] bg-[#111111] text-white flex flex-col items-center justify-center font-mono flex-shrink-0 shadow-[1px_1px_0px_#111111]">
+              <span class="text-[8px] font-bold uppercase leading-none text-white/60">TKN</span>
+              <span class="text-sm font-black leading-none mt-0.5">${item.tokenNumber}</span>
             </div>
-            <p class="font-mono text-[11px] text-[#111111]/70 font-semibold mt-0.5">
-              ${item.qrCodeId} &bull; ${item.age}y &bull; ${item.gender}
-            </p>
-            <p class="text-xs text-[#111111] font-sans font-medium mt-1">
-              <strong class="font-mono text-[10px] uppercase text-[#E11D2E]">Complaints:</strong> ${item.chiefComplaint}
-            </p>
+            <div class="min-w-0">
+              <h4 class="font-black text-xs uppercase text-[#111111] truncate tracking-tight">${item.patientName}</h4>
+              <p class="font-mono text-[10px] text-[#111111]/70 font-semibold truncate">
+                ${item.qrCodeId} &bull; ${item.age || 30}y &bull; ${item.gender || 'Pt'}
+              </p>
+            </div>
+          </div>
+          <div class="flex flex-col items-end gap-1 flex-shrink-0">
+            ${statusBadge}
+            <span class="px-1.5 py-0.2 border border-[#111111] bg-[#f9fafb] font-mono text-[9px] font-black text-[#E11D2E]">${item.bloodGroup || 'N/A'}</span>
           </div>
         </div>
 
-        <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-shrink-0 font-mono">
-          <button onclick="callPatientIn(${item.tokenNumber}, '${item.qrCodeId}')" class="${isCalling ? 'btn-primary' : 'btn-secondary'} px-3.5 py-2 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-sm">${isCalling ? 'play_arrow' : 'campaign'}</span>
-            <span>${isCalling ? 'Resume Chart' : 'Call Patient In'}</span>
-          </button>
+        <div class="p-2 bg-[#f9fafb] border border-[#111111]/20 text-[11px] font-sans">
+          <span class="font-mono text-[9px] font-bold uppercase text-[#E11D2E] block">Chief Complaint:</span>
+          <p class="text-[#111111] font-medium line-clamp-2 mt-0.5">${item.chiefComplaint || 'Consultation request'}</p>
         </div>
+
+        <button onclick="callPatientIn(${item.tokenNumber}, '${item.qrCodeId}')" class="${isCalling ? 'btn-primary' : 'btn-secondary'} w-full py-1.5 px-2 text-xs font-mono uppercase font-bold tracking-wider flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+          <span class="material-symbols-outlined text-sm">${isCalling ? 'play_arrow' : 'campaign'}</span>
+          <span>${isCalling ? 'Resume Active Chart' : 'Call Patient In'}</span>
+        </button>
       </div>
     `;
   }).join('');
@@ -1459,6 +1585,10 @@ window.callPatientIn = async function(tokenNumber, qrCodeId) {
 window.openNewPatientModal = function() {
   const modal = document.getElementById('doctorNewPatientModal');
   if (modal) modal.classList.remove('hidden');
+  const phoneInput = document.getElementById('docNewPhone');
+  if (phoneInput && (!phoneInput.value || !phoneInput.value.trim() || phoneInput.value === '+91')) {
+    phoneInput.value = '+91 ';
+  }
 };
 
 window.closeNewPatientModal = function() {
@@ -1468,13 +1598,25 @@ window.closeNewPatientModal = function() {
 
 window.handleNewPatientSubmit = async function(e) {
   e.preventDefault();
-  const name = document.getElementById('docNewName').value;
-  const age = document.getElementById('docNewAge').value;
+  const name = document.getElementById('docNewName').value.trim();
+  const age = document.getElementById('docNewAge').value.trim();
   const gender = document.getElementById('docNewGender').value;
-  const phone = document.getElementById('docNewPhone').value;
+  let phone = document.getElementById('docNewPhone').value.trim();
   const bloodGroup = document.getElementById('docNewBlood').value;
-  const allergies = document.getElementById('docNewAllergies').value;
-  const chiefComplaint = document.getElementById('docNewComplaint').value;
+  const allergies = document.getElementById('docNewAllergies').value.trim();
+  const chiefComplaint = document.getElementById('docNewComplaint').value.trim();
+
+  // Normalize phone number to format +91 XXXXXXXXXX
+  if (phone && phone !== '+91' && phone !== '+91 ') {
+    const digits = phone.replace(/[^0-9]/g, '');
+    if (digits.startsWith('91') && digits.length >= 12) {
+      phone = '+' + digits.slice(0, 2) + ' ' + digits.slice(2);
+    } else if (digits.length === 10) {
+      phone = '+91 ' + digits;
+    }
+  } else {
+    phone = '';
+  }
 
   try {
     const res = await (window.authFetch ? window.authFetch('/api/v1/doctor-access/create-patient', {
@@ -1493,7 +1635,10 @@ window.handleNewPatientSubmit = async function(e) {
 
     showToast(`✅ Patient ${name} created with LifeQR ID ${data.patient.qrCodeId} and added to queue!`, 'success');
     closeNewPatientModal();
-    document.getElementById('doctorNewPatientForm').reset();
+    const newPatientForm = document.getElementById('doctorNewPatientForm');
+    if (newPatientForm) newPatientForm.reset();
+    const phoneInput = document.getElementById('docNewPhone');
+    if (phoneInput) phoneInput.value = '+91 ';
     await loadDoctorWaitingQueue();
     await loadAuthorizedPatients();
   } catch (err) {
@@ -1759,9 +1904,17 @@ function setupDoctorSocketQueue() {
   if (typeof io !== 'undefined') {
     try {
       const socket = io({ withCredentials: true });
+      socket.on('connect', () => {
+        socket.emit('join-room', 'doctor:all');
+        socket.emit('join-room', 'hospital:er');
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.id) {
+          socket.emit('join-room', `doctor:${currentUser.id}`);
+        }
+      });
       socket.on('patient-queued', (item) => {
         showToast(`🔔 New patient in waiting queue: ${item.patientName} (Token #${item.tokenNumber})`, 'warning');
         loadDoctorWaitingQueue(true);
+        loadAuthorizedPatients();
       });
       socket.on('calling-patient', (data) => {
         loadDoctorWaitingQueue(true);
@@ -1943,6 +2096,111 @@ window.loadDoctorHelpTickets = async function() {
     }).join('');
   } catch (err) {
     console.warn('Failed to load doctor help tickets:', err);
+  }
+};
+
+// ==================== HOSPITAL INPATIENT ADMISSION & BED ALLOCATION ====================
+
+window.updateSuggestedBed = function(ward) {
+  const bedInput = document.getElementById('admitHospitalBed');
+  if (!bedInput) return;
+  if (ward.includes('Trauma Bay 1')) bedInput.value = 'TB-01';
+  else if (ward.includes('Trauma Bay 2')) bedInput.value = 'TB-02';
+  else if (ward.includes('ICU')) bedInput.value = 'ICU-04';
+  else if (ward.includes('General')) bedInput.value = 'GW-12';
+  else if (ward.includes('Cardiology')) bedInput.value = 'CCU-02';
+  else bedInput.value = 'OBS-03';
+};
+
+async function loadDoctorHospitalBedMetrics() {
+  try {
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/hospitals/metrics') : '/api/v1/hospitals/metrics';
+    const res = await (window.authFetch ? window.authFetch(apiUrl) : fetch(apiUrl, { credentials: 'include' }));
+    if (!res.ok) return;
+    const data = await res.json();
+    const badge = document.getElementById('hospitalBedAvailabilityBadge');
+    if (badge && data.beds) {
+      const avail = (data.beds.traumaBaysAvailable || 0) + (data.beds.icuAvailable || 0) + (data.beds.generalAvailable || 0);
+      badge.textContent = `Beds Available: ${avail} / ${data.beds.total || 30}`;
+    }
+  } catch (e) {
+    console.warn('loadDoctorHospitalBedMetrics notice:', e.message);
+  }
+}
+
+window.admitPatientToHospital = async function() {
+  if (!activePatient || !activePatient.qrCodeId) {
+    showToast('Please search or call an active patient before admitting.', 'warning');
+    return;
+  }
+
+  const facility = document.getElementById('admitHospitalFacility')?.value || 'Metro City Central Emergency & Trauma Center';
+  const ward = document.getElementById('admitHospitalWard')?.value || 'Trauma Bay 1 (Resuscitation Alpha)';
+  const bedNumber = document.getElementById('admitHospitalBed')?.value.trim() || 'TB-01';
+  const triageLevel = document.getElementById('admitHospitalTriage')?.value || 'URGENT';
+  const reason = document.getElementById('admitHospitalReason')?.value.trim() 
+    || document.getElementById('consultDiagnosis')?.value 
+    || 'Inpatient admission from physician workstation';
+
+  const vitals = {
+    hr: document.getElementById('consultPulse')?.value || 84,
+    bp: document.getElementById('consultBp')?.value || '120/80',
+    spo2: document.getElementById('consultSpo2')?.value || 99,
+    temp: document.getElementById('consultTemp')?.value || '98.6°F'
+  };
+
+  const attendingName = (currentUser && currentUser.name) ? currentUser.name : 'Attending Physician';
+
+  try {
+    showToast('Transmitting hospital inpatient admission protocol...', 'info');
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/hospitals/admissions') : '/api/v1/hospitals/admissions';
+    const fetchFn = window.authFetch || fetch;
+
+    const res = await fetchFn(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        qrCodeId: activePatient.qrCodeId,
+        patientName: activePatient.name || 'Admitted Patient',
+        bloodGroup: activePatient.bloodGroup || 'O+',
+        age: activePatient.age || 30,
+        gender: activePatient.gender || 'Other',
+        ward,
+        bedNumber,
+        attendingDoctor: attendingName,
+        triageLevel,
+        vitals
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to complete admission');
+
+    // Also record clinical treatment history note for the patient
+    try {
+      await doctorApiFetch(`/history/add/${encodeURIComponent(activePatient.qrCodeId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          type: 'treatment',
+          title: `Hospital Admission: ${ward} (${bedNumber})`,
+          description: `Patient admitted to ${facility}. Ward: ${ward}, Bed: ${bedNumber}. Triage: ${triageLevel}. Reason: ${reason}`
+        })
+      });
+    } catch(e) {}
+
+    const admissionId = data.admission?.id || 'CONFIRMED';
+    showToast(`🏥 Patient ${activePatient.name} admitted successfully to ${ward} (${bedNumber})! Admission ID: ${admissionId}`, 'success');
+
+    // Update beds badge and refresh medical history timeline
+    await loadDoctorHospitalBedMetrics();
+    if (activePatient.qrCodeId) {
+      await loadPatientMedicalHistory(activePatient.qrCodeId);
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
   }
 };
 

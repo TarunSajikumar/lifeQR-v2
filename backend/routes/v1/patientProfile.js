@@ -244,9 +244,15 @@ router.get('/me', authenticateToken, async (req, res) => {
       profileData = await CrewProfile.findOne({ userId: user._id });
     }
 
+    let clientProfile = profileData ? (profileData.toObject ? profileData.toObject() : { ...profileData }) : null;
+    // Security Access Audit Log / activities are strictly restricted to administrators
+    if (clientProfile && user.role !== 'admin') {
+      delete clientProfile.activities;
+    }
+
     res.json({
       user,
-      profile: profileData
+      profile: clientProfile
     });
   } catch (error) {
     console.error('Error fetching current user profile:', error);

@@ -94,7 +94,7 @@ async function loadDashboardData() {
     renderQRDetails();
     await loadReports();
     await loadActivities();
-    await loadAccessRequests();
+    await loadDoctorHistory();
     await loadMedicalHistory();
 
   } catch (err) {
@@ -159,14 +159,18 @@ function renderProfileDetails() {
   if (healthIssuesInput) healthIssuesInput.value = currentProfile?.healthIssues || '';
 
   // Render profile photo
+  const photoUrl = currentUser.profilePhoto
+    ? ((window.getApiUrl ? window.getApiUrl('/patient/photo') : '/api/v1/patient/photo') + '?t=' + Date.now())
+    : 'https://www.w3schools.com/howto/img_avatar.png';
+
   const photoEl = document.getElementById('userProfilePhoto');
-  if (photoEl) {
-    if (currentUser.profilePhoto) {
-      photoEl.src = window.getApiUrl ? window.getApiUrl('/patient/photo') : '/api/v1/patient/photo';
-    } else {
-      photoEl.src = 'https://www.w3schools.com/howto/img_avatar.png'; // default avatar
-    }
-  }
+  if (photoEl) photoEl.src = photoUrl;
+
+  const normalPhoto = document.getElementById('normalUserProfilePhoto');
+  if (normalPhoto) normalPhoto.src = photoUrl;
+
+  const modalPreview = document.getElementById('photoModalPreview');
+  if (modalPreview) modalPreview.src = photoUrl;
 
   // Set toggle visibility state
   const toggle = document.getElementById('publicProfileToggle');
@@ -185,7 +189,7 @@ function renderProfileDetails() {
         contactRow.className = 'flex justify-between items-center p-3.5 bg-[#f9fafb] border-2 border-[#111111]';
         contactRow.innerHTML = `
           <div>
-            <p class="font-black text-[#111111] text-xs uppercase tracking-tight">${c.name} <span class="text-[#E11D2E] font-mono font-bold">(${c.relationship || 'ICE'})</span></p>
+            <p class="font-black text-[#111111] text-xs uppercase tracking-tight">${c.name} ${c.relationship ? `<span class="text-[#E11D2E] font-mono font-bold">(${c.relationship})</span>` : ''}</p>
             <p class="text-xs font-mono font-bold text-[#111111]/70 mt-0.5">${c.phone}</p>
           </div>
           <div class="flex items-center gap-2">
@@ -211,7 +215,167 @@ function renderProfileDetails() {
     if (phoneInput) phoneInput.value = contact.phone || '+91 ';
     if (relInput) relInput.value = contact.relationship || '';
   }
+
+  // Populate Normal View Elements (Read-only view shown first)
+  const normalName = document.getElementById('normalProfileName');
+  if (normalName) normalName.textContent = currentUser.name || 'Patient';
+
+  if (normalPhoto && photoEl) {
+    normalPhoto.src = photoEl.src;
+  }
+
+  const normalMeta = document.getElementById('normalProfileMeta');
+  if (normalMeta) {
+    const ageStr = currentProfile?.age ? `${currentProfile.age} Yrs` : 'Age Unspecified';
+    const genderStr = currentUser?.gender ? currentUser.gender.toUpperCase() : 'Gender Unspecified';
+    const phoneStr = currentUser?.phone ? currentUser.phone : 'No Phone';
+    normalMeta.textContent = `${ageStr} • ${genderStr} • Phone: ${phoneStr}`;
+  }
+
+  const normalBlood = document.getElementById('normalBloodGroupDisplay');
+  if (normalBlood) normalBlood.textContent = currentProfile?.bloodGroup || '--';
+
+  const normalPhoneDisp = document.getElementById('normalPhoneDisplay');
+  if (normalPhoneDisp) normalPhoneDisp.textContent = currentUser?.phone || 'Not Registered';
+
+  const normalLocDisp = document.getElementById('normalLocationDisplay');
+  if (normalLocDisp) {
+    const city = currentUser?.city || '';
+    const state = currentUser?.state || '';
+    normalLocDisp.textContent = (city && state ? `${city}, ${state}` : (city || state || '--'));
+  }
+
+  const normalFullAddr = document.getElementById('normalFullAddressDisplay');
+  if (normalFullAddr) {
+    const addr = currentUser?.address || '';
+    const city = currentUser?.city || '';
+    const state = currentUser?.state || '';
+    const full = [addr, city, state].filter(Boolean).join(', ');
+    normalFullAddr.textContent = full || 'No residential address registered';
+  }
+
+  const normalPublicBadge = document.getElementById('normalPublicBadge');
+  if (normalPublicBadge) {
+    const isPublic = currentProfile?.publicProfile !== false;
+    if (isPublic) {
+      normalPublicBadge.textContent = 'PUBLIC QR ACTIVE';
+      normalPublicBadge.className = 'px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[10px] font-mono font-bold uppercase';
+    } else {
+      normalPublicBadge.textContent = 'PRIVATE QR ONLY';
+      normalPublicBadge.className = 'px-2 py-0.5 border border-neutral-600 bg-neutral-100 text-neutral-800 text-[10px] font-mono font-bold uppercase';
+    }
+  }
+
+  // Populate Normal Allergies
+  const normalAllergies = document.getElementById('normalAllergiesContainer');
+  if (normalAllergies) {
+    const rawAllergies = currentProfile?.allergies;
+    let list = [];
+    if (Array.isArray(rawAllergies)) {
+      list = rawAllergies;
+    } else if (typeof rawAllergies === 'string' && rawAllergies.trim()) {
+      list = rawAllergies.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    if (list.length === 0) {
+      normalAllergies.innerHTML = `
+        <span class="px-2 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[11px] font-mono font-bold flex items-center gap-1">
+          <span class="material-symbols-outlined text-xs">verified</span>
+          <span>No known severe drug or food allergies reported</span>
+        </span>
+      `;
+    } else {
+      normalAllergies.innerHTML = list.map(item => `
+        <span class="px-2.5 py-1 border border-[#E11D2E] bg-red-100 text-[#E11D2E] text-xs font-mono font-bold flex items-center gap-1 shadow-[1px_1px_0px_#111111]">
+          <span class="material-symbols-outlined text-xs">warning</span>
+          <span>${item.toUpperCase()}</span>
+        </span>
+      `).join('');
+    }
+  }
+
+  // Populate Normal Medications
+  const normalMeds = document.getElementById('normalMedicationsContainer');
+  if (normalMeds) {
+    const rawMeds = currentProfile?.medications;
+    let list = [];
+    if (Array.isArray(rawMeds)) {
+      list = rawMeds;
+    } else if (typeof rawMeds === 'string' && rawMeds.trim()) {
+      list = rawMeds.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    if (list.length === 0) {
+      normalMeds.innerHTML = `
+        <span class="text-xs text-gray-500 font-mono italic">No active daily prescription medications listed</span>
+      `;
+    } else {
+      normalMeds.innerHTML = list.map(item => `
+        <span class="px-2.5 py-1 border border-[#111111] bg-gray-100 text-[#111111] text-xs font-mono font-bold flex items-center gap-1 shadow-[1px_1px_0px_#111111]">
+          <span class="material-symbols-outlined text-xs">medication</span>
+          <span>${item}</span>
+        </span>
+      `).join('');
+    }
+  }
+
+  // Populate Normal Health Issues
+  const normalHealth = document.getElementById('normalHealthIssuesContainer');
+  if (normalHealth) {
+    const rawIssues = currentProfile?.healthIssues;
+    let list = [];
+    if (Array.isArray(rawIssues)) {
+      list = rawIssues;
+    } else if (typeof rawIssues === 'string' && rawIssues.trim()) {
+      list = rawIssues.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    if (list.length === 0) {
+      normalHealth.innerHTML = `
+        <span class="text-xs text-gray-500 font-mono italic">No chronic medical conditions listed</span>
+      `;
+    } else {
+      normalHealth.innerHTML = list.map(item => `
+        <span class="px-2.5 py-1 border border-[#111111] bg-[#f9fafb] text-[#111111] text-xs font-mono font-bold flex items-center gap-1 shadow-[1px_1px_0px_#111111]">
+          <span class="material-symbols-outlined text-xs">vital_signs</span>
+          <span>${item}</span>
+        </span>
+      `).join('');
+    }
+  }
 }
+
+window.toggleEditProfile = function(show) {
+  const editSec = document.getElementById('profileEditSection');
+  if (!editSec) return;
+
+  const isHidden = editSec.classList.contains('hidden');
+  const willShow = show !== undefined ? show : isHidden;
+
+  if (willShow) {
+    editSec.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    const nameInput = document.getElementById('profileName');
+    if (nameInput) setTimeout(() => nameInput.focus(), 150);
+  } else {
+    editSec.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+};
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const cropModal = document.getElementById('photoCropModal');
+    if (cropModal && !cropModal.classList.contains('hidden')) {
+      if (typeof window.cancelCropModal === 'function') window.cancelCropModal();
+      return;
+    }
+    const editSec = document.getElementById('profileEditSection');
+    if (editSec && !editSec.classList.contains('hidden')) {
+      window.toggleEditProfile(false);
+    }
+  }
+});
 
 function renderQRDetails() {
   const qrCode = currentProfile?.qrCode || currentUser?.qrCode;
@@ -282,6 +446,17 @@ async function loadReports() {
 }
 
 async function loadActivities() {
+  const auditCard = document.getElementById('securityAuditLogCard');
+
+  // Security Access Audit Log is strictly restricted to administrators
+  if (!currentUser || currentUser.role !== 'admin') {
+    if (auditCard) auditCard.classList.add('hidden');
+    return;
+  }
+
+  // Revealed exclusively to administrators
+  if (auditCard) auditCard.classList.remove('hidden');
+
   try {
     const apiUrl = window.getApiUrl ? window.getApiUrl('/patient/me') : '/api/v1/patient/me';
     const response = await (window.authFetch ? window.authFetch(apiUrl) : fetch(apiUrl, { credentials: 'include' }));
@@ -338,44 +513,224 @@ async function loadActivities() {
   }
 }
 
-async function loadAccessRequests() {
+async function loadDoctorHistory() {
   try {
-    const apiUrl = window.getApiUrl ? window.getApiUrl('/doctor-access/requests') : '/api/v1/doctor-access/requests';
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/doctor-access/history') : '/api/v1/doctor-access/history';
     const response = await (window.authFetch ? window.authFetch(apiUrl) : fetch(apiUrl, { credentials: 'include' }));
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
 
-    const container = document.getElementById('doctorAccessRequests');
+    const container = document.getElementById('doctorHistoryContainer') || document.getElementById('doctorAccessRequests');
+    const badge = document.getElementById('doctorHistoryCountBadge');
     if (!container) return;
     container.innerHTML = '';
 
-    if (!data.requests || data.requests.length === 0) {
-      container.innerHTML = `<p class="text-xs text-[#111111]/60 font-mono italic">No pending doctor requests.</p>`;
+    const pendingRequests = data.pendingRequests || [];
+    const hospitalAdmissions = data.hospitalAdmissions || [];
+    const consultations = data.consultations || [];
+    const clinicalEntries = data.clinicalEntries || [];
+    const medicalRecords = data.medicalRecords || [];
+    const authorizedDoctors = data.authorizedDoctors || [];
+
+    const totalCount = pendingRequests.length + hospitalAdmissions.length + consultations.length + clinicalEntries.length + medicalRecords.length + authorizedDoctors.length;
+    if (badge) {
+      badge.textContent = `${totalCount} ${totalCount === 1 ? 'Record' : 'Records'}`;
+    }
+
+    if (totalCount === 0) {
+      container.innerHTML = `
+        <div class="text-center p-5 bg-[#f9fafb] border-2 border-[#111111] space-y-1.5">
+          <div class="w-9 h-9 mx-auto border-2 border-[#111111] bg-white flex items-center justify-center text-[#E11D2E]">
+            <span class="material-symbols-outlined text-lg">local_hospital</span>
+          </div>
+          <p class="font-black text-xs uppercase text-[#111111]">No Doctor or Hospital Records Yet</p>
+          <p class="text-[10px] font-mono text-gray-500 leading-normal">Verified doctor consultations, hospital admissions, inpatient ward allocations, and clinical diagnoses will appear here.</p>
+        </div>
+      `;
       return;
     }
 
-    data.requests.forEach(r => {
+    // 1. Pending Access Requests (Priority Action at top)
+    pendingRequests.forEach(r => {
       const row = document.createElement('div');
-      row.className = 'p-3.5 bg-[#f9fafb] border-2 border-[#111111] space-y-3';
+      row.className = 'p-3 bg-amber-50 border-2 border-[#111111] space-y-2 shadow-[2px_2px_0px_#111111]';
       row.innerHTML = `
         <div class="flex justify-between items-start">
           <div>
-            <p class="text-xs font-black text-[#111111] uppercase tracking-tight">Dr. ${r.metadata?.doctorName || 'Doctor'}</p>
-            <p class="text-[10px] font-mono font-bold text-[#111111]/60 mt-0.5 uppercase">${r.metadata?.specialization || ''} &bull; ${r.metadata?.hospital || ''}</p>
+            <span class="px-1.5 py-0.2 bg-amber-600 text-white font-mono text-[9px] font-bold uppercase tracking-wider">Access Request</span>
+            <p class="text-xs font-black text-[#111111] uppercase tracking-tight mt-1">Dr. ${r.metadata?.doctorName || 'Doctor'}</p>
+            <p class="text-[10px] font-mono font-bold text-[#111111]/70 mt-0.5 uppercase">${r.metadata?.specialization || 'Attending Physician'} &bull; ${r.metadata?.hospital || 'Clinical Centre'}</p>
           </div>
-          <span class="px-2 py-0.5 border border-[#111111] bg-amber-100 text-amber-900 text-[9px] font-mono font-bold uppercase tracking-wider">Pending</span>
+          <span class="material-symbols-outlined text-amber-800 text-base">lock_open</span>
         </div>
-        <div class="flex gap-2 justify-end pt-1 border-t border-[#111111]/10">
-          <button onclick="respondToRequest('${r.metadata?.requestId}', false)" class="btn-secondary text-xs px-3 py-1 uppercase font-mono tracking-wider font-bold">Decline</button>
-          <button onclick="respondToRequest('${r.metadata?.requestId}', true)" class="btn-primary text-xs px-3 py-1 uppercase font-mono tracking-wider font-bold">Approve</button>
+        <div class="flex gap-2 justify-end pt-1 border-t border-[#111111]/20">
+          <button onclick="respondToRequest('${r.metadata?.requestId}', false)" class="btn-secondary text-[10px] px-2.5 py-1 uppercase font-mono tracking-wider font-bold">Decline</button>
+          <button onclick="respondToRequest('${r.metadata?.requestId}', true)" class="btn-primary text-[10px] px-3 py-1 uppercase font-mono tracking-wider font-bold">Authorize</button>
         </div>
       `;
       container.appendChild(row);
     });
+
+    // 2. Hospital Admissions & Inpatient Stays
+    hospitalAdmissions.forEach(adm => {
+      const meta = adm.metadata || {};
+      const dateStr = adm.timestamp ? new Date(adm.timestamp).toLocaleDateString() : 'Active';
+      const timeStr = adm.timestamp ? new Date(adm.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const ward = meta.ward || 'Emergency / Inpatient Ward';
+      const bed = meta.bedNumber ? `Bed ${meta.bedNumber}` : '';
+      const triage = (meta.triageLevel || 'URGENT').toUpperCase();
+      const doctor = meta.attendingDoctor ? `Attending: ${meta.attendingDoctor}` : 'Attending Physician';
+      const isDischarged = adm.type === 'Hospital Discharge' || meta.status === 'discharged';
+      
+      const row = document.createElement('div');
+      row.className = `p-3.5 border-2 border-[#111111] space-y-2 shadow-[2px_2px_0px_#111111] ${isDischarged ? 'bg-gray-50' : 'bg-red-50/50'}`;
+      row.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div class="space-y-0.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="px-1.5 py-0.5 ${isDischarged ? 'bg-gray-800' : 'bg-[#E11D2E]'} text-white font-mono text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <span class="material-symbols-outlined text-[10px]">local_hospital</span>
+                <span>${isDischarged ? 'Hospital Discharge' : 'Hospital Inpatient Admission'}</span>
+              </span>
+              <span class="px-1.5 py-0.5 border border-[#111111] bg-white font-mono text-[9px] font-bold uppercase">${triage}</span>
+            </div>
+            <p class="text-xs font-black text-[#111111] uppercase tracking-tight mt-1">${ward} ${bed ? `&bull; ${bed}` : ''}</p>
+            <p class="text-[10px] font-mono text-gray-700 font-bold uppercase">${doctor} &bull; Metro City Central Hospital</p>
+          </div>
+          <span class="material-symbols-outlined text-[#E11D2E] text-base">${isDischarged ? 'check_circle' : 'hotel'}</span>
+        </div>
+        ${adm.description ? `<p class="text-[11px] font-sans text-gray-700 bg-white p-2 border border-[#111111]/20">${adm.description}</p>` : ''}
+        <div class="flex justify-between items-center text-[10px] font-mono text-gray-500 pt-1 border-t border-[#111111]/10">
+          <span>Facility: Metro City Central ER Hub</span>
+          <span>${dateStr} ${timeStr}</span>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+
+    // 3. Doctor Consultations
+    consultations.forEach(c => {
+      const docName = c.doctorId?.name ? `Dr. ${c.doctorId.name}` : 'Attending Physician';
+      const dateStr = new Date(c.createdAt || c.scheduledAt).toLocaleDateString();
+      const row = document.createElement('div');
+      row.className = 'p-3 bg-white border-2 border-[#111111] space-y-1.5 shadow-[2px_2px_0px_#111111]';
+      row.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-black text-[#111111] uppercase tracking-tight flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm text-[#E11D2E]">medical_services</span>
+              <span>${docName}</span>
+            </p>
+            <p class="text-[10px] font-mono font-bold text-[#111111]/60 uppercase">${c.chiefComplaint || 'Consultation Encounter'}</p>
+          </div>
+          <span class="px-1.5 py-0.5 border border-emerald-600 bg-emerald-50 text-emerald-800 text-[9px] font-mono font-bold uppercase">Consultation</span>
+        </div>
+        ${c.diagnosis ? `<p class="text-[11px] font-mono font-bold text-[#E11D2E] bg-red-50 p-1.5 border border-[#111111]/10">Dx: ${c.diagnosis}</p>` : ''}
+        <div class="flex justify-between items-center text-[10px] font-mono text-gray-500 pt-1 border-t border-gray-100">
+          <span>Status: ${c.status ? c.status.toUpperCase() : 'COMPLETED'}</span>
+          <span>${dateStr}</span>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+
+    // 4. Clinical History Entries from Doctors & Hospital Wards
+    clinicalEntries.forEach(entry => {
+      const isHospital = (entry.author && entry.author.role === 'hospital') ||
+                         (entry.title && (entry.title.toLowerCase().includes('hospital') || entry.title.toLowerCase().includes('admission') || entry.title.toLowerCase().includes('ward')));
+      const dateStr = entry.recordDate || entry.date ? new Date(entry.recordDate || entry.date).toLocaleDateString() : 'Recorded';
+      const authorName = entry.author?.name || entry.doctorOrHospital || (isHospital ? 'Hospital Medical Staff' : 'Attending Physician');
+
+      const row = document.createElement('div');
+      row.className = 'p-3 bg-white border-2 border-[#111111] space-y-1.5 shadow-[2px_2px_0px_#111111]';
+      row.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="px-1.5 py-0.2 ${isHospital ? 'bg-red-800' : 'bg-[#111111]'} text-white font-mono text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <span class="material-symbols-outlined text-[10px]">${isHospital ? 'local_hospital' : 'medical_services'}</span>
+                <span>${isHospital ? 'Hospital Clinical Entry' : 'Doctor Clinical Finding'}</span>
+              </span>
+            </div>
+            <p class="text-xs font-black text-[#111111] uppercase tracking-tight mt-1">${entry.title || 'Clinical Encounter'}</p>
+            <p class="text-[10px] font-mono text-gray-600 font-bold uppercase">${authorName}</p>
+          </div>
+          <span class="text-[9px] font-mono text-gray-500">${dateStr}</span>
+        </div>
+        ${entry.diagnosis ? `<p class="text-[11px] font-mono font-bold text-[#E11D2E] bg-red-50 p-1.5 border border-[#111111]/10">Dx: ${entry.diagnosis}</p>` : ''}
+        ${entry.treatment ? `<p class="text-[11px] font-mono text-gray-800 bg-gray-50 p-1.5 border border-[#111111]/10">Rx / Plan: ${entry.treatment}</p>` : ''}
+        ${entry.description && entry.description !== entry.title ? `<p class="text-[11px] font-sans text-gray-700 line-clamp-2">${entry.description}</p>` : ''}
+      `;
+      container.appendChild(row);
+    });
+
+    // 5. Clinical Medical Records from Doctors & Hospitals
+    medicalRecords.forEach(m => {
+      const dateStr = new Date(m.recordDate || m.createdAt).toLocaleDateString();
+      const row = document.createElement('div');
+      row.className = 'p-3 bg-[#f9fafb] border-2 border-[#111111] space-y-1';
+      row.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-black text-[#111111] uppercase tracking-tight">${m.title || 'Clinical Encounter Note'}</p>
+            <p class="text-[10px] font-mono text-gray-600 uppercase font-bold">${m.doctorOrHospital || 'Attending Physician'}</p>
+          </div>
+          <span class="text-[9px] font-mono text-gray-500">${dateStr}</span>
+        </div>
+        ${m.notes ? `<p class="text-[11px] font-sans text-gray-700 line-clamp-2">${m.notes}</p>` : ''}
+      `;
+      container.appendChild(row);
+    });
+
+    // 6. Authorized Attending Doctors
+    authorizedDoctors.forEach(doc => {
+      const dateStr = doc.grantedAt ? new Date(doc.grantedAt).toLocaleDateString() : 'Active';
+      const row = document.createElement('div');
+      row.className = 'p-3 bg-white border-2 border-[#111111] space-y-1';
+      row.innerHTML = `
+        <div class="flex justify-between items-center">
+          <div>
+            <p class="text-xs font-black text-[#111111] uppercase tracking-tight">Dr. ${doc.name || 'Authorized Doctor'}</p>
+            <p class="text-[10px] font-mono text-gray-500 font-bold">Authorized: ${dateStr}</p>
+          </div>
+          <button onclick="revokeDoctorAccess('${doc.doctorId}')" class="px-2 py-0.5 border border-[#111111] bg-white text-[9px] font-mono font-bold uppercase hover:bg-red-50 hover:text-[#E11D2E] transition" title="Revoke Access">
+            Revoke
+          </button>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+
   } catch (err) {
-    console.warn('loadAccessRequests notice:', err.message);
+    console.warn('loadDoctorHistory notice:', err.message);
   }
 }
+
+window.loadAccessRequests = loadDoctorHistory;
+
+window.revokeDoctorAccess = async function(doctorId) {
+  try {
+    const apiUrl = window.getApiUrl ? window.getApiUrl('/doctor-access/revoke') : '/api/v1/doctor-access/revoke';
+    const response = await (window.authFetch 
+      ? window.authFetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ doctorId })
+        })
+      : fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ doctorId })
+        }));
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    showToast('Doctor access revoked successfully', 'info');
+    await loadDoctorHistory();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+};
 
 window.respondToRequest = async function(requestId, approve) {
   try {
@@ -568,12 +923,13 @@ function setupFormListeners() {
 
         showToast('Profile updated successfully!', 'success');
         await loadDashboardData();
+        if (window.toggleEditProfile) window.toggleEditProfile(false);
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
         if (btn) {
           btn.disabled = false;
-          btn.textContent = 'Save Changes';
+          btn.innerHTML = '<span>Save Medical Profile Changes</span><span class="material-symbols-outlined text-sm">check</span>';
         }
       }
     });
@@ -688,13 +1044,358 @@ function setupFormListeners() {
   }
 }
 
-// Upload profile photo
-window.uploadProfilePhoto = async function() {
+// Profile Photo Modal & Picker Handlers
+window.openPhotoUploadModal = function() {
+  const modal = document.getElementById('photoUploadModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    // Sync current photo in modal preview
+    const normalPhoto = document.getElementById('normalUserProfilePhoto');
+    const modalPreview = document.getElementById('photoModalPreview');
+    if (modalPreview && normalPhoto) {
+      modalPreview.src = normalPhoto.src;
+    }
+  }
+};
+
+window.closePhotoUploadModal = function() {
+  const modal = document.getElementById('photoUploadModal');
+  if (modal) modal.classList.add('hidden');
+  const statusEl = document.getElementById('photoUploadStatus');
+  if (statusEl) statusEl.classList.add('hidden');
+};
+
+window.triggerGalleryPicker = function() {
   const fileInput = document.getElementById('profilePhotoInput');
-  if (!fileInput || fileInput.files.length === 0) return;
+  if (fileInput) {
+    fileInput.value = '';
+    fileInput.click();
+  }
+};
+
+window.triggerCameraPicker = function() {
+  const cameraInput = document.getElementById('profileCameraInput');
+  if (cameraInput) {
+    cameraInput.value = '';
+    cameraInput.click();
+  }
+};
+
+// ============================================================
+// PROFILE PHOTO CROPPER & 1080x1080 RESOLUTION ENFORCEMENT
+// ============================================================
+
+let cropSession = {
+  img: null,
+  file: null,
+  originalWidth: 0,
+  originalHeight: 0,
+  objectUrl: null,
+  scaleMultiplier: 1,
+  baseScale: 1,
+  rotation: 0,
+  offsetX: 0,
+  offsetY: 0,
+  isDragging: false,
+  dragStartX: 0,
+  dragStartY: 0,
+  listenersAttached: false
+};
+
+// Entry point when user selects/takes a photo
+window.uploadProfilePhoto = function(file) {
+  if (!file) {
+    const fileInput = document.getElementById('profilePhotoInput');
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+      file = fileInput.files[0];
+    }
+  }
+  if (!file) {
+    const cameraInput = document.getElementById('profileCameraInput');
+    if (cameraInput && cameraInput.files && cameraInput.files.length > 0) {
+      file = cameraInput.files[0];
+    }
+  }
+  if (!file) return;
+
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+  if (!allowedTypes.includes(file.type)) {
+    showToast('Invalid file format. Please upload a JPG or PNG image.', 'error');
+    return;
+  }
+
+  if (file.size > 8 * 1024 * 1024) {
+    showToast('Image file exceeds 8MB. Please select a smaller photo.', 'error');
+    return;
+  }
+
+  // Inspect dimensions to verify if 1080x1080
+  const img = new Image();
+  const objectUrl = URL.createObjectURL(file);
+  img.onload = function() {
+    const width = img.naturalWidth;
+    const height = img.naturalHeight;
+
+    if (width === 1080 && height === 1080) {
+      // Exactly 1080x1080 - proceed directly
+      URL.revokeObjectURL(objectUrl);
+      window.performPhotoUpload(file, false);
+    } else {
+      // Dimensions are NOT 1080x1080 - ask for crop & launch 1080x1080 cropping tool!
+      window.openCropModal(img, file, width, height, objectUrl);
+    }
+  };
+  img.onerror = function() {
+    URL.revokeObjectURL(objectUrl);
+    showToast('Could not decode image. Please choose a valid image.', 'error');
+  };
+  img.src = objectUrl;
+};
+
+window.openCropModal = function(img, file, width, height, objectUrl) {
+  // Hide parent photo modal if open
+  closePhotoUploadModal();
+
+  const cropModal = document.getElementById('photoCropModal');
+  if (!cropModal) return;
+
+  cropSession.img = img;
+  cropSession.file = file;
+  cropSession.originalWidth = width;
+  cropSession.originalHeight = height;
+  cropSession.objectUrl = objectUrl;
+  cropSession.rotation = 0;
+  cropSession.scaleMultiplier = 1;
+  cropSession.offsetX = 0;
+  cropSession.offsetY = 0;
+
+  const dimText = document.getElementById('cropDimensionText');
+  if (dimText) {
+    dimText.textContent = `Original: ${width} × ${height}px`;
+  }
+
+  const slider = document.getElementById('cropZoomSlider');
+  if (slider) slider.value = 1;
+
+  const statusEl = document.getElementById('cropProcessStatus');
+  if (statusEl) statusEl.classList.add('hidden');
+
+  const btn = document.getElementById('applyCropBtn');
+  if (btn) btn.disabled = false;
+
+  cropModal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+
+  initCropCanvas();
+  redrawCropPreview();
+};
+
+window.cancelCropModal = function() {
+  const cropModal = document.getElementById('photoCropModal');
+  if (cropModal) cropModal.classList.add('hidden');
+  document.body.style.overflow = '';
+
+  if (cropSession.objectUrl) {
+    try { URL.revokeObjectURL(cropSession.objectUrl); } catch(e){}
+    cropSession.objectUrl = null;
+  }
+  cropSession.img = null;
+  cropSession.file = null;
+
+  // Clear inputs so re-selecting same file fires onchange
+  const fileInput = document.getElementById('profilePhotoInput');
+  if (fileInput) fileInput.value = '';
+  const cameraInput = document.getElementById('profileCameraInput');
+  if (cameraInput) cameraInput.value = '';
+};
+
+function initCropCanvas() {
+  const canvas = document.getElementById('cropPreviewCanvas');
+  const container = document.getElementById('cropViewportContainer');
+  if (!canvas || !container) return;
+
+  canvas.width = 640;
+  canvas.height = 640;
+
+  const maxDim = Math.min(cropSession.originalWidth, cropSession.originalHeight);
+  cropSession.baseScale = 640 / Math.max(maxDim, 1);
+
+  if (cropSession.listenersAttached) return;
+  cropSession.listenersAttached = true;
+
+  // Mouse pan
+  container.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    cropSession.isDragging = true;
+    container.style.cursor = 'grabbing';
+    cropSession.dragStartX = e.clientX - cropSession.offsetX;
+    cropSession.dragStartY = e.clientY - cropSession.offsetY;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!cropSession.isDragging) return;
+    cropSession.offsetX = e.clientX - cropSession.dragStartX;
+    cropSession.offsetY = e.clientY - cropSession.dragStartY;
+    redrawCropPreview();
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (cropSession.isDragging) {
+      cropSession.isDragging = false;
+      const c = document.getElementById('cropViewportContainer');
+      if (c) c.style.cursor = 'grab';
+    }
+  });
+
+  // Touch pan for mobile
+  container.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      cropSession.isDragging = true;
+      const t = e.touches[0];
+      cropSession.dragStartX = t.clientX - cropSession.offsetX;
+      cropSession.dragStartY = t.clientY - cropSession.offsetY;
+    }
+  }, { passive: false });
+
+  container.addEventListener('touchmove', (e) => {
+    if (!cropSession.isDragging || e.touches.length !== 1) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    cropSession.offsetX = t.clientX - cropSession.dragStartX;
+    cropSession.offsetY = t.clientY - cropSession.dragStartY;
+    redrawCropPreview();
+  }, { passive: false });
+
+  container.addEventListener('touchend', () => {
+    cropSession.isDragging = false;
+  });
+
+  // Wheel zoom
+  container.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.08 : 0.08;
+    adjustCropZoom(delta);
+  }, { passive: false });
+}
+
+function redrawCropPreview() {
+  const canvas = document.getElementById('cropPreviewCanvas');
+  if (!canvas || !cropSession.img) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  const container = document.getElementById('cropViewportContainer');
+  const dispW = (container ? container.clientWidth : 320) || 320;
+  const scaleRatio = canvas.width / dispW;
+
+  ctx.translate(canvas.width / 2 + cropSession.offsetX * scaleRatio, canvas.height / 2 + cropSession.offsetY * scaleRatio);
+  ctx.rotate((cropSession.rotation * Math.PI) / 180);
+
+  const drawScale = cropSession.baseScale * cropSession.scaleMultiplier;
+  const w = cropSession.originalWidth * drawScale;
+  const h = cropSession.originalHeight * drawScale;
+
+  ctx.drawImage(cropSession.img, -w / 2, -h / 2, w, h);
+  ctx.restore();
+}
+
+window.adjustCropZoom = function(delta) {
+  const slider = document.getElementById('cropZoomSlider');
+  let current = parseFloat(slider ? slider.value : 1);
+  let next = Math.max(0.5, Math.min(3, current + delta));
+  if (slider) slider.value = next;
+  window.onCropZoomInput(next);
+};
+
+window.onCropZoomInput = function(val) {
+  cropSession.scaleMultiplier = parseFloat(val) || 1;
+  redrawCropPreview();
+};
+
+window.rotateCropImage = function() {
+  cropSession.rotation = (cropSession.rotation + 90) % 360;
+  redrawCropPreview();
+};
+
+window.resetCropPosition = function() {
+  cropSession.offsetX = 0;
+  cropSession.offsetY = 0;
+  cropSession.scaleMultiplier = 1;
+  cropSession.rotation = 0;
+  const slider = document.getElementById('cropZoomSlider');
+  if (slider) slider.value = 1;
+  redrawCropPreview();
+};
+
+window.applyAndUploadCrop = function() {
+  if (!cropSession.img) return;
+
+  const btn = document.getElementById('applyCropBtn');
+  const statusEl = document.getElementById('cropProcessStatus');
+  if (btn) btn.disabled = true;
+  if (statusEl) statusEl.classList.remove('hidden');
+
+  // Render to offscreen canvas strictly at 1080x1080
+  const exportCanvas = document.createElement('canvas');
+  exportCanvas.width = 1080;
+  exportCanvas.height = 1080;
+  const exportCtx = exportCanvas.getContext('2d');
+  exportCtx.imageSmoothingEnabled = true;
+  exportCtx.imageSmoothingQuality = 'high';
+
+  const container = document.getElementById('cropViewportContainer');
+  const dispW = (container ? container.clientWidth : 320) || 320;
+  const scaleRatio = 1080 / dispW;
+
+  exportCtx.translate(540 + cropSession.offsetX * scaleRatio, 540 + cropSession.offsetY * scaleRatio);
+  exportCtx.rotate((cropSession.rotation * Math.PI) / 180);
+
+  const exportBaseScale = 1080 / Math.min(cropSession.originalWidth, cropSession.originalHeight);
+  const drawScale = exportBaseScale * cropSession.scaleMultiplier;
+  const w = cropSession.originalWidth * drawScale;
+  const h = cropSession.originalHeight * drawScale;
+
+  exportCtx.drawImage(cropSession.img, -w / 2, -h / 2, w, h);
+
+  exportCanvas.toBlob(async function(blob) {
+    if (!blob) {
+      if (btn) btn.disabled = false;
+      if (statusEl) statusEl.classList.add('hidden');
+      showToast('Cropping error occurred. Please try again.', 'error');
+      return;
+    }
+
+    const croppedFile = new File([blob], 'patient-avatar-1080x1080.jpg', { type: 'image/jpeg' });
+    cancelCropModal();
+    await window.performPhotoUpload(croppedFile, true);
+
+    if (btn) btn.disabled = false;
+    if (statusEl) statusEl.classList.add('hidden');
+  }, 'image/jpeg', 0.92);
+};
+
+window.performPhotoUpload = async function(file, isCropped) {
+  if (!file) return;
+
+  const statusEl = document.getElementById('photoUploadStatus');
+  if (statusEl) statusEl.classList.remove('hidden');
+
+  // Instant local preview
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const localUrl = e.target.result;
+    const normalPhoto = document.getElementById('normalUserProfilePhoto');
+    if (normalPhoto) normalPhoto.src = localUrl;
+    const photoEl = document.getElementById('userProfilePhoto');
+    if (photoEl) photoEl.src = localUrl;
+    const modalPreview = document.getElementById('photoModalPreview');
+    if (modalPreview) modalPreview.src = localUrl;
+  };
+  reader.readAsDataURL(file);
 
   const formData = new FormData();
-  formData.append('photo', fileInput.files[0]);
+  formData.append('photo', file);
 
   try {
     const apiUrl = window.getApiUrl ? window.getApiUrl('/patient/upload-photo') : '/api/v1/patient/upload-photo';
@@ -702,13 +1403,33 @@ window.uploadProfilePhoto = async function() {
       ? window.authFetch(apiUrl, { method: 'POST', body: formData })
       : fetch(apiUrl, { method: 'POST', credentials: 'include', body: formData }));
     const res = await response.json();
-    if (!response.ok) throw new Error(res.error);
+    if (!response.ok) throw new Error(res.error || 'Failed to upload photo');
 
-    showToast('Profile photo updated successfully!', 'success');
+    showToast(isCropped ? 'Profile photo cropped to 1080×1080 & updated!' : 'Profile photo updated successfully!', 'success');
+
+    const freshUrl = (window.getApiUrl ? window.getApiUrl('/patient/photo') : '/api/v1/patient/photo') + '?t=' + Date.now();
+    const normalPhoto = document.getElementById('normalUserProfilePhoto');
+    if (normalPhoto) normalPhoto.src = freshUrl;
     const photoEl = document.getElementById('userProfilePhoto');
-    if (photoEl) photoEl.src = res.profilePhoto;
+    if (photoEl) photoEl.src = freshUrl;
+    const modalPreview = document.getElementById('photoModalPreview');
+    if (modalPreview) modalPreview.src = freshUrl;
+
+    if (currentUser) {
+      currentUser.profilePhoto = res.profilePhoto;
+    }
+
+    setTimeout(() => {
+      closePhotoUploadModal();
+    }, 400);
   } catch (err) {
-    showToast(err.message, 'error');
+    showToast(err.message || 'Error uploading profile photo', 'error');
+  } finally {
+    if (statusEl) statusEl.classList.add('hidden');
+    const fileInput = document.getElementById('profilePhotoInput');
+    if (fileInput) fileInput.value = '';
+    const cameraInput = document.getElementById('profileCameraInput');
+    if (cameraInput) cameraInput.value = '';
   }
 };
 
@@ -1033,7 +1754,7 @@ window.downloadWalletCard = function() {
     drawCardRoundRect(ctx, 52, 344, 250, 36, 6, true, true);
     ctx.fillStyle = '#E11D2E';
     ctx.font = '700 14px "JetBrains Mono", monospace';
-    ctx.fillText(`PASSPORT ID: ${qrId}`, 66, 368);
+    ctx.fillText(`PERSON ID: ${qrId}`, 66, 368);
 
     // Physical Privacy Guarantee Notice Container (y = 405)
     ctx.fillStyle = '#0b111e';

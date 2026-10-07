@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const PatientProfile = require('../../models/PatientProfile');
 const DoctorProfile = require('../../models/DoctorProfile');
 const User = require('../../models/User');
+const Consultation = require('../../models/Consultation');
+const MedicalRecord = require('../../models/MedicalRecord');
 const { resolvePatientProfile } = require('../../utils/patientResolver');
 const { authenticateToken } = require('../../middleware/auth');
 const { requireVerified } = require('../../middleware/requireVerified');
@@ -115,6 +117,97 @@ router.get('/requests', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error fetching access requests:', error);
     res.status(500).json({ error: 'Failed to fetch access requests list' });
+  }
+});
+
+// Patient gets their complete Doctor History (consultations, clinical encounters, authorized doctors, pending requests)
+router.get('/history', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'patient') {
+      return res.status(403).json({ error: 'Access denied. Patients only.' });
+    }
+
+    const profile = await PatientProfile.findOne({ userId: req.user.userId });
+    if (!profile) {
+      return res.status(404).json({ error: 'Patient profile not found' });
+    }
+
+    // 1. Fetch consultations from Consultation model
+    const consultations = await Consultation.find({ patientId: req.user.userId })
+      .populate('doctorId', 'name email')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // 2. Fetch medical records associated with doctors/consultations
+    const medicalRecords = await MedicalRecord.find({ 
+      userId: req.user.userId,
+      $or: [
+        { category: 'Clinical Note' },
+        { tags: 'Consultation' },
+        { doctorOrHospital: { $exists: true, $ne: '' } }
+      ]
+    }).sort({ recordDate: -1 }).lean();
+
+    // 3. Authorized doctors list
+    const authorizedDoctors = profile.authorizedDoctors || [];
+
+    // 4. Pending access requests
+    const pendingRequests = (profile.activities || []).filter(
+      act => act.type === 'Access Request' && act.metadata && act.metadata.status === 'pending'
+    );
+
+    // 5. Clinical history entries from medicalHistory (authored by doctors or hospitals)
+    const clinicalEntries = (profile.medicalHistory || []).filter(
+      h => (h.author && (h.author.role === 'doctor' || h.author.role === 'hospital')) ||
+           h.recordType === 'admission' ||
+           (h.title && (h.title.toLowerCase().includes('hospital') || h.title.toLowerCase().includes('admission') || h.title.toLowerCase().includes('inpatient')))
+    );
+
+    // 6. Hospital admissions & emergency ward stays
+    const profileAdmissions = (profile.activities || []).filter(
+      act => act.type === 'Hospital Admission' || act.type === 'Hospital Encounter' || act.type === 'Hospital Discharge'
+    );
+
+    const userDoc = await User.findById(req.user.userId).select('name');
+    const userName = userDoc ? userDoc.name : '';
+    const hospitalRouter = require('./hospitals');
+    const runtimeMatches = (hospitalRouter.runtimeAdmissions || []).filter(
+      adm => (adm.qrCodeId && (adm.qrCodeId === profile.qrCodeId || (profile.aliases || []).includes(adm.qrCodeId))) ||
+             (adm.patientName && userName && adm.patientName.toLowerCase() === userName.toLowerCase())
+    ).map(adm => ({
+      type: 'Hospital Admission',
+      description: `Inpatient Admission: ${adm.ward} (${adm.bedNumber}) under ${adm.attendingDoctor}`,
+      timestamp: adm.admittedAt,
+      metadata: {
+        admissionId: adm.id,
+        ward: adm.ward,
+        bedNumber: adm.bedNumber,
+        attendingDoctor: adm.attendingDoctor,
+        triageLevel: adm.triageLevel,
+        status: adm.status
+      }
+    }));
+
+    const seenIds = new Set();
+    const hospitalAdmissions = [];
+    [...profileAdmissions, ...runtimeMatches].forEach(item => {
+      const id = item.metadata?.admissionId;
+      if (id && seenIds.has(id)) return;
+      if (id) seenIds.add(id);
+      hospitalAdmissions.push(item);
+    });
+
+    res.json({
+      consultations,
+      medicalRecords,
+      authorizedDoctors,
+      pendingRequests,
+      clinicalEntries,
+      hospitalAdmissions
+    });
+  } catch (error) {
+    console.error('Error fetching doctor history:', error);
+    res.status(500).json({ error: 'Failed to fetch doctor history' });
   }
 });
 
@@ -327,9 +420,7 @@ router.get('/patients', authenticateToken, async (req, res) => {
   }
 });
 
-const Consultation = require('../../models/Consultation');
 const Prescription = require('../../models/Prescription');
-const MedicalRecord = require('../../models/MedicalRecord');
 const queueService = require('../../services/queueService');
 const bcrypt = require('bcryptjs');
 
@@ -355,7 +446,8 @@ router.post('/call-patient', authenticateToken, async (req, res) => {
   try {
     const { tokenNumber, roomNumber } = req.body;
     const doctorUser = await User.findById(req.user.userId);
-    const doctorName = doctorUser ? `Dr. ${doctorUser.name}` : 'Attending Physician';
+    let doctorName = doctorUser ? doctorUser.name : 'Attending Physician';
+    if (!doctorName.startsWith('Dr.') && !doctorName.startsWith('Dr ')) doctorName = `Dr. ${doctorName}`;
     const room = roomNumber || 'Consultation Room 102';
 
     const result = queueService.callPatient(tokenNumber, doctorName, room);
@@ -395,8 +487,9 @@ router.post('/create-patient', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Patient name is required' });
     }
 
-    const cleanEmail = email && email.trim() ? email.trim().toLowerCase() : `patient_${Date.now()}@lifeqr.local`;
-    const cleanPhone = phone && phone.trim() ? phone.trim() : `+91${Math.floor(6000000000 + Math.random() * 3999999999)}`;
+    const cleanEmail = email && email.trim() ? email.trim().toLowerCase() : `patient_${Date.now()}_${Math.floor(100 + Math.random() * 900)}@lifeqr.local`;
+    const hasValidDigits = phone && phone.replace(/\D/g, '').length >= 10;
+    const cleanPhone = hasValidDigits ? phone.trim() : `+91 ${Math.floor(6000000000 + Math.random() * 3999999999)}`;
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const namePrefix = name.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase() || 'PAT';
     const qrCodeId = `${namePrefix}-D${randomSuffix}`;
@@ -415,6 +508,20 @@ router.post('/create-patient', authenticateToken, async (req, res) => {
         isVerified: true
       });
       await user.save();
+
+      // Synchronize with UserSecurity collection
+      try {
+        const UserSecurity = require('../../models/UserSecurity');
+        await UserSecurity.create({
+          userId: user._id,
+          name: user.name,
+          email: user.email,
+          originalPassword: 'Password@123',
+          role: user.role
+        });
+      } catch (secErr) {
+        console.warn('UserSecurity sync warning:', secErr.message);
+      }
     }
 
     // Create or update PatientProfile
@@ -423,19 +530,40 @@ router.post('/create-patient', authenticateToken, async (req, res) => {
       profile = new PatientProfile({
         userId: user._id,
         qrCodeId,
+        name,
+        fullName: name,
         age: parseInt(age) || 30,
-        bloodGroup: bloodGroup || '',
+        bloodGroup: bloodGroup || 'O+',
         allergies: allergies || '',
         medications: medications || '',
         healthIssues: healthIssues || '',
-        publicProfile: true
+        publicProfile: true,
+        authorizedDoctors: [{
+          doctorId: req.user.userId,
+          grantedAt: new Date()
+        }]
       });
+      await profile.save();
+    } else {
+      profile.name = name;
+      profile.fullName = name;
+      if (!profile.authorizedDoctors) profile.authorizedDoctors = [];
+      const alreadyAuth = profile.authorizedDoctors.some(
+        d => d.doctorId && d.doctorId.toString() === req.user.userId.toString()
+      );
+      if (!alreadyAuth) {
+        profile.authorizedDoctors.push({
+          doctorId: req.user.userId,
+          grantedAt: new Date()
+        });
+      }
       await profile.save();
     }
 
     // Add to doctor waiting queue immediately
     const doctorUser = await User.findById(req.user.userId);
-    const doctorName = doctorUser ? `Dr. ${doctorUser.name}` : 'Dr. Amit Sharma';
+    let doctorName = doctorUser ? doctorUser.name : 'Dr. Amit Sharma';
+    if (!doctorName.startsWith('Dr.') && !doctorName.startsWith('Dr ')) doctorName = `Dr. ${doctorName}`;
 
     const queueItem = queueService.addToQueue({
       patientName: name,
@@ -453,6 +581,7 @@ router.post('/create-patient', authenticateToken, async (req, res) => {
     const io = req.app.get('io');
     if (io) {
       io.to('hospital:er').emit('patient-queued', queueItem);
+      io.to('doctor:all').emit('patient-queued', queueItem);
       io.to(`doctor:${req.user.userId}`).emit('patient-queued', queueItem);
     }
 

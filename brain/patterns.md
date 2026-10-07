@@ -55,4 +55,10 @@ Frontend common files (styles, images, scripts, Tailwind build outputs, login/si
 - **Zero-FOUC Head Bootstrapper**: Every HTML page runs an inline `<script>` in `<head>` to immediately set `<html data-theme="...">` matching either the user's manual choice or device appearance before first paint.
 - **Dynamic Adaptability**: When the device switches between Dark and Light mode, the dashboard automatically updates its root `data-theme`, meta theme-color, toggle button state, and UI surfaces across all patient, crew, doctor, ER, and admin portals.
 
+## 🚪 8. Swiss Editorial Modal & Action Confirmation Pattern
+- **Elimination of Native Prompts**: Avoid native browser `confirm()`, `alert()`, or `prompt()` across dashboards.
+- **Editorial Design Language**: Use `.editorial-card` (`border: 2px solid #111111`, `box-shadow: 6px 6px 0px #111111`), high z-index (`z-[70]`), backdrop blur (`bg-black/80 backdrop-blur-xs`), and theme-aware inputs.
+- **Dedicated Flow Modals**: Specific clinical flows (e.g. Inpatient Discharge `#dischargePatientModal`, Intake `#admitPatientModal`, QR Rotation) display full patient demographics, triage badges, ward/bed tags, and consequential warning boxes.
+- **Universal Dialog Handlers**: Expose promise-based helpers (`window.hospitalConfirmDialog`, `window.adminConfirmDialog`) with Escape key and backdrop dismissal to provide consistent, premium UX throughout the platform.
+
 

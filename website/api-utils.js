@@ -157,6 +157,19 @@ window.authFetch = function(url, options = {}) {
   });
 };
 
+/**
+ * HTML sanitization helper to safely render user-provided text in templates
+ */
+window.escapeHtml = function(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 // Development Live Reloading Listener
 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
   (function() {
