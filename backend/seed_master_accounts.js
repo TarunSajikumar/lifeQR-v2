@@ -93,8 +93,20 @@ async function seed() {
     patient.password = hashedPassword;
     patient.verified = true;
     patient.verificationStatus = 'VERIFIED';
+    patient.address = patient.address || '42 Marine Drive, Mumbai, MH';
     await patient.save();
     console.log('✅ Verified patient@lifeqr.com');
+
+    let profile = await PatientProfile.findOne({ userId: patient._id });
+    if (profile) {
+      profile.lastLocation = {
+        lat: 18.9438,
+        lng: 72.8234,
+        updatedAt: new Date()
+      };
+      await profile.save();
+      console.log('✅ Set live emergency location for Rahul Sharma (18.9438, 72.8234)');
+    }
   }
 
   await mongoose.connection.close();

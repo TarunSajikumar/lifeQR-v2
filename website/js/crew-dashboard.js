@@ -5,6 +5,7 @@ let scannerInstance = null;
 let mapInstance = null;
 let mapMarker = null;
 let activeSosId = null;
+let activeSosLocation = null;
 
 function crewApiFetch(endpoint, options = {}) {
   const request = window.authFetch || fetch;
@@ -114,6 +115,9 @@ function showSosAlertPopup(data) {
   setTxt('sosPatAllergies', data.allergies || 'None');
   setTxt('sosPatMessage', data.message || '');
   setTxt('sosPatLoc', `${data.location.lat.toFixed(4)}, ${data.location.lng.toFixed(4)}`);
+  if (data.location && typeof data.location.lat === 'number') {
+    activeSosLocation = data.location;
+  }
 
   const input = document.getElementById('patientQrId');
   if (input) input.value = data.patientId;
@@ -176,10 +180,24 @@ async function logCrewTriageAccess(qrCodeId) {
   }
 }
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function showPatientSkeleton() {
+  const standby = document.getElementById('standbyDeck');
+  if (standby) standby.classList.add('hidden');
   const panel = document.getElementById('patientDetailsPanel');
   const skel = document.getElementById('patientSkeleton');
   const content = document.getElementById('patientContent');
+  const clearBtn = document.getElementById('clearTriageBtn');
+  if (clearBtn) clearBtn.classList.remove('hidden');
   if (panel) panel.classList.remove('hidden');
   if (skel) skel.classList.remove('hidden');
   if (content) content.classList.add('hidden');
@@ -188,19 +206,50 @@ function showPatientSkeleton() {
 function hidePatientView() {
   const panel = document.getElementById('patientDetailsPanel');
   if (panel) panel.classList.add('hidden');
+  const standby = document.getElementById('standbyDeck');
+  if (standby) standby.classList.remove('hidden');
+  const clearBtn = document.getElementById('clearTriageBtn');
+  if (clearBtn) clearBtn.classList.add('hidden');
+  activePatient = null;
+  activeSosLocation = null;
+  if (mapInstance) {
+    try { mapInstance.remove(); } catch (e) {}
+    mapInstance = null;
+    mapMarker = null;
+  }
 }
+
+window.resetTriageView = function() {
+  activePatient = null;
+  const qrInput = document.getElementById('patientQrId');
+  if (qrInput) qrInput.value = '';
+  hidePatientView();
+  showToast('Triage console reset to standby readiness', 'info');
+};
+
+window.quickSearchPatient = function(id) {
+  const qrInput = document.getElementById('patientQrId');
+  if (qrInput) qrInput.value = id;
+  searchPatient();
+};
 
 function renderPatientDetails() {
   const skel = document.getElementById('patientSkeleton');
   const content = document.getElementById('patientContent');
+  const standby = document.getElementById('standbyDeck');
+  if (standby) standby.classList.add('hidden');
   if (skel) skel.classList.add('hidden');
   if (content) content.classList.remove('hidden');
+  const clearBtn = document.getElementById('clearTriageBtn');
+  if (clearBtn) clearBtn.classList.remove('hidden');
 
   const name = activePatient.name || (activePatient.user && activePatient.user.name) || 'Emergency Patient';
   const qrId = activePatient.qrCodeId || (document.getElementById('patientQrId') ? document.getElementById('patientQrId').value.trim() : '') || 'N/A';
   const bloodGroup = activePatient.bloodGroup || (activePatient.profile && activePatient.profile.bloodGroup) || 'N/A';
   const gender = activePatient.gender || (activePatient.user && activePatient.user.gender) || 'N/A';
   const age = activePatient.age || (activePatient.profile && activePatient.profile.age) || 'N/A';
+  const phone = activePatient.phone || (activePatient.user && activePatient.user.phone) || 'N/A';
+  const address = activePatient.address || (activePatient.user && activePatient.user.address) || 'Registered Scene Location';
   const allergies = activePatient.allergies || (activePatient.profile && activePatient.profile.allergies) || 'None Reported';
   const medications = activePatient.medications || (activePatient.profile && activePatient.profile.medications) || 'None Reported';
   const healthIssues = activePatient.healthIssues || (activePatient.profile && activePatient.profile.healthIssues) || 'None Reported';
@@ -216,32 +265,76 @@ function renderPatientDetails() {
   setTxt('patBloodGroup', bloodGroup);
   setTxt('patGender', gender !== 'N/A' ? gender.toUpperCase() : 'N/A');
   setTxt('patAge', age !== 'N/A' ? `${age} Yrs` : 'N/A');
+  setTxt('patPhone', phone);
+  setTxt('patAddress', address);
   setTxt('patAllergies', allergies);
   setTxt('patMeds', medications);
   setTxt('patMedications', medications);
   setTxt('patIssues', healthIssues);
   setTxt('patHealthIssues', healthIssues);
 
+  // Phone Direct Call Button
+  const phoneCallBtn = document.getElementById('patPhoneCallBtn');
+  if (phoneCallBtn) {
+    if (phone && phone !== 'N/A') {
+      phoneCallBtn.href = `tel:${phone}`;
+      phoneCallBtn.classList.remove('hidden');
+    } else {
+      phoneCallBtn.classList.add('hidden');
+    }
+  }
+
+  // Allergy Flash Warning Banner
+  const allergyBanner = document.getElementById('patAllergyBanner');
+  if (allergyBanner) {
+    const allergiesStr = Array.isArray(allergies) ? allergies.join(', ') : String(allergies);
+    if (allergiesStr && allergiesStr.toLowerCase() !== 'none' && allergiesStr.toLowerCase() !== 'none reported' && allergiesStr.toLowerCase() !== 'none known') {
+      allergyBanner.classList.remove('hidden');
+      const textEl = document.getElementById('patAllergyBannerText');
+      if (textEl) textEl.textContent = `ALERT: High-risk patient allergies reported: ${allergiesStr}`;
+    } else {
+      allergyBanner.classList.add('hidden');
+    }
+  }
+
+  // PATIENT PHOTO RENDERING
+  const photoEl = document.getElementById('patPhoto');
+  if (photoEl) {
+    const pPhoto = activePatient.profilePhoto || (activePatient.user && activePatient.user.profilePhoto);
+    if (pPhoto && !pPhoto.startsWith('/uploads')) {
+      photoEl.src = pPhoto;
+    } else if (qrId && qrId !== 'N/A') {
+      photoEl.src = `/api/v1/emergency-access/${encodeURIComponent(qrId)}/photo`;
+    } else {
+      photoEl.src = '/LifeQR.png';
+    }
+    photoEl.onerror = function() {
+      this.onerror = null;
+      this.src = '/LifeQR.png';
+    };
+  }
+
+  // Emergency Contacts
   const contactsContainer = document.getElementById('patEmergencyContact') || document.getElementById('patContactsList');
   if (contactsContainer) {
     contactsContainer.innerHTML = '';
     const contacts = activePatient.emergencyContacts || (activePatient.profile && activePatient.profile.emergencyContacts) || [];
     if (contacts.length === 0) {
-      contactsContainer.innerHTML = `<p class="text-xs text-slate-400 italic">No emergency contacts registered.</p>`;
+      contactsContainer.innerHTML = `<p class="text-xs text-[#111111]/60 font-mono italic p-3 border-2 border-dashed border-[#111111]/20">No emergency contacts registered.</p>`;
     } else {
       contacts.forEach((c, idx) => {
         const div = document.createElement('div');
-        div.className = 'p-3 bg-[#111111] border-2 border-[#2e2e2e] flex items-center justify-between gap-3 mb-2';
+        div.className = 'p-3.5 bg-[#f9fafb] border-2 border-[#111111] flex items-center justify-between gap-3 shadow-[2px_2px_0px_#111111]';
         div.innerHTML = `
           <div>
             <div class="flex items-center gap-2">
-              <p class="text-xs font-bold text-white uppercase">${c.name || 'Emergency Contact'}</p>
-              <span class="px-1.5 py-0.5 bg-red-950/60 border border-[#E11D2E] text-[#E11D2E] text-[10px] font-mono font-bold uppercase">${c.relationship || `Priority ${idx + 1}`}</span>
+              <p class="text-xs font-black text-[#111111] uppercase tracking-tight">${escapeHtml(c.name || 'Emergency Contact')}</p>
+              <span class="px-1.5 py-0.5 bg-red-50 border border-[#E11D2E] text-[#E11D2E] text-[10px] font-mono font-bold uppercase">${escapeHtml(c.relationship || `Priority ${idx + 1}`)}</span>
             </div>
-            <p class="text-xs text-slate-300 font-mono mt-0.5">${c.phone || '-'}</p>
+            <p class="text-xs text-[#111111]/70 font-mono font-bold mt-1">${escapeHtml(c.phone || '-')}</p>
           </div>
           ${c.phone ? `
-          <a href="tel:${c.phone}" class="px-3.5 py-1.5 bg-[#E11D2E] hover:bg-white hover:text-[#111111] text-white text-xs font-mono font-bold uppercase tracking-wider transition flex items-center gap-1.5 shadow-[2px_2px_0px_#000000]">
+          <a href="tel:${c.phone}" class="btn-primary px-3.5 py-1.5 text-xs font-mono font-bold uppercase tracking-wider transition flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
             <span class="material-symbols-outlined text-xs">call</span> Call
           </a>` : ''}
         `;
@@ -258,21 +351,21 @@ function renderPatientDetails() {
   if (reportsList) {
     reportsList.innerHTML = '';
     if (reports.length === 0) {
-      reportsList.innerHTML = `<p class="text-xs text-slate-400 italic p-3 bg-[#111111] border-2 border-[#2e2e2e]">No diagnostic reports or uploaded medical files on record.</p>`;
+      reportsList.innerHTML = `<p class="text-xs text-[#111111]/60 font-mono italic p-3 border-2 border-dashed border-[#111111]/20">No diagnostic reports or uploaded medical files on record.</p>`;
     } else {
       reports.forEach(r => {
         const div = document.createElement('div');
-        div.className = 'p-3 bg-[#111111] border-2 border-[#2e2e2e] flex items-center justify-between gap-3';
+        div.className = 'p-3.5 bg-[#f9fafb] border-2 border-[#111111] flex items-center justify-between gap-3 shadow-[2px_2px_0px_#111111]';
         div.innerHTML = `
           <div class="truncate mr-2">
             <div class="flex items-center gap-2 mb-0.5">
-              <span class="px-1.5 py-0.5 bg-red-950/60 border border-[#E11D2E] text-[#E11D2E] text-[9px] font-mono font-bold uppercase">${r.category || 'Clinical'}</span>
-              <span class="text-[10px] text-slate-400 font-mono">${r.uploadedAt ? new Date(r.uploadedAt).toLocaleDateString() : ''}</span>
+              <span class="px-1.5 py-0.5 bg-red-50 border border-[#E11D2E] text-[#E11D2E] text-[9px] font-mono font-bold uppercase">${escapeHtml(r.category || 'Clinical')}</span>
+              <span class="text-[10px] text-[#111111]/60 font-mono">${r.uploadedAt ? new Date(r.uploadedAt).toLocaleDateString() : ''}</span>
             </div>
-            <p class="text-xs font-bold text-white truncate">${r.originalName || r.filename || r.title || 'Medical File'}</p>
+            <p class="text-xs font-black text-[#111111] uppercase truncate">${escapeHtml(r.originalName || r.filename || r.title || 'Medical File')}</p>
           </div>
           ${r.url || r.fileUrl ? `
-            <a href="${r.url || r.fileUrl}" target="_blank" class="px-3 py-1 bg-white hover:bg-[#E11D2E] hover:text-white text-[#111111] text-xs font-mono font-bold uppercase tracking-wider transition flex items-center gap-1 shadow-[2px_2px_0px_#000000]">
+            <a href="${r.url || r.fileUrl}" target="_blank" class="btn-secondary px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider transition flex items-center gap-1 shadow-[2px_2px_0px_#111111]">
               <span class="material-symbols-outlined text-xs">visibility</span> View
             </a>
           ` : ''}
@@ -288,34 +381,159 @@ function renderPatientDetails() {
   if (historyList) {
     historyList.innerHTML = '';
     if (history.length === 0) {
-      historyList.innerHTML = `<p class="text-xs text-slate-400 italic p-3 bg-[#111111] border-2 border-[#2e2e2e]">No recorded clinical history entries.</p>`;
+      historyList.innerHTML = `<p class="text-xs text-[#111111]/60 font-mono italic p-3 border-2 border-dashed border-[#111111]/20">No recorded clinical history entries.</p>`;
     } else {
       history.forEach(h => {
         const div = document.createElement('div');
-        div.className = 'p-3 bg-[#111111] border-l-4 border-l-[#E11D2E] border-2 border-[#2e2e2e] space-y-1';
+        div.className = 'p-3.5 bg-[#f9fafb] border-l-4 border-l-[#E11D2E] border-2 border-[#111111] space-y-1 shadow-[2px_2px_0px_#111111]';
         div.innerHTML = `
-          <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
-            <span class="font-bold uppercase text-[#E11D2E]">${h.type || 'Event'}</span>
+          <div class="flex items-center justify-between text-[10px] font-mono text-[#111111]/60">
+            <span class="font-bold uppercase text-[#E11D2E]">${escapeHtml(h.type || 'Event')}</span>
             <span>${h.timestamp ? new Date(h.timestamp).toLocaleString() : ''}</span>
           </div>
-          <p class="text-xs font-bold text-white">${h.title || 'Checkpoint'}</p>
-          ${h.description ? `<p class="text-xs text-slate-300 font-sans">${h.description}</p>` : ''}
+          <p class="text-xs font-black text-[#111111] uppercase">${escapeHtml(h.title || 'Checkpoint')}</p>
+          ${h.description ? `<p class="text-xs text-[#111111]/80 font-sans mt-0.5">${escapeHtml(h.description)}</p>` : ''}
         `;
         historyList.appendChild(div);
       });
     }
   }
 
-  const loc = activePatient.lastLocation || activePatient.location;
-  if (loc && loc.lat && loc.lng) {
-    renderEmergencyMap(loc.lat, loc.lng);
+  const loc = (activePatient.lastLocation && typeof activePatient.lastLocation.lat === 'number' && typeof activePatient.lastLocation.lng === 'number' && (activePatient.lastLocation.lat !== 0 || activePatient.lastLocation.lng !== 0))
+    ? activePatient.lastLocation
+    : (activePatient.location && typeof activePatient.location.lat === 'number' && typeof activePatient.location.lng === 'number' && (activePatient.location.lat !== 0 || activePatient.location.lng !== 0))
+      ? activePatient.location
+      : (activeSosLocation && typeof activeSosLocation.lat === 'number' && typeof activeSosLocation.lng === 'number' && (activeSosLocation.lat !== 0 || activeSosLocation.lng !== 0))
+        ? activeSosLocation
+        : null;
+
+  if (loc) {
+    renderEmergencyMap(loc.lat, loc.lng, { isLive: true, label: 'Patient Live Satellite Fix' });
     loadNearbyHospitals(loc.lat, loc.lng);
-    const gmapsBtn = document.getElementById('gmapsNavBtn');
-    if (gmapsBtn) {
-      gmapsBtn.href = `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lng}`;
+  } else if (address && address.trim() && address !== 'Registered Scene Location' && address !== 'N/A') {
+    const addrCoords = resolveCoordinatesFromAddress(address);
+    if (addrCoords) {
+      renderEmergencyMap(addrCoords.lat, addrCoords.lng, { isLive: false, label: addrCoords.label || ('Scene Baseline: ' + address) });
+      loadNearbyHospitals(addrCoords.lat, addrCoords.lng);
+    } else {
+      renderMapStandbyState(name, address);
     }
+  } else {
+    renderMapStandbyState(name, '');
   }
 }
+
+function resolveCoordinatesFromAddress(addr) {
+  if (!addr || typeof addr !== 'string') return null;
+  const s = addr.toLowerCase();
+  if (s.includes('marine drive') || s.includes('mumbai') || s.includes('bandra') || s.includes('vashi') || s.includes('bombay')) {
+    return { lat: 18.9438, lng: 72.8234, label: 'Mumbai Marine Drive Corridor' };
+  }
+  if (s.includes('delhi') || s.includes('noida') || s.includes('gurgaon') || s.includes('connaught')) {
+    return { lat: 28.6139, lng: 77.2090, label: 'NCR Medical Corridor' };
+  }
+  if (s.includes('bangalore') || s.includes('bengaluru') || s.includes('koramangala') || s.includes('indiranagar')) {
+    return { lat: 12.9716, lng: 77.5946, label: 'Bengaluru Trauma Corridor' };
+  }
+  if (s.includes('nagpur') || s.includes('nandanvan')) {
+    return { lat: 21.1458, lng: 79.0882, label: 'Nagpur Central Scene' };
+  }
+  if (s.includes('pune') || s.includes('kothrud') || s.includes('viman nagar')) {
+    return { lat: 18.5204, lng: 73.8567, label: 'Pune Trauma Corridor' };
+  }
+  if (s.includes('hyderabad') || s.includes('secunderabad')) {
+    return { lat: 17.3850, lng: 78.4867, label: 'Hyderabad Trauma Corridor' };
+  }
+  if (s.includes('chennai') || s.includes('madras')) {
+    return { lat: 13.0827, lng: 80.2707, label: 'Chennai Trauma Corridor' };
+  }
+  if (s.includes('evergreen')) {
+    return { lat: 37.7749, lng: -122.4194, label: 'Evergreen Base Corridor' };
+  }
+  return null;
+}
+
+function renderMapStandbyState(patientName, address) {
+  const mapEl = document.getElementById('leafletMapContainer') || document.getElementById('emergencyMap');
+  if (!mapEl) return;
+
+  if (mapInstance) {
+    try { mapInstance.remove(); } catch (e) {}
+    mapInstance = null;
+    mapMarker = null;
+  }
+
+  const statusBadge = document.getElementById('mapStatusBadge');
+  if (statusBadge) {
+    statusBadge.className = 'px-2 py-0.5 border border-[#E11D2E] bg-red-50 text-[#E11D2E] text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1';
+    statusBadge.innerHTML = '<span class="live-dot"></span> AWAITING GPS FIX';
+  }
+
+  const subtext = document.getElementById('mapTelemetrySubtext');
+  if (subtext) {
+    subtext.textContent = 'Live satellite GPS coordinates not yet broadcasted by patient';
+  }
+
+  const gmapsBtn = document.getElementById('gmapsNavBtn');
+  if (gmapsBtn) {
+    if (address && address.trim() && address !== 'Registered Scene Location' && address !== 'N/A') {
+      gmapsBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+      gmapsBtn.classList.remove('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
+      gmapsBtn.title = 'Open registered emergency address in Google Maps';
+    } else {
+      gmapsBtn.href = 'javascript:void(0)';
+      gmapsBtn.classList.add('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
+      gmapsBtn.title = 'Awaiting live GPS coordinates';
+    }
+  }
+
+  mapEl.innerHTML = `
+    <div class="w-full h-full bg-[#f9fafb] flex flex-col items-center justify-center p-6 text-center space-y-3.5 select-none">
+      <div class="w-14 h-14 border-2 border-[#111111] bg-white flex items-center justify-center shadow-[4px_4px_0px_#111111]">
+        <span class="material-symbols-outlined text-3xl text-[#E11D2E] animate-pulse">satellite_alt</span>
+      </div>
+      <div class="max-w-md space-y-1">
+        <h4 class="font-black text-sm uppercase text-[#111111]">Awaiting Live Patient GPS Beacon</h4>
+        <p class="text-xs font-sans text-[#111111]/70">
+          ${escapeHtml(patientName || 'This patient')} has not yet transmitted live satellite coordinates via an active SOS alert or mobile location share.
+        </p>
+        ${address && address !== 'Registered Scene Location' && address !== 'N/A' ? `<p class="text-[11px] font-mono font-bold text-[#111111] mt-1.5 bg-white border border-[#111111] p-1.5 shadow-[2px_2px_0px_#111111]">Registered Address: ${escapeHtml(address)}</p>` : ''}
+      </div>
+      <div class="flex items-center gap-2 pt-1 flex-wrap justify-center">
+        <button onclick="window.simulatePatientLocation()" class="btn-primary text-xs px-3.5 py-2 uppercase font-mono font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#111111]">
+          <span class="material-symbols-outlined text-sm">my_location</span>
+          <span>Simulate Scene Location (EMT Drill)</span>
+        </button>
+        ${address && address !== 'Registered Scene Location' && address !== 'N/A' ? `
+        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}" target="_blank" class="btn-secondary text-xs px-3.5 py-2 uppercase font-mono font-bold flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">navigation</span>
+          <span>Open Scene Address</span>
+        </a>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+window.simulatePatientLocation = function() {
+  if (!activePatient) {
+    showToast('Please search or load a patient first.', 'warning');
+    return;
+  }
+  const address = activePatient.address || (activePatient.user && activePatient.user.address) || '';
+  const resolved = resolveCoordinatesFromAddress(address);
+  const lat = resolved ? resolved.lat : 18.9438;
+  const lng = resolved ? resolved.lng : 72.8234;
+
+  activePatient.lastLocation = {
+    lat,
+    lng,
+    updatedAt: new Date().toISOString()
+  };
+
+  showToast('🚨 Simulated incident scene coordinates deployed for EMT drill!', 'info');
+  renderEmergencyMap(lat, lng, { isLive: true, isSimulated: true, label: 'Simulated Scene Fix (EMT Drill)' });
+  loadNearbyHospitals(lat, lng);
+};
 
 async function loadNearbyHospitals(lat, lng) {
   const wrapper = document.getElementById('hospitalWrapper');
@@ -386,7 +604,7 @@ async function loadNearbyHospitals(lat, lng) {
   }
 }
 
-function renderEmergencyMap(lat, lng) {
+function renderEmergencyMap(lat, lng, options = {}) {
   const container = document.getElementById('mapWrapper') || document.getElementById('emergencyMapContainer');
   if (container) container.classList.remove('hidden');
 
@@ -395,35 +613,113 @@ function renderEmergencyMap(lat, lng) {
 
   if (typeof L === 'undefined') {
     console.warn('Leaflet library not loaded.');
+    mapEl.innerHTML = `
+      <div class="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#f9fafb]">
+        <p class="font-black text-sm uppercase text-[#111111]">Map Engine Loading...</p>
+        <p class="text-xs font-mono text-[#111111]/70 mt-1">Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}</p>
+        <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" class="btn-primary mt-3 text-xs px-3.5 py-1.5 uppercase font-mono font-bold">Open In Google Maps</a>
+      </div>
+    `;
     return;
   }
 
-  if (!mapInstance) {
-    mapInstance = L.map(mapEl).setView([lat, lng], 14);
+  // Update Status Badge
+  const statusBadge = document.getElementById('mapStatusBadge');
+  if (statusBadge) {
+    if (options.isLive) {
+      statusBadge.className = 'px-2 py-0.5 border border-green-700 bg-green-100 text-green-900 text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1 shadow-[2px_2px_0px_#111111]';
+      statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse"></span> ${options.isSimulated ? 'EMT SIMULATED FIX' : 'LIVE SATELLITE FIX'}`;
+    } else {
+      statusBadge.className = 'px-2 py-0.5 border border-[#111111] bg-amber-100 text-amber-900 text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1 shadow-[2px_2px_0px_#111111]';
+      statusBadge.innerHTML = '<span class="material-symbols-outlined text-xs">home_pin</span> SCENE BASELINE';
+    }
+  }
+
+  // Update Telemetry Subtext
+  const subtext = document.getElementById('mapTelemetrySubtext');
+  if (subtext) {
+    subtext.textContent = `Fix: ${lat.toFixed(5)}, ${lng.toFixed(5)} • ${options.label || 'Patient Live Distress Location'}`;
+  }
+
+  // Update Google Maps button
+  const gmapsBtn = document.getElementById('gmapsNavBtn');
+  if (gmapsBtn) {
+    gmapsBtn.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    gmapsBtn.classList.remove('opacity-50', 'pointer-events-none', 'cursor-not-allowed');
+    gmapsBtn.title = 'Open turn-by-turn navigation in Google Maps';
+  }
+
+  // Safe re-initialization of Leaflet
+  if (mapInstance) {
+    try {
+      mapInstance.remove();
+    } catch (e) {}
+    mapInstance = null;
+    mapMarker = null;
+  }
+  mapEl.innerHTML = '';
+
+  try {
+    mapInstance = L.map(mapEl, {
+      zoomControl: true,
+      scrollWheelZoom: false
+    }).setView([lat, lng], 14);
+
+    // High-clarity free OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '© OpenStreetMap'
+      attribution: '© OpenStreetMap contributors'
     }).addTo(mapInstance);
-  } else {
-    mapInstance.setView([lat, lng], 14);
-  }
 
-  if (mapMarker) {
-    mapMarker.setLatLng([lat, lng]);
-  } else {
-    mapMarker = L.marker([lat, lng]).addTo(mapInstance)
-      .bindPopup('<b>Patient Live Location</b>')
+    // High-impact Swiss Editorial Pulsing Emergency Beacon Marker
+    const emergencyIcon = L.divIcon({
+      className: 'custom-emergency-beacon',
+      html: `
+        <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+          <span style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(225, 29, 46, 0.4); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+          <div style="position: relative; width: 26px; height: 26px; background: #E11D2E; border: 2px solid #111111; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 2px 2px 0px #111111;">
+            <span class="material-symbols-outlined" style="color: white; font-size: 15px; line-height: 1;">emergency</span>
+          </div>
+        </div>
+      `,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+      popupAnchor: [0, -18]
+    });
+
+    const patName = activePatient ? (activePatient.name || 'Emergency Patient') : 'Patient';
+    mapMarker = L.marker([lat, lng], { icon: emergencyIcon }).addTo(mapInstance)
+      .bindPopup(`
+        <div style="font-family: Archivo, sans-serif; padding: 4px 2px; min-width: 150px;">
+          <span style="display: inline-block; font-size: 9px; font-family: monospace; font-weight: bold; background: #E11D2E; color: white; padding: 1px 5px; border: 1px solid #111111; text-transform: uppercase;">
+            ${options.isLive ? 'Live Beacon' : 'Scene Address'}
+          </span>
+          <p style="font-weight: 900; font-size: 13px; text-transform: uppercase; margin-top: 5px; color: #111111; line-height: 1.2;">
+            ${escapeHtml(patName)}
+          </p>
+          <p style="font-size: 10px; font-family: monospace; color: #555; margin-top: 3px;">
+            ${lat.toFixed(5)}, ${lng.toFixed(5)}
+          </p>
+          <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" style="display: inline-block; margin-top: 8px; font-size: 10px; font-weight: bold; color: #E11D2E; text-decoration: underline; text-transform: uppercase; font-family: monospace;">
+            Open Google Maps &rarr;
+          </a>
+        </div>
+      `)
       .openPopup();
-  }
 
-  const gmapsBtn = document.getElementById('gmapsNavBtn');
-  if (gmapsBtn && lat && lng) {
-    gmapsBtn.href = `https://maps.google.com/?q=${lat},${lng}`;
+    setTimeout(() => {
+      if (mapInstance) mapInstance.invalidateSize();
+    }, 250);
+  } catch (err) {
+    console.error('Failed to initialize Leaflet map:', err);
+    mapEl.innerHTML = `
+      <div class="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#f9fafb]">
+        <p class="font-black text-sm uppercase text-[#111111]">Map Display Error</p>
+        <p class="text-xs font-mono text-[#111111]/70 mt-1">${escapeHtml(err.message)}</p>
+        <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" class="btn-primary mt-3 text-xs px-3.5 py-1.5 uppercase font-mono font-bold">Open In Google Maps</a>
+      </div>
+    `;
   }
-
-  setTimeout(() => {
-    if (mapInstance) mapInstance.invalidateSize();
-  }, 200);
 }
 
 function setupCrewListeners() {
@@ -505,68 +801,6 @@ window.startQRScanner = function() {
 window.stopQRScanner = function() {
   if (scannerInstance) {
     scannerInstance.stop();
-  }
-};
-
-window.openERStreamModal = function() {
-  const modal = document.getElementById('erStreamModal');
-  if (!activePatient) {
-    showToast('Please search or scan a Patient QR Code first before streaming vitals to ER', 'warning');
-    return;
-  }
-  if (modal) modal.classList.remove('hidden');
-};
-
-window.closeERStreamModal = function() {
-  const modal = document.getElementById('erStreamModal');
-  if (modal) modal.classList.add('hidden');
-};
-
-window.sendERLiveStream = async function() {
-  if (!activePatient) {
-    showToast('No active patient selected for ER vitals stream', 'error');
-    return;
-  }
-
-  const eta = parseInt(document.getElementById('erEtaMinutes').value) || 10;
-  const hr = parseInt(document.getElementById('erPulse').value) || 100;
-  const spo2 = parseInt(document.getElementById('erSpO2').value) || 98;
-  const bpStr = document.getElementById('erBp').value || '120/80';
-  const triageLevel = document.getElementById('erTriageLevel').value || 'CRITICAL';
-  const complaint = document.getElementById('erComplaint').value || 'Acute Distress';
-
-  const bpParts = bpStr.split('/');
-  const bpSys = parseInt(bpParts[0]) || 120;
-  const bpDia = parseInt(bpParts[1]) || 80;
-
-  const qrId = activePatient.qrCodeId || (document.getElementById('patientQrId') ? document.getElementById('patientQrId').value : '');
-
-  try {
-    const res = await crewApiFetch('/er/stream-vitals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        qrCodeId: qrId,
-        etaMinutes: eta,
-        triageLevel,
-        vitals: {
-          heartRate: hr,
-          bpSystolic: bpSys,
-          bpDia,
-          spO2: spo2,
-          gcs: 15
-        },
-        chiefComplaint: complaint
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-
-    showToast('📡 Live in-transit vitals & ETA streamed to Hospital ER Desk!', 'success');
-    closeERStreamModal();
-  } catch (err) {
-    showToast(err.message, 'error');
   }
 };
 

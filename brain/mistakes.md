@@ -153,3 +153,38 @@
   4. Synchronized `app/` and `website/` via `scripts/sync-frontend.js`.
 - **Status**: Resolved.
 
+## Issue 023: CrewAmbulance_dashboard.html Patient Image Missing & Unbalanced Standby Layout
+- **Symptom**: In [CrewAmbulance_dashboard.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/CrewAmbulance_dashboard.html), upon looking up a patient, the patient's profile photo was completely missing from the triage HUD. When no patient was searched, the right 8 columns were completely hidden, leaving an awkward blank screen.
+- **Root Cause**:
+  1. [CrewAmbulance_dashboard.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/CrewAmbulance_dashboard.html) had no `<img>` element for patient photos in the DOM.
+  2. In `crew-dashboard.js`, `renderPatientDetails()` did not retrieve or render any photo for the patient.
+  3. The layout was structured with a narrow 4-column search panel on the left and a hidden 8-column right panel, leaving the page half-empty on initial load.
+- **Fix**:
+  1. Redesigned [CrewAmbulance_dashboard.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/CrewAmbulance_dashboard.html) into a unified tactical workstation featuring a prominent top Triage & Scanner Control Bar, an informative Standby Deck with live GPS telemetry, radar map, and protocol checklist when idle, and a full-width Patient Identity Hero with a high-contrast framed `#patPhoto` (`w-24 h-24 sm:w-28 sm:h-28`) with verified badge overlay and error fallback.
+  2. Added secure photo endpoint `GET /api/v1/patient/profile/:qrCodeId/photo` in `backend/routes/v1/patientProfile.js` alongside existing `/api/v1/emergency-access/:token/photo`.
+  3. Updated `crew-dashboard.js` with responsive light/dark Swiss Editorial card styles, allergy flash alerts, phone quick-call button, and clear reset/standby workflow.
+  4. Synchronized all updates between `app/` and `website/` via `scripts/sync-frontend.js`.
+- **Status**: Resolved.
+
+## Issue 024: Paramedic Crew Dashboard Blank Map & Unhandled Missing GPS Location
+- **Symptom**: In [CrewAmbulance_dashboard.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/CrewAmbulance_dashboard.html), upon looking up a patient, the "PATIENT LIVE EMERGENCY GPS LOCATION" container rendered as a completely blank white rectangle with a black border, and the "GOOGLE MAPS" navigation button was dead/unlinked.
+- **Root Cause**:
+  1. **Unpersisted SOS Location**: In [backend/routes/v1/sos.js](file:///c:/Users/tarun/Downloads/lifeqr-complete/backend/routes/v1/sos.js), `POST /sos/sos` unshifted alerts into `profile.sosAlerts` but omitted updating `profile.lastLocation`, leaving patient profiles without top-level coordinates.
+  2. **Missing Address Field in API**: In [backend/routes/v1/patientProfile.js](file:///c:/Users/tarun/Downloads/lifeqr-complete/backend/routes/v1/patientProfile.js), `GET /profile/:qrCodeId` omitted `address` and lacked fallback to recent SOS alert locations.
+  3. **Silent Bypass in JavaScript**: In `crew-dashboard.js`, `renderEmergencyMap()` was only invoked if `loc && loc.lat && loc.lng` existed. When absent, the map container remained visible in the DOM with empty HTML and `gmapsNavBtn` left with `href=""`.
+  4. **Stale Test Accounts**: Test accounts (including master patient Rahul Sharma `patient@lifeqr.com`) had empty `lastLocation: {}`.
+- **Fix**:
+  1. Updated `backend/routes/v1/sos.js` to automatically persist `profile.lastLocation` whenever valid `lat`/`lng` coordinates are broadcasted.
+  2. Updated `backend/routes/v1/patientProfile.js` to return `address` and fallback to the latest SOS alert location if `lastLocation` is unset.
+  3. Re-seeded `patient@lifeqr.com` in `backend/seed_master_accounts.js` with verified emergency coordinates for Marine Drive, Mumbai (`18.9438, 72.8234`).
+  4. Added `resolveCoordinatesFromAddress()` fallback to map registered scene locations (Mumbai, Delhi/NCR, Bengaluru, Pune, Nagpur, Hyderabad, Chennai).
+  5. Implemented `renderMapStandbyState()` so that patients without live GPS render a Swiss Editorial tactical radar HUD (`AWAITING GPS FIX`), an explanation, and a "Simulate Scene Location (EMT Drill)" button that lets responders immediately drop scene coordinates and view nearby trauma centers.
+  6. Enhanced `renderEmergencyMap()` with reliable OpenStreetMap tiles, custom pulsing red emergency beacon marker (`custom-emergency-beacon`), dynamic Google Maps route link, and status badge (`LIVE SATELLITE FIX` / `SCENE BASELINE` / `EMT SIMULATED FIX`).
+  7. Synchronized all changes between `app/` and `website/` via `scripts/sync-frontend.js`.
+- **Status**: Resolved.
+
+## Issue 025: Removed Unrealistic Hospital ER Pre-Arrival Uplink Card
+- **Symptom**: In [CrewAmbulance_dashboard.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/CrewAmbulance_dashboard.html), an impractical "Hospital ER Pre-Arrival Uplink" card and "Stream to ER" button were present claiming to stream live vitals (HR, SpO2, BP) and ETA directly to hospital trauma bays.
+- **Root Cause**: The feature was an unrealistic placeholder mockup requiring non-existent specialized ambulance hardware telemetry connections.
+- **Fix**: Removed the "Hospital ER Pre-Arrival Uplink" card and "Stream to ER" button from both `app/CrewAmbulance_dashboard.html` and `website/CrewAmbulance_dashboard.html`. Cleaned up unused stream functions in `crew-dashboard.js`. Updated standby card to "Trauma Center Routing" and synchronized frontend directories via `scripts/sync-frontend.js`.
+- **Status**: Resolved.

@@ -106,6 +106,33 @@ router.get('/photo', authenticateToken, async (req, res) => {
   }
 });
 
+// Get patient profile photo by qrCodeId for responders
+router.get('/profile/:qrCodeId/photo', async (req, res) => {
+  try {
+    const { qrCodeId } = req.params;
+    const profile = await resolvePatientProfile(qrCodeId, 'userId');
+    if (!profile || !profile.userId) {
+      return res.status(404).json({ error: 'Patient profile not found' });
+    }
+
+    const photoUrl = profile.userId.profilePhoto;
+    if (!photoUrl) {
+      return res.status(404).json({ error: 'No profile photo registered' });
+    }
+
+    const filename = path.basename(photoUrl);
+    const filePath = path.join(photosDir, filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Profile photo file not found' });
+    }
+
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('Error serving patient triage photo:', error);
+    res.status(500).json({ error: 'Failed to serve photo' });
+  }
+});
+
 // Get emergency profile access by qrCodeId (Used by rescuers - NO auth required)
 router.get('/profile/:qrCodeId', async (req, res) => {
   try {
@@ -145,6 +172,15 @@ router.get('/profile/:qrCodeId', async (req, res) => {
       }).catch(err => console.error('Failed to dispatch scan alert email:', err));
     }
 
+    // Resolve most recent location (from lastLocation or latest SOS alert)
+    const resolvedLocation = (patientProfile.lastLocation && typeof patientProfile.lastLocation.lat === 'number' && typeof patientProfile.lastLocation.lng === 'number' && (patientProfile.lastLocation.lat !== 0 || patientProfile.lastLocation.lng !== 0))
+      ? patientProfile.lastLocation
+      : (patientProfile.sosAlerts && patientProfile.sosAlerts.length > 0 && patientProfile.sosAlerts[0].location && typeof patientProfile.sosAlerts[0].location.lat === 'number')
+        ? { lat: patientProfile.sosAlerts[0].location.lat, lng: patientProfile.sosAlerts[0].location.lng, updatedAt: patientProfile.sosAlerts[0].createdAt }
+        : null;
+
+    const patientAddress = patient.address || patientProfile.address || '';
+
     // If profile is set to private, restrict sensitive data fields
     if (!patientProfile.publicProfile) {
       return res.json({
@@ -156,7 +192,8 @@ router.get('/profile/:qrCodeId', async (req, res) => {
         emergencyContacts: patientProfile.emergencyContacts,
         phone: patient.phone,
         profilePhoto: patient.profilePhoto,
-        lastLocation: patientProfile.lastLocation,
+        address: patientAddress,
+        lastLocation: resolvedLocation,
         privateProfile: true,
         message: 'This profile is set to private. Only emergency details and contacts are visible.'
       });
@@ -175,7 +212,8 @@ router.get('/profile/:qrCodeId', async (req, res) => {
       emergencyContacts: patientProfile.emergencyContacts,
       phone: patient.phone,
       profilePhoto: patient.profilePhoto,
-      lastLocation: patientProfile.lastLocation,
+      address: patientAddress,
+      lastLocation: resolvedLocation,
       reports: patientProfile.reports || [],
       medicalHistory: patientProfile.medicalHistory || [],
       privateProfile: false

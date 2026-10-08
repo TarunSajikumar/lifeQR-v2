@@ -103,6 +103,14 @@ router.post('/add/:qrCodeId?', authenticateToken, requireVerified, async (req, r
       if (!isAuthorized) {
         return res.status(403).json({ error: 'You are not authorized by this patient to add treatment records' });
       }
+    } else if (req.user.role === 'crew' || req.user.role === 'admin') {
+      if (!queryQrCodeId) {
+        return res.status(400).json({ error: 'Patient QR Code ID is required for responders' });
+      }
+      profile = await resolvePatientProfile(queryQrCodeId);
+      if (!profile) {
+        return res.status(404).json({ error: 'Patient profile not found' });
+      }
     } else {
       return res.status(403).json({ error: 'Access denied' });
     }

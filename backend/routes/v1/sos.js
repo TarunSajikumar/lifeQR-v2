@@ -37,6 +37,13 @@ router.post('/sos', authenticateToken, async (req, res) => {
     };
 
     profile.sosAlerts.unshift(sosAlert);
+    if (typeof lat === 'number' && typeof lng === 'number' && (lat !== 0 || lng !== 0)) {
+      profile.lastLocation = {
+        lat,
+        lng,
+        updatedAt: new Date()
+      };
+    }
     profile.activities.unshift({
       type: 'SOS Triggered',
       title: 'SOS Emergency Broadcasted',
