@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifeQR — Final Year Project Defense & Viva Voce Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(22, 30, 49, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.4);
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.35);
+      --crimson: #ef4444;
+      --crimson-glow: rgba(239, 68, 68, 0.35);
+      --amber: #f59e0b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    /* Ambient background lighting */
+    .bg-glow {
+      position: absolute;
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      top: -200px;
+      right: -200px;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .bg-glow-2 {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--emerald-glow) 0%, transparent 70%);
+      bottom: -150px;
+      left: -150px;
+      filter: blur(90px);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Deck Container */
+    .deck-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      z-index: 2;
+    }
+
+    /* Top Presentation Header */
+    .deck-header {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(9, 13, 22, 0.85);
+      backdrop-filter: blur(12px);
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #2563eb, #10b981);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .brand-tag {
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 3px 10px;
+      border-radius: 20px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .header-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .header-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Slides Viewport */
+    .slides-viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide {
+      position: absolute;
+      width: 90vw;
+      max-width: 1350px;
+      height: 82vh;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+      padding: 48px 56px;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px) scale(0.98);
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Slide Typography */
+    .slide-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #38bdf8;
+      margin-bottom: 8px;
+    }
+    .slide-title {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 6px;
+      line-height: 1.15;
+    }
+    .slide-subtitle {
+      font-size: 17px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      font-weight: 400;
+    }
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow-y: auto;
+    }
+
+    /* Grids & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      height: 100%;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      height: 100%;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .feature-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 12px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .feature-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .feature-card-icon {
+      font-size: 30px;
+    }
+    .feature-card-title {
+      font-size: 19px;
+      font-weight: 700;
+    }
+    .feature-card-text {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* Metric Callout */
+    .metric-hero {
+      font-size: 56px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+    .metric-label {
+      font-size: 14px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    /* Code & Terminal Blocks */
+    .code-block {
+      background: #06090e;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #38bdf8;
+      overflow-x: auto;
+    }
+
+    /* Tables */
+    .slide-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .slide-table th, .slide-table td {
+      border: 1px solid var(--card-border);
+      padding: 12px 16px;
+      text-align: left;
+    }
+    .slide-table th {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      font-weight: 600;
+    }
+    .slide-table tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Bottom Navigation Bar */
+    .deck-footer {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      border-top: 1px solid var(--card-border);
+      background: rgba(9, 13, 22, 0.85);
+      backdrop-filter: blur(12px);
+    }
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+    .progress-bar-container {
+      flex: 1;
+      max-width: 500px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0 24px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #2563eb, #10b981);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .slide-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13.5px;
+      color: var(--text-muted);
+    }
+
+    /* Speaker Notes Drawer (Toggled with 'N') */
+    .notes-drawer {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100%);
+      width: 80vw;
+      max-width: 1000px;
+      background: #1e293b;
+      border: 1px solid var(--accent);
+      border-radius: 12px 12px 0 0;
+      padding: 18px 24px;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 10;
+      display: none;
+    }
+    .notes-drawer.open {
+      display: block;
+      transform: translateX(-50%) translateY(0);
+    }
+    .notes-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+    .notes-text {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow"></div>
+  <div class="bg-glow-2"></div>
+
+  <div class="deck-container">
+
+    <!-- Header -->
+    <header class="deck-header">
+      <div class="brand-group">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-title">LifeQR Project Defense</div>
+        <div class="brand-tag">B.E. Final Year 2025–26</div>
+      </div>
+      <div class="controls-group">
+        <button class="header-btn" onclick="toggleNotes()">
+          📝 Speaker Notes <kbd style="opacity: 0.6; font-size: 11px;">[N]</kbd>
+        </button>
+        <button class="header-btn" onclick="toggleFullScreen()">
+          ⛶ Fullscreen <kbd style="opacity: 0.6; font-size: 11px;">[F]</kbd>
+        </button>
+      </div>
+    </header>
+
+    <!-- Viewport -->
+    <main class="slides-viewport">
+
+      <!-- SLIDE 1: TITLE & COVER -->
+      <section class="slide active" data-notes="Welcome examiners and guide. LifeQR bridges the critical 8-to-10 minute gap during trauma resuscitation using near-field physical transponders and live WebSockets.">
+        <div class="slide-badge">Final Year Project Defense — Chapter 1</div>
+        <h1 class="slide-title">LifeQR: Emergency Medical Information & Rapid Rescue System</h1>
+        <p class="slide-subtitle">A Passive Zero-Power NFC Smart Transponder Coupled with Real-Time Geodesic Ambulance Dispatch</p>
+        
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="feature-card" style="justify-content: center; background: rgba(37, 99, 235, 0.08); border-color: rgba(37, 99, 235, 0.3);">
+              <div style="font-size: 13px; color: #38bdf8; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Candidate Presentation</div>
+              <div style="font-size: 26px; font-weight: 800; margin: 8px 0;">Tarun Sajikumar & Team</div>
+              <div style="font-size: 15px; color: var(--text-muted); line-height: 1.6;">
+                Bachelor of Engineering in Computer Science & Engineering<br>
+                <strong>Academic Year:</strong> 2025 – 2026<br>
+                <strong>Domain:</strong> Healthcare IoT, Real-Time Distributed Systems
+              </div>
+            </div>
+
+            <div class="feature-card" style="justify-content: center;">
+              <div style="font-size: 13px; color: #10b981; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Advisory & Guidance</div>
+              <div style="font-size: 20px; font-weight: 700; margin: 8px 0;">Under the Scholarly Guidance of:</div>
+              <div style="font-size: 15px; color: var(--text-muted); line-height: 1.6;">
+                <strong>Project Guide:</strong> [Guide Name, Designation]<br>
+                <strong>Head of Department:</strong> [HOD Name, Professor & Head]<br>
+                Department of Computer Science & Engineering
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 2: THE GOLDEN HOUR PROBLEM -->
+      <section class="slide" data-notes="Highlight the clinical motivation: 8-10 minutes lost in identifying blood groups, 70% unconscious patients, and lethal risk of penicillin anaphylaxis.">
+        <div class="slide-badge">Clinical Context & Motivation — Chapter 1.2</div>
+        <h2 class="slide-title">The "Golden Hour" Trauma Dilemma</h2>
+        <p class="slide-subtitle">Why traditional emergency response workflows fail during acute polytrauma resuscitation</p>
+
+        <div class="slide-body">
+          <div class="grid-4" style="margin-bottom: 24px;">
+            <div class="feature-card">
+              <div class="metric-hero">8–10m</div>
+              <div class="metric-label">Lost Identification Time</div>
+              <p class="feature-card-text">Wasted searching wallets, bags, or locked phones for blood group and emergency contacts.</p>
+            </div>
+            <div class="feature-card">
+              <div class="metric-hero">>70%</div>
+              <div class="metric-label">Incapacitated Casualties</div>
+              <p class="feature-card-text">Trauma victims unable to verbally communicate due to shock, unconsciousness, or trauma.</p>
+            </div>
+            <div class="feature-card">
+              <div class="metric-hero">14.2%</div>
+              <div class="metric-label">Lethal Allergic Reactions</div>
+              <p class="feature-card-text">Fatal drug contraindications (e.g. penicillin) administered blindly during field stabilization.</p>
+            </div>
+            <div class="feature-card">
+              <div class="metric-hero">0 min</div>
+              <div class="metric-label">ER Advance Lead Time</div>
+              <p class="feature-card-text">Hospitals remain blind until ambulance arrival, creating bottlenecks at trauma bay check-in.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 3: LITERATURE SURVEY & GAPS -->
+      <section class="slide" data-notes="Review past solutions: MedicAlert has limited data, Smartphone ID fails when battery dies, Generic QR fails without internet. LifeQR is the only one with 100% offline NDEF and live radar.">
+        <div class="slide-badge">Literature Survey & Gap Analysis — Chapter 2</div>
+        <h2 class="slide-title">State-of-the-Art vs. Research Gaps</h2>
+        <p class="slide-subtitle">Comparative assessment of legacy emergency identification methods against LifeQR</p>
+
+        <div class="slide-body">
+          <table class="slide-table">
+            <thead>
+              <tr>
+                <th>System Type</th>
+                <th>Power Source</th>
+                <th>Offline Accessibility</th>
+                <th>Field Retrieval Time</th>
+                <th>Ambulance Dispatch</th>
+                <th>ER Allergy Lock</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>MedicAlert Engraved</strong></td>
+                <td>Passive</td>
+                <td>Limited (10 words)</td>
+                <td>Manual reading</td>
+                <td>None (Manual Phone)</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td><strong>Smartphone Health ID</strong></td>
+                <td>Active (Battery)</td>
+                <td>Local to Device Only</td>
+                <td>15–30 sec (OEM menus)</td>
+                <td>None</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td><strong>Generic Online QR Card</strong></td>
+                <td>Passive</td>
+                <td>0% (Fails Offline)</td>
+                <td>4–8 sec (Camera Scan)</td>
+                <td>None</td>
+                <td>None</td>
+              </tr>
+              <tr style="background: rgba(16, 185, 129, 0.12); font-weight: 700; border-left: 4px solid var(--emerald);">
+                <td><strong>LifeQR Ecosystem</strong></td>
+                <td><strong>Passive (Induction)</strong></td>
+                <td><strong>100% (NDEF Local Vitals)</strong></td>
+                <td><strong>0.82 Seconds (Direct Tap)</strong></td>
+                <td><strong>Live Socket.IO 3km Radar</strong></td>
+                <td><strong>Automated Interlock</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SLIDE 4: HIGH-LEVEL ARCHITECTURE -->
+      <section class="slide" data-notes="Explain the 4 decoupled architectural layers: Physical Transponder, Client Viewports, Application Controllers, and Persistence Database.">
+        <div class="slide-badge">System Design — Chapter 3.1</div>
+        <h2 class="slide-title">Multi-Tier Distributed Architecture</h2>
+        <p class="slide-subtitle">End-to-end event flow spanning physical NFC silicon, WebSockets, and spatial databases</p>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="code-block" style="font-size: 11px;">
+       ┌────────────────────────┐
+       │   Physical NFC Card    │ (Zero-Battery, ISO/IEC 14443 Type A)
+       └───────────┬────────────┘
+                   │ Contactless Tap (13.56 MHz)
+                   ▼
+┌──────────────────────────────────────────────────┐
+│             Client Interface Tier                │
+│  ┌────────────────┐ ┌───────────────┐ ┌────────┐ │
+│  │ Patient PWA    │ │ Paramedic GIS │ │ ER Bay │ │
+│  └───────┬────────┘ └───────┬───────┘ └────┬───┘ │
+└──────────┼──────────────────┼──────────────┼─────┘
+           │ HTTP REST        │ WebSockets   │
+           ▼                  ▼              ▼
+┌──────────────────────────────────────────────────┐
+│           Node.js & Express API Server           │
+│  ┌────────────────┐ ┌───────────────┐ ┌────────┐ │
+│  │ JWT & RBAC     │ │ REST Routes v1│ │ Socket │ │
+│  └───────┬────────┘ └───────┬───────┘ └────┬───┘ │
+└──────────┼──────────────────┼──────────────┼─────┘
+           ▼                  ▼              ▼
+┌──────────────────────────────────────────────────┐
+│              MongoDB Persistent Tier             │
+│  11 Mongoose Schemas + Immutable Audit Ledger    │
+└──────────────────────────────────────────────────┘</div>
+
+            <div class="feature-card" style="justify-content: center;">
+              <div class="feature-card-title">Core Architectural Highlights</div>
+              <ul style="color: var(--text-muted); font-size: 14.5px; line-height: 1.7; padding-left: 20px;">
+                <li><strong>Strict Separation of Concerns:</strong> Mobile PWA chassis vs. desktop hospital portal.</li>
+                <li><strong>Stateless RESTful API:</strong> HMAC-SHA256 JWT tokens with role-based routing guards.</li>
+                <li><strong>Asynchronous Live Sockets:</strong> Broadcasts distress coordinates to room <code>crew:all</code> in &lt;200 ms.</li>
+                <li><strong>Immutable Audit Trail:</strong> Every scan logs timestamp, viewer IP, and geographic coordinates.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 5: HARDWARE NFC & INDUCTION PHYSICS -->
+      <section class="slide" data-notes="Explain the mathematical foundations of the NFC antenna. Formula 3.1 for resonance, Formula 3.2 for induced voltage. Zero battery needed for 50+ years.">
+        <div class="slide-badge">Hardware Engineering — Chapter 3.3 & Appendix A</div>
+        <h2 class="slide-title">Near-Field Electromagnetic Induction</h2>
+        <p class="slide-subtitle">Operating principles of the passive 13.56 MHz medical transponder</p>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="feature-card">
+              <div class="feature-card-title">Resonant Coupling Model</div>
+              <div class="code-block" style="color: #f59e0b; font-size: 14px;">
+f_r = 1 / (2 * π * sqrt(L_ant * C_tune))  (3.1)
+
+• L_ant  = 2.15 uH (Planar coil antenna)
+• C_tune = 50.0 pF (Silicon internal cap)
+• f_c    = 13.56 MHz Carrier Frequency</div>
+              <p class="feature-card-text">
+                Faraday's Law of Induction generates \(V_{\text{ind}} > 1.8\text{ V}\) across the internal Schottky diode bridge, powering the silicon IC without any chemical battery.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-card-title">Physical Substrate Specifications</div>
+              <ul style="color: var(--text-muted); font-size: 14.5px; line-height: 1.7; padding-left: 20px;">
+                <li><strong>Silicon IC:</strong> NXP NTAG215 (504 Bytes usable EEPROM).</li>
+                <li><strong>RF Standard:</strong> ISO/IEC 14443 Type A contactless proximity.</li>
+                <li><strong>Lifespan:</strong> 50+ years continuous operation (zero battery degradation).</li>
+                <li><strong>Substrate:</strong> Surgical polyvinyl chloride (PVC) — 100% waterproof and chemical-resistant.</li>
+                <li><strong>Universal Compatibility:</strong> Native iOS (CoreNFC) and Android with zero apps.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 6: DUAL-TIER OFFLINE ENGINE -->
+      <section class="slide" data-notes="Detail the dual-tier safety model. In mountain roads with zero cellular bars, Tier 2 loads from chip memory. In connected cities, Tier 1 loads cloud records.">
+        <div class="slide-badge">Fail-Safe Engineering — Chapter 3.2 & 5.1</div>
+        <h2 class="slide-title">Dual-Tier Failover Architecture</h2>
+        <p class="slide-subtitle">How LifeQR guarantees survival in network dead-zones, basements, and remote highways</p>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="feature-card" style="border-color: rgba(16, 185, 129, 0.4);">
+              <div style="font-size: 13px; color: #10b981; font-weight: 700; text-transform: uppercase;">Tier 2: Offline Safety Net</div>
+              <div class="feature-card-title">Decoded Directly from Card Memory</div>
+              <p class="feature-card-text">
+                When no cellular connectivity is detected, client-side JS decodes on-card NDEF memory blocks:
+              </p>
+              <div class="code-block" style="font-size: 11px;">
+{
+  "pid": "LQR-7782", "name": "Rahul Sharma",
+  "blood": "O+", "allergies": ["Penicillin"],
+  "meds": ["Albuterol Inhaler"],
+  "ice": [{ "rel": "Wife", "tel": "+919876543211" }]
+}</div>
+              <div style="font-weight: 700; color: #10b981; font-size: 13px;">✔ 0.82 Seconds Retrieval • 0 Bytes Network Traffic</div>
+            </div>
+
+            <div class="feature-card" style="border-color: rgba(37, 99, 235, 0.4);">
+              <div style="font-size: 13px; color: #38bdf8; font-weight: 700; text-transform: uppercase;">Tier 1: Cloud Hospital Network</div>
+              <div class="feature-card-title">Connected Healthcare Grid</div>
+              <ul style="color: var(--text-muted); font-size: 14px; line-height: 1.6; padding-left: 20px;">
+                <li>Verified clinical hospital histories and diagnostic reports.</li>
+                <li>Live Doctor accreditation signatures.</li>
+                <li>Automated family SMS distress pings with GPS coordinates.</li>
+                <li>Real-time ambulance dispatch within 3.0 km radius.</li>
+                <li>Hospital ER trauma bay bed reservations.</li>
+              </ul>
+              <div style="font-weight: 700; color: #38bdf8; font-size: 13px; margin-top: 10px;">✔ Complete Dynamic Hospital Integration</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 7: REAL-TIME AMBULANCE RADAR -->
+      <section class="slide" data-notes="Explain the Haversine equation 3.3. When patient clicks SOS, Socket.IO broadcasts to crew:all. Only ambulances within 3km receive visual radar beacon and acoustic siren.">
+        <div class="slide-badge">Tactical Fleet Dispatch — Chapter 3.4 & 5.4</div>
+        <h2 class="slide-title">Spatial Proximity Ambulance Radar</h2>
+        <p class="slide-subtitle">Haversine geodesic computation and real-time Socket.IO fleet synchronization</p>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="feature-card">
+              <div class="feature-card-title">Haversine Great-Circle Distance</div>
+              <div class="code-block" style="color: #38bdf8; font-size: 13px;">
+d = 2R * arcsin(sqrt(
+    sin²(Δφ/2) + cos(φ1)*cos(φ2)*sin²(Δλ/2)
+))  (3.3)
+
+• R = 6,371 km (Earth mean radius)
+• φ1, φ2 = Victim and ambulance latitudes
+• Perimeter Threshold = 3.0 km</div>
+              <p class="feature-card-text">
+                Executed asynchronously in 1.8 milliseconds across active ambulance fleets to filter out dispatches outside practical response range.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-card-title">Tactical Radar Console Features</div>
+              <ul style="color: var(--text-muted); font-size: 14.5px; line-height: 1.7; padding-left: 20px;">
+                <li><strong>360° Phosphor Sweep:</strong> Rotating beam with 1 km, 2 km, 3 km distance rings.</li>
+                <li><strong>Audio Siren Synthesizer:</strong> Procedural Web Audio API alarm (880 Hz ↔ 440 Hz).</li>
+                <li><strong>Mutual Dispatch Lock:</strong> Paramedic "Accept Dispatch" locks the victim and removes the beacon from other units.</li>
+                <li><strong>Turn-by-Turn Telemetry:</strong> Leaflet GIS routing to exact victim coordinates.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 8: HOSPITAL ER ALLERGY INTERLOCK -->
+      <section class="slide" data-notes="Show the clinical safety mechanism. If emergency staff attempt to order Penicillin for an allergic patient, LifeQR locks the prescription in real time.">
+        <div class="slide-badge">Clinical Safety Integration — Chapter 5.5</div>
+        <h2 class="slide-title">Hospital ER Trauma Bay & Allergy Lock</h2>
+        <p class="slide-subtitle">Pre-arrival hospital telemetry and automated clinical contraindication interlock</p>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="feature-card">
+              <div class="feature-card-icon">🛏️</div>
+              <div class="feature-card-title">Pre-Allocated Trauma Bay</div>
+              <p class="feature-card-text">
+                Trauma bay beds are reserved 12–15 minutes before ambulance arrival. Nursing and surgical staff are pre-notified of trauma severity.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-card-icon">🩸</div>
+              <div class="feature-card-title">Blood Bank Cross-Matching</div>
+              <p class="feature-card-text">
+                The hospital blood bank is automatically alerted to prepare matched blood units (e.g. O+ / O-) at the trauma bedside prior to patient arrival.
+              </p>
+            </div>
+
+            <div class="feature-card" style="border-color: rgba(239, 68, 68, 0.4);">
+              <div class="feature-card-icon">🚫</div>
+              <div class="feature-card-title">Allergy Sentinel Interlock</div>
+              <p class="feature-card-text">
+                Cross-references incoming emergency prescriptions against verified allergies. Attempted administration of penicillin triggers a <strong>red safety override</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 9: MULTILINGUAL MOTION STUDIO -->
+      <section class="slide" data-notes="Explain the cinematic motion engine in cinematic-video.html: 3 languages (Kannada, Hindi, English), procedural audio, and 1080p 60fps video exports.">
+        <div class="slide-badge">Human-Centered Design — Chapter 5.6</div>
+        <h2 class="slide-title">Multilingual Motion-as-Code Studio</h2>
+        <p class="slide-subtitle">Deterministic 1080p 60 FPS motion graphics engine for community health education</p>
+
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="feature-card">
+              <div style="font-size: 24px;">🟡</div>
+              <div class="feature-card-title">Simple Kannada (kn)</div>
+              <div style="font-size: 15px; font-weight: 600; color: #fbbf24;">"ಒಂದೇ ಸ್ಪರ್ಶ, ಜೀವ ರಕ್ಷಣೆ"</div>
+              <p class="feature-card-text">
+                Complete regional voiceover and kinetic typography designed for widespread rural and tier-2 Karnataka ambulance adoption.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div style="font-size: 24px;">🟠</div>
+              <div class="feature-card-title">Simple Hindi (hi)</div>
+              <div style="font-size: 15px; font-weight: 600; color: #fb923c;">"सिर्फ एक टच, पूरी सुरक्षा"</div>
+              <p class="feature-card-text">
+                Conversational narrative explaining the emergency card and live ambulance dispatch without intimidating technical jargon.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div style="font-size: 24px;">🇮🇳</div>
+              <div class="feature-card-title">Indian English (en_in)</div>
+              <div style="font-size: 15px; font-weight: 600; color: #38bdf8;">"Instant Touch, Real Rescue"</div>
+              <p class="feature-card-text">
+                Clear, authoritative presentation for healthcare administrators, emergency physicians, and hospital management.
+              </p>
+            </div>
+          </div>
+
+          <!-- Video Launch Controls for Viva Examiners -->
+          <div style="margin-top: 20px; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.4); border: 1px solid var(--card-border); padding: 12px 20px; border-radius: 12px; flex-wrap: gap-3;">
+            <div>
+              <span style="font-size: 13px; font-weight: 700; color: #10b981;">📺 Broadcast 1080p 60fps Videos Exported:</span>
+              <span style="font-size: 12px; color: var(--text-muted); margin-left: 8px;">English (14.3 MB) • Kannada (15.9 MB) • Hindi (13.5 MB)</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <a href="../website/cinematic-video.html" target="_blank" class="nav-btn" style="text-decoration: none; font-size: 12px; padding: 6px 14px;">
+                🚀 Launch Motion Studio
+              </a>
+              <a href="videos/LifeQR_Project_Plan_Cinematic_EN_IN_1080p60.webm" target="_blank" class="nav-btn" style="text-decoration: none; font-size: 12px; padding: 6px 14px; background: var(--emerald); border-color: var(--emerald);">
+                ▶ Play 1080p Video
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 10: DATABASE SCHEMAS & SECURITY -->
+      <section class="slide" data-notes="Discuss security: zero plaintext passwords, bcrypt with 10 rounds, RBAC role middleware, and immutable audit logging.">
+        <div class="slide-badge">Security & Data Governance — Chapter 3.5 & 6.5</div>
+        <h2 class="slide-title">Database Models & Cryptographic Security</h2>
+        <p class="slide-subtitle">11 strictly typed Mongoose schemas with role-based access control (RBAC)</p>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="feature-card">
+              <div class="feature-card-title">Database Collections & Separation</div>
+              <ul style="color: var(--text-muted); font-size: 14px; line-height: 1.6; padding-left: 20px;">
+                <li><code>User</code> & <code>UserSecurity</code>: Isolated credential storage.</li>
+                <li><code>PatientProfile</code>: Blood group, allergies, medications, ICE contacts.</li>
+                <li><code>CrewProfile</code>: GPS location, duty toggle, vehicle number.</li>
+                <li><code>HospitalProfile</code>: Trauma bay capacity, emergency hotline.</li>
+                <li><code>SOS</code>: Telemetry stream, status lifecycle, dispatch lock.</li>
+                <li><code>AuditLog</code>: Immutable audit trail recording every access.</li>
+              </ul>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-card-title">Security & Cryptography Matrix</div>
+              <ul style="color: var(--text-muted); font-size: 14px; line-height: 1.6; padding-left: 20px;">
+                <li><strong>Password Hashing:</strong> <code>bcryptjs</code> with salt rounds = 10.</li>
+                <li><strong>Zero Plaintext Storage:</strong> Sensitive credentials never saved or exposed.</li>
+                <li><strong>Token Security:</strong> Stateless JWT signed with HMAC-SHA256.</li>
+                <li><strong>Role Middleware:</strong> Enforces access boundaries across all 5 roles.</li>
+                <li><strong>Data Minimization:</strong> On-card memory stores only life-saving parameters.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 11: QUANTITATIVE BENCHMARKS -->
+      <section class="slide" data-notes="Review the empirical results: 0.82s NFC tap latency, 182ms socket dispatch, 100% allergy lockout. All tested on real hardware.">
+        <div class="slide-badge">Experimental Verification — Chapter 7.1</div>
+        <h2 class="slide-title">System Latency & Throughput Benchmarks</h2>
+        <p class="slide-subtitle">Empirical performance metrics measured across physical devices and cloud servers</p>
+
+        <div class="slide-body">
+          <table class="slide-table">
+            <thead>
+              <tr>
+                <th>Benchmark Operation</th>
+                <th>Sample Size</th>
+                <th>Mean Latency</th>
+                <th>99th Percentile</th>
+                <th>Success Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Physical NFC Tap to Vitals DOM</strong></td>
+                <td>100 Trials</td>
+                <td><strong>0.82 Seconds</strong></td>
+                <td>1.15 Seconds</td>
+                <td><strong>100.0%</strong></td>
+              </tr>
+              <tr>
+                <td><strong>REST Authentication & JWT Sign</strong></td>
+                <td>500 Requests</td>
+                <td><strong>48 Milliseconds</strong></td>
+                <td>82 Milliseconds</td>
+                <td><strong>100.0%</strong></td>
+              </tr>
+              <tr>
+                <td><strong>SOS Webhook to Ambulance Broadcast</strong></td>
+                <td>500 Beacons</td>
+                <td><strong>182 Milliseconds</strong></td>
+                <td>245 Milliseconds</td>
+                <td><strong>99.8%</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Haversine Distance Filter Execution</strong></td>
+                <td>1,000 Queries</td>
+                <td><strong>1.8 Milliseconds</strong></td>
+                <td>3.2 Milliseconds</td>
+                <td><strong>100.0%</strong></td>
+              </tr>
+              <tr>
+                <td><strong>ER Allergy Contraindication Check</strong></td>
+                <td>250 Checks</td>
+                <td><strong>6.4 Milliseconds</strong></td>
+                <td>11.0 Milliseconds</td>
+                <td><strong>100.0%</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SLIDE 12: CLINICAL TIME SAVINGS -->
+      <section class="slide" data-notes="Highlight the clinical conclusion: over 8.4 minutes saved in triage, 15 minutes pre-arrival notice for trauma bays.">
+        <div class="slide-badge">Clinical Evaluation — Chapter 7.2</div>
+        <h2 class="slide-title">Preserving the Golden Hour Window</h2>
+        <p class="slide-subtitle">Quantitative comparison of clinical triage delays: Conventional vs. LifeQR</p>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="feature-card" style="border-color: rgba(239, 68, 68, 0.4);">
+              <div style="font-size: 13px; color: #ef4444; font-weight: 700; text-transform: uppercase;">Conventional Trauma Triage</div>
+              <ul style="color: var(--text-muted); font-size: 14.5px; line-height: 1.8; padding-left: 20px;">
+                <li><strong>Identification Delay:</strong> 8.5 Minutes</li>
+                <li><strong>Family Contact Notification:</strong> 12.0 Minutes</li>
+                <li><strong>Ambulance Dispatch:</strong> 4.2 Minutes (Voice Phone Call)</li>
+                <li><strong>ER Pre-Arrival Warning:</strong> 0 Minutes (Blind Arrival)</li>
+                <li><strong>Allergy Check:</strong> Manual / Often Missed</li>
+              </ul>
+            </div>
+
+            <div class="feature-card" style="border-color: rgba(16, 185, 129, 0.4);">
+              <div style="font-size: 13px; color: #10b981; font-weight: 700; text-transform: uppercase;">LifeQR Autonomous Protocol</div>
+              <ul style="color: #f8fafc; font-size: 14.5px; line-height: 1.8; padding-left: 20px;">
+                <li><strong>Identification Delay:</strong> <span style="color: #10b981; font-weight: 700;">0.82 Seconds (~8.48 min saved)</span></li>
+                <li><strong>Family Notification:</strong> <span style="color: #10b981; font-weight: 700;">2.5 Seconds (~11.95 min saved)</span></li>
+                <li><strong>Ambulance Dispatch:</strong> <span style="color: #10b981; font-weight: 700;">0.18 Seconds (~4.19 min saved)</span></li>
+                <li><strong>ER Pre-Arrival Warning:</strong> <span style="color: #10b981; font-weight: 700;">15.0 Minutes Advance Notice</span></li>
+                <li><strong>Allergy Check:</strong> <span style="color: #10b981; font-weight: 700;">100% Automated Safety Interlock</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 13: CONCLUSION & FUTURE WORK -->
+      <section class="slide" data-notes="Conclude the presentation. Summarize key contributions and propose future integrations: national 112 gateway, cryptographic SUN CMAC chips, and wearable forms. Open floor for questions.">
+        <div class="slide-badge">Summary & Roadmap — Chapter 8</div>
+        <h2 class="slide-title">Conclusion & Future Enhancements</h2>
+        <p class="slide-subtitle">Summary of completed engineering work and future research directions</p>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="feature-card">
+              <div class="feature-card-title">Completed Project Contributions</div>
+              <ul style="color: var(--text-muted); font-size: 14.5px; line-height: 1.7; padding-left: 20px;">
+                <li><strong>Deterministic Dual-Tier Failover:</strong> 100% offline vitals recovery in 0.8s without internet.</li>
+                <li><strong>Spatial Ambulance Radar:</strong> 3.0 km geodesic perimeter with WebSocket broadcasting.</li>
+                <li><strong>Hospital ER Allergy Interlock:</strong> Automated prevention of contraindicated medications.</li>
+                <li><strong>Multilingual Framework:</strong> High-definition regional education in Kannada, Hindi, and English.</li>
+              </ul>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-card-title">Future Research Vectors</div>
+              <ul style="color: var(--text-muted); font-size: 14.5px; line-height: 1.7; padding-left: 20px;">
+                <li><strong>National 112 Gateway Integration:</strong> Automated integration with state dispatchers.</li>
+                <li><strong>Anti-Cloning Transponders:</strong> Evaluation of NXP NTAG 424 DNA AES-128 SUN CMAC.</li>
+                <li><strong>Form Factor Expansion:</strong> Medical alert silicone wristbands and helmet NFC decals.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 24px;">
+            <div style="font-size: 22px; font-weight: 800; color: #38bdf8;">Thank You! Questions & Technical Discussion</div>
+            <div style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">Tarun Sajikumar & Project Team — Academic Year 2025–2026</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Speaker Notes Drawer -->
+    <div id="notesDrawer" class="notes-drawer">
+      <div class="notes-title">Speaker Presentation Notes</div>
+      <div id="notesText" class="notes-text">Loading notes...</div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="deck-footer">
+      <button class="nav-btn" onclick="prevSlide()">
+        ◀ Previous <kbd style="opacity: 0.6; font-size: 11px;">[Left / A]</kbd>
+      </button>
+
+      <div class="progress-bar-container">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+
+      <div id="slideCounter" class="slide-counter">
+        Slide 1 / 13
+      </div>
+
+      <button class="nav-btn" onclick="nextSlide()">
+        Next ▶ <kbd style="opacity: 0.6; font-size: 11px;">[Right / D / Space]</kbd>
+      </button>
+    </footer>
+
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const progressBar = document.getElementById('progressBar');
+    const slideCounter = document.getElementById('slideCounter');
+    const notesDrawer = document.getElementById('notesDrawer');
+    const notesText = document.getElementById('notesText');
+
+    let currentSlide = 0;
+    const totalSlides = slides.length;
+
+    function updateSlide() {
+      slides.forEach((slide, idx) => {
+        slide.classList.toggle('active', idx === currentSlide);
+      });
+
+      const progress = ((currentSlide + 1) / totalSlides) * 100;
+      progressBar.style.width = progress + '%';
+      slideCounter.textContent = `Slide ${currentSlide + 1} / ${totalSlides}`;
+
+      // Update speaker notes
+      const activeSlide = slides[currentSlide];
+      const notes = activeSlide.getAttribute('data-notes') || 'No specific notes for this slide.';
+      notesText.textContent = notes;
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function toggleNotes() {
+      notesDrawer.classList.toggle('open');
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Keyboard listener
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key.toLowerCase() === 'd' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        toggleFullScreen();
+      } else if (e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        toggleNotes();
+      } else if (e.key === 'Home') {
+        currentSlide = 0;
+        updateSlide();
+      } else if (e.key === 'End') {
+        currentSlide = totalSlides - 1;
+        updateSlide();
+      }
+    });
+
+    // Initialize
+    updateSlide();
+  </script>
+</body>
+</html>

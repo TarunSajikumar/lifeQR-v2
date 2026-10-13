@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifeQR™ Cinematic Motion Studio — Simple Talk & High-Definition Showcase</title>
+  <link rel="icon" href="../LifeQR.png" type="image/png">
+
+  <!-- Typography & Multi-Language Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Noto+Sans+Kannada:wght@400;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --bg: #07090e;
+      --surface: #0e121a;
+      --card: #141824;
+      --border: #222938;
+      --red: #E11D2E;
+      --red-glow: rgba(225, 29, 46, 0.4);
+      --cyan: #00f0ff;
+      --cyan-glow: rgba(0, 240, 255, 0.35);
+      --amber: #f59e0b;
+      --emerald: #10B981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: #ffffff;
+      font-family: 'Archivo', 'Noto Sans Kannada', 'Noto Sans Devanagari', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    .font-black { font-family: 'Archivo Black', 'Noto Sans Kannada', 'Noto Sans Devanagari', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Custom Scrubber Range styling */
+    input[type=range].studio-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #1c2230;
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range].studio-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--red);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 10px var(--red);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+    input[type=range].studio-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.3);
+    }
+
+    /* Keybinding badge */
+    .kbd-key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      background: #1c2230;
+      border: 1px solid #323b4e;
+      border-bottom: 2px solid #323b4e;
+      border-radius: 4px;
+      color: #cbd5e1;
+    }
+
+    /* Studio button */
+    .studio-btn {
+      background: #131722;
+      border: 1.5px solid #283144;
+      color: #ffffff;
+      font-family: 'JetBrains Mono', 'Noto Sans Kannada', 'Noto Sans Devanagari', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .studio-btn:hover {
+      background: #1e2436;
+      border-color: #3b4763;
+      transform: translateY(-1px);
+    }
+    .studio-btn:active {
+      transform: translateY(0);
+    }
+    .studio-btn.active {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan-glow);
+      background: rgba(0, 240, 255, 0.12);
+    }
+    .studio-btn.danger {
+      background: rgba(225, 29, 46, 0.15);
+      border-color: var(--red);
+      color: #ff5260;
+    }
+    .studio-btn.danger:hover {
+      background: var(--red);
+      color: #ffffff;
+    }
+    .studio-btn.success {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--emerald);
+      color: #34d399;
+    }
+    .studio-btn.success:hover {
+      background: var(--emerald);
+      color: #ffffff;
+    }
+
+    /* Canvas Frame Container */
+    #canvasWrapper {
+      position: relative;
+      background: #000000;
+      width: 100%;
+      height: calc(100vh - 165px);
+      min-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+      overflow: hidden;
+    }
+
+    canvas#motionCanvas {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      box-shadow: 0 0 20px rgba(0,0,0,0.9);
+      background: #06080c;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Studio Navigation Bar -->
+  <header class="border-b border-[#1d2332] bg-[#0b0e15] px-6 py-3 flex items-center justify-between z-30 flex-wrap gap-3">
+    <div class="flex items-center gap-4">
+      <a href="index.html" class="flex items-center gap-2 group">
+        <img src="../LifeQR.png" alt="LifeQR" class="w-7 h-7 object-contain">
+        <span class="font-black text-xl tracking-tight text-white group-hover:text-[#E11D2E] transition-colors">LifeQR</span>
+      </a>
+      <div class="h-5 w-[1px] bg-[#222a3a]"></div>
+      <div class="flex items-center gap-2">
+        <span class="bg-[#E11D2E]/20 text-[#ff4d5a] border border-[#E11D2E]/40 font-mono text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+          SIMPLE TALK • HIGH-DEF MOTION
+        </span>
+        <span class="text-xs text-gray-400 font-mono hidden md:inline">1920×1080 @ 60 FPS • AFTER EFFECTS STYLE</span>
+      </div>
+    </div>
+
+    <!-- Center: Language Switcher, Audio Tone & View Mode -->
+    <div class="flex items-center gap-3 flex-wrap">
+      <!-- Mode Toggle -->
+      <div class="flex items-center gap-1 bg-[#141824] p-1 rounded-lg border border-[#273144]">
+        <button id="modeCanvasBtn" class="studio-btn active text-[11px] py-1 px-2.5" title="Interactive Real-time Canvas Engine">
+          🎮 Canvas Engine
+        </button>
+        <button id="modeVideoBtn" class="studio-btn text-[11px] py-1 px-2.5" title="Watch Pre-Rendered Broadcast 1080p 60fps Video">
+          📺 1080p Video Player
+        </button>
+      </div>
+
+      <div class="flex items-center gap-1.5 bg-[#141824] p-1 rounded-lg border border-[#273144]">
+        <span class="text-[10px] font-mono text-gray-400 uppercase px-2 font-bold hidden sm:inline">VOICE & LANGUAGE:</span>
+        <button id="langEnBtn" class="studio-btn active text-[11px] py-1 px-3">
+          🇮🇳 English (India)
+        </button>
+        <button id="langKnBtn" class="studio-btn text-[11px] py-1 px-3">
+          🟡 ಕನ್ನಡ (Kannada)
+        </button>
+        <button id="langHiBtn" class="studio-btn text-[11px] py-1 px-3">
+          🟠 हिंदी (Hindi)
+        </button>
+      </div>
+
+      <div id="toneGroup" class="flex items-center gap-1.5 bg-[#141824] p-1 rounded-lg border border-[#273144]">
+        <span class="text-[10px] font-mono text-gray-400 uppercase px-2 font-bold hidden md:inline">AUDIO TONE:</span>
+        <button id="toneFriendlyBtn" class="studio-btn active text-[11px] py-1 px-2.5" title="Simple Talk / Natural Conversational Pace">
+          🎙️ Simple Talk
+        </button>
+        <button id="toneEmergencyBtn" class="studio-btn text-[11px] py-1 px-2.5" title="Urgent / Emergency Clear Delivery">
+          🚨 Emergency
+        </button>
+        <button id="toneCinematicBtn" class="studio-btn text-[11px] py-1 px-2.5" title="Deep Sub-bass Cinematic Voice">
+          🎬 Cinematic
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="flex items-center gap-3">
+      <button id="testVoiceBtn" class="studio-btn text-[11px] py-1 px-3 text-[#00f0ff] border-[#00f0ff]/40 hover:bg-[#00f0ff]/10" title="Test voice narration in chosen language and tone">
+        🔊 Test Voice
+      </button>
+      <span id="recordStatus" class="font-mono text-xs font-bold text-red-400 hidden animate-pulse">
+        🔴 RECORDING 1080P: 0%
+      </span>
+      <button id="exportBtn" class="studio-btn success">
+        ⚡ EXPORT 1080P MP4/WEBM
+      </button>
+      <a href="index.html" class="studio-btn">
+        ← BACK TO PLATFORM
+      </a>
+    </div>
+  </header>
+
+  <!-- Video Stage / Canvas Player -->
+  <main class="flex-1 flex flex-col relative bg-[#05070a]">
+    <div id="canvasWrapper" style="box-shadow: 0 0 80px rgba(16, 185, 129, 0.15), inset 0 0 80px rgba(0,0,0,0.9);">
+      <canvas id="motionCanvas"></canvas>
+      <!-- Click to Start Experience Overlay (Unlocks Browser AudioContext) -->
+      <div id="playOverlay" onclick="if(window.motionPlayer){window.motionPlayer.play();} this.style.display='none';" class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm cursor-pointer z-10 hover:bg-black/50 transition-all">
+        <div class="w-20 h-20 rounded-full bg-[#E11D2E] text-white flex items-center justify-center text-3xl shadow-2xl hover:scale-110 transition-transform mb-4 border-2 border-white/80">
+          ▶
+        </div>
+        <div class="text-xl font-black text-white tracking-wide uppercase font-mono text-center px-4">
+          START CINEMATIC MOTION SHOWCASE
+        </div>
+        <div class="text-xs text-[#00f0ff] font-mono mt-2 bg-[#141824]/90 px-3 py-1 rounded border border-[#232d40]">
+          🔊 Full Studio Multi-Language Voiceover & Dynamic Motion Design
+        </div>
+      </div>
+      <video id="renderedVideoPlayer" controls playsinline style="display: none; max-width: 100%; max-height: 100%; box-shadow: 0 0 40px rgba(0,0,0,0.9);" class="rounded-lg">
+        <source id="videoSource" src="videos/LifeQR_Project_Plan_Cinematic_EN_IN_1080p60.webm" type="video/webm">
+        Your browser does not support HTML5 video.
+      </video>
+    </div>
+
+    <!-- Studio Transport & Scrubber Bar -->
+    <div id="studioHudBar" class="border-t border-[#1d2332] bg-[#0c1017] px-6 py-3 flex flex-col gap-2 z-20">
+      
+      <!-- Scrubber Line with Plate Chips -->
+      <div class="flex items-center gap-3 w-full">
+        <span id="timecodeDisplay" class="font-mono text-xs font-bold text-[#00f0ff] min-w-[130px]">
+          00:00.00 / 01:38.00
+        </span>
+
+        <div class="relative flex-1 flex items-center">
+          <input type="range" id="timelineScrubber" min="0" max="1000" value="0" step="1" class="studio-slider">
+        </div>
+
+        <select id="plateSelect" class="bg-[#141824] border border-[#2a3448] text-xs font-mono text-gray-200 px-3 py-1.5 rounded cursor-pointer outline-none hover:border-gray-500">
+          <!-- Populated dynamically based on language -->
+        </select>
+      </div>
+
+      <!-- Button Row & Keyboard Shortcuts Info -->
+      <div class="flex items-center justify-between flex-wrap gap-2 pt-1">
+        
+        <!-- Playback Buttons -->
+        <div class="flex items-center gap-2">
+          <button id="playBtn" class="studio-btn danger min-w-[85px] justify-center">
+            ▶ PLAY
+          </button>
+          <button id="loopBtn" class="studio-btn">
+            🔁 LOOP PLATE
+          </button>
+          <button id="muteBtn" class="studio-btn">
+            🔊 AUDIO
+          </button>
+
+          <div class="h-4 w-[1px] bg-[#222a3a] mx-1"></div>
+
+          <button onclick="window.motionPlayer.seekTo(0)" class="studio-btn text-[11px] py-1" title="Rewind to start">
+            ⏮ START
+          </button>
+          <button onclick="window.motionPlayer.jumpPlate(-1)" class="studio-btn text-[11px] py-1" title="Previous Plate [">
+            ◀ PREV PLATE
+          </button>
+          <button onclick="window.motionPlayer.jumpPlate(1)" class="studio-btn text-[11px] py-1" title="Next Plate ]">
+            NEXT PLATE ▶
+          </button>
+        </div>
+
+        <!-- Shortcut Cheatsheet -->
+        <div class="flex items-center gap-4 text-xs font-mono text-gray-400">
+          <div class="flex items-center gap-1.5">
+            <span class="kbd-key">SPACE</span>
+            <span>Play/Pause</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="kbd-key">←</span>
+            <span class="kbd-key">→</span>
+            <span>Seek 1s</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="kbd-key">[</span>
+            <span class="kbd-key">]</span>
+            <span>Plate</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="kbd-key">,</span>
+            <span class="kbd-key">.</span>
+            <span>Frame</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="kbd-key">L</span>
+            <span>Loop</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="kbd-key">H</span>
+            <span>Hide HUD</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="kbd-key">E</span>
+            <span>Export</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Pre-Rendered Broadcast Video Downloads & Instant Watch Showcase -->
+  <section class="bg-[#0b0f17] border-t border-[#1d2332] px-6 py-10">
+    <div class="max-w-7xl mx-auto">
+      <div class="flex items-center justify-between mb-6 pb-3 border-b border-[#1c2230] flex-wrap gap-4">
+        <div>
+          <div class="inline-flex items-center gap-2 font-mono text-xs text-[#00f0ff] font-bold tracking-widest uppercase mb-1">
+            <span class="w-2 h-2 rounded-full bg-[#00f0ff] inline-block animate-pulse"></span>
+            <span>BROADCAST PACKAGES // 1080P 60FPS DOWNLOAD HUB</span>
+          </div>
+          <h2 class="text-2xl font-black text-white">Pre-Rendered Cinematic Videos (Ready to Watch & Download)</h2>
+          <p class="text-gray-400 text-sm mt-1">
+            Full 98-second motion design presentations exported in 1080p 60fps across three languages with studio voiceovers and sound effects.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- English Card -->
+        <div class="bg-[#121622] border border-[#232c3e] hover:border-[#00f0ff]/50 rounded-xl p-5 flex flex-col justify-between transition-all">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono font-bold text-gray-400 uppercase">🇮🇳 English (India)</span>
+              <span class="text-[11px] font-mono bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded">14.3 MB • 1080p60</span>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">LifeQR Project Presentation</h3>
+            <p class="text-xs text-gray-400 line-clamp-2 mb-4">
+              Clear, friendly, conversational Indian English narrative covering the Golden Hour crisis, zero-power NFC card, and live ambulance radar.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 pt-3 border-t border-[#1c2230]">
+            <button onclick="switchVideoMode('en_in')" class="studio-btn flex-1 justify-center text-xs py-1.5 text-[#00f0ff] border-[#00f0ff]/40 hover:bg-[#00f0ff]/10">
+              ▶ Watch 1080p
+            </button>
+            <a href="videos/LifeQR_Project_Plan_Cinematic_EN_IN_1080p60.webm" download="LifeQR_Project_Plan_Cinematic_EN_IN_1080p60.webm" class="studio-btn success text-xs py-1.5 px-3">
+              ⬇ Download
+            </a>
+          </div>
+        </div>
+
+        <!-- Kannada Card -->
+        <div class="bg-[#121622] border border-[#232c3e] hover:border-[#fbbf24]/50 rounded-xl p-5 flex flex-col justify-between transition-all">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono font-bold text-yellow-400 uppercase">🟡 ಕನ್ನಡ (Kannada)</span>
+              <span class="text-[11px] font-mono bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2 py-0.5 rounded">15.9 MB • 1080p60</span>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">ಲೈಫ್ ಕ್ಯೂಆರ್ ಪ್ರಾಜೆಕ್ಟ್ ವಿವರಣೆ</h3>
+            <p class="text-xs text-gray-400 line-clamp-2 mb-4">
+              ಸರಳ ಕನ್ನಡ ವಿವರಣೆ — ತುರ್ತು ಪರಿಸ್ಥಿತಿಯಲ್ಲಿ 1 ಸೆಕೆಂಡ್‌ನಲ್ಲಿ ರಕ್ತದ ಗ್ರೂಪ್ ಮಾಹಿತಿ ಮತ್ತು 3 ಕಿಮೀ ವ್ಯಾಪ್ತಿಯಲ್ಲಿ ಲೈವ್ ಆಂಬ್ಯುಲೆನ್ಸ್ ರಕ್ಷಣಾ ವ್ಯವಸ್ಥೆ.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 pt-3 border-t border-[#1c2230]">
+            <button onclick="switchVideoMode('kn')" class="studio-btn flex-1 justify-center text-xs py-1.5 text-yellow-400 border-yellow-400/40 hover:bg-yellow-400/10">
+              ▶ Watch 1080p
+            </button>
+            <a href="videos/LifeQR_Project_Plan_Cinematic_KN_1080p60.webm" download="LifeQR_Project_Plan_Cinematic_KN_1080p60.webm" class="studio-btn success text-xs py-1.5 px-3">
+              ⬇ Download
+            </a>
+          </div>
+        </div>
+
+        <!-- Hindi Card -->
+        <div class="bg-[#121622] border border-[#232c3e] hover:border-[#fb923c]/50 rounded-xl p-5 flex flex-col justify-between transition-all">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono font-bold text-orange-400 uppercase">🟠 हिंदी (Hindi)</span>
+              <span class="text-[11px] font-mono bg-orange-500/20 text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded">13.5 MB • 1080p60</span>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">LifeQR प्रोजेक्ट प्रेजेंटेशन</h3>
+            <p class="text-xs text-gray-400 line-clamp-2 mb-4">
+              आसान और स्पष्ट हिंदी में — सिर्फ एक टच में ब्लड ग्रुप और इमरजेंसी संपर्क, बिना इंटरनेट के काम करने वाला स्मार्ट कार्ड और अस्पताल की तैयारी।
+            </p>
+          </div>
+          <div class="flex items-center gap-2 pt-3 border-t border-[#1c2230]">
+            <button onclick="switchVideoMode('hi')" class="studio-btn flex-1 justify-center text-xs py-1.5 text-orange-400 border-orange-400/40 hover:bg-orange-400/10">
+              ▶ Watch 1080p
+            </button>
+            <a href="videos/LifeQR_Project_Plan_Cinematic_HI_1080p60.webm" download="LifeQR_Project_Plan_Cinematic_HI_1080p60.webm" class="studio-btn success text-xs py-1.5 px-3">
+              ⬇ Download
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Simple-Talk 9-Plate Sequence Breakdown (Dynamic Multi-Language) -->
+  <section class="bg-[#090c12] border-t border-[#1d2332] px-6 py-12">
+    <div class="max-w-7xl mx-auto">
+      
+      <!-- Section Header -->
+      <div class="flex items-center justify-between mb-8 pb-4 border-b border-[#1c2230] flex-wrap gap-4">
+        <div>
+          <div class="inline-flex items-center gap-2 font-mono text-xs text-[#10B981] font-bold tracking-widest uppercase mb-1">
+            <span class="w-2 h-2 rounded-full bg-[#10B981] inline-block animate-ping"></span>
+            <span id="sequenceBadge">HIGH-DEFINITION MOTION AS CODE // SIMPLE TALK</span>
+          </div>
+          <h2 id="sequenceTitle" class="text-3xl font-black text-white">9-Scene Motion Sequence (Simple Talk & High-Def Graphics)</h2>
+          <p id="sequenceDesc" class="text-gray-400 text-sm mt-1">
+            Clear, easy-to-understand explanations with After Effects-grade procedural motion graphics and multi-language audio narration.
+          </p>
+        </div>
+
+        <button onclick="window.motionPlayer.seekTo(0); window.motionPlayer.play();" class="studio-btn danger">
+          ▶ PLAY FULL 98-SECOND SEQUENCE
+        </button>
+      </div>
+
+      <!-- 9 Plates Grid (Dynamically localized into Kannada / Hindi / English) -->
+      <div id="plateCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Rendered dynamically by MotionEngine -->
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Scripts (Versioned with kinetic-typography.js) -->
+  <script src="cinematic-motion/kinetic-typography.js?v=4.5.0"></script>
+  <script src="cinematic-motion/audio-sfx.js?v=4.5.0"></script>
+  <script src="cinematic-motion/timeline.js?v=4.5.0"></script>
+  <script src="cinematic-motion/engine.js?v=4.5.0"></script>
+  <script>
+    // Global player reference & Video switcher helper
+    const VIDEO_FILES = {
+      en_in: 'videos/LifeQR_Project_Plan_Cinematic_EN_IN_1080p60.webm',
+      kn: 'videos/LifeQR_Project_Plan_Cinematic_KN_1080p60.webm',
+      hi: 'videos/LifeQR_Project_Plan_Cinematic_HI_1080p60.webm'
+    };
+
+    let currentMode = 'canvas'; // 'canvas' or 'video'
+
+    function switchVideoMode(lang) {
+      const modeCanvasBtn = document.getElementById('modeCanvasBtn');
+      const modeVideoBtn = document.getElementById('modeVideoBtn');
+      const canvasEl = document.getElementById('motionCanvas');
+      const videoEl = document.getElementById('renderedVideoPlayer');
+      const videoSrc = document.getElementById('videoSource');
+      const hudBar = document.getElementById('studioHudBar');
+
+      // Pause canvas playback if playing
+      if (window.motionPlayer && window.motionPlayer.isPlaying) {
+        window.motionPlayer.pause();
+      }
+
+      currentMode = 'video';
+      modeCanvasBtn.classList.remove('active');
+      modeVideoBtn.classList.add('active');
+
+      canvasEl.style.display = 'none';
+      videoEl.style.display = 'block';
+      hudBar.style.display = 'none';
+
+      // Set target language and source
+      if (lang && VIDEO_FILES[lang]) {
+        videoSrc.src = VIDEO_FILES[lang];
+        videoEl.load();
+        videoEl.play().catch(e => console.log('Autoplay deferred:', e));
+
+        // Sync language button active states
+        if (window.motionPlayer) {
+          window.motionPlayer.setLanguage(lang);
+        }
+      }
+
+      // Smooth scroll to player
+      document.getElementById('canvasWrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function switchCanvasMode() {
+      const modeCanvasBtn = document.getElementById('modeCanvasBtn');
+      const modeVideoBtn = document.getElementById('modeVideoBtn');
+      const canvasEl = document.getElementById('motionCanvas');
+      const videoEl = document.getElementById('renderedVideoPlayer');
+      const hudBar = document.getElementById('studioHudBar');
+
+      if (!videoEl.paused) {
+        videoEl.pause();
+      }
+
+      currentMode = 'canvas';
+      modeVideoBtn.classList.remove('active');
+      modeCanvasBtn.classList.add('active');
+
+      videoEl.style.display = 'none';
+      canvasEl.style.display = 'block';
+      hudBar.style.display = 'flex';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize MotionEngine
+      window.motionPlayer = new MotionEngine('motionCanvas', 'canvasWrapper');
+
+      const modeCanvasBtn = document.getElementById('modeCanvasBtn');
+      const modeVideoBtn = document.getElementById('modeVideoBtn');
+
+      if (modeCanvasBtn) modeCanvasBtn.addEventListener('click', switchCanvasMode);
+      if (modeVideoBtn) modeVideoBtn.addEventListener('click', () => {
+        const lang = (window.motionPlayer && window.motionPlayer.timeline) ? window.motionPlayer.timeline.currentLanguage : 'en_in';
+        switchVideoMode(lang);
+      });
+
+      // Synchronize language buttons with video source if in video mode
+      ['langEnBtn', 'langKnBtn', 'langHiBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+          btn.addEventListener('click', () => {
+            if (currentMode === 'video') {
+              const langMap = { langEnBtn: 'en_in', langKnBtn: 'kn', langHiBtn: 'hi' };
+              const lang = langMap[id];
+              const videoEl = document.getElementById('renderedVideoPlayer');
+              const videoSrc = document.getElementById('videoSource');
+              if (videoSrc && VIDEO_FILES[lang]) {
+                videoSrc.src = VIDEO_FILES[lang];
+                videoEl.load();
+                videoEl.play().catch(e => console.log(e));
+              }
+            }
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

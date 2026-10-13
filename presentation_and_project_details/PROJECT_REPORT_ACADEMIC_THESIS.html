@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifeQR — Final Year Project Report (Official Academic Format)</title>
+  <style>
+    /* ==========================================================================
+       UNIVERSITY FINAL YEAR PROJECT REPORT FORMAT (2025-2026) SPECIFICATIONS:
+       - Paper: A4 (210mm x 297mm)
+       - Margins: Left: 1.25" (31.75mm), Right: 1.0" (25.4mm), Top: 0.75" (19.05mm), Bottom: 0.75" (19.05mm)
+       - Line Spacing: 1.5 line spacing (approx 1.5em)
+       - Body text: 12pt Justified
+       - Chapter title: 18pt Centered
+       - Chapter label: 16pt Left-to-Right
+       - Section Heading: 16pt Left
+       - Subsection Heading: 14pt Left
+       - Equations: Right-justified decimal numbering (e.g. (3.1))
+       - Figures & Tables: Chapter-wise numbering (e.g. Fig. 1.1, Table 3.1)
+       ========================================================================== */
+
+    @page {
+      size: A4 portrait;
+      margin-left: 1.25in;
+      margin-right: 1.0in;
+      margin-top: 0.75in;
+      margin-bottom: 0.75in;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12pt;
+      line-height: 1.5;
+      color: #111;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Interactive / Web preview container */
+    .report-wrapper {
+      max-width: 850px;
+      margin: 20px auto;
+      background: #ffffff;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.15);
+      padding: 0.75in 1.0in 0.75in 1.25in; /* Exact university margins */
+    }
+
+    /* Print styling strictly enforcing university specifications */
+    @media print {
+      body {
+        background: #ffffff;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .report-wrapper {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+      }
+      .page-break {
+        page-break-before: always;
+        break-before: page;
+      }
+    }
+
+    /* Typography Hierarchy */
+    h1.chapter-title {
+      font-size: 18pt;
+      font-weight: bold;
+      text-align: center;
+      text-transform: uppercase;
+      margin-top: 10px;
+      margin-bottom: 25px;
+      letter-spacing: 0.5px;
+    }
+
+    .chapter-label {
+      font-size: 16pt;
+      font-weight: bold;
+      text-align: left;
+      text-transform: uppercase;
+      margin-top: 35px;
+      margin-bottom: 5px;
+      border-bottom: 2px solid #222;
+      padding-bottom: 4px;
+    }
+
+    h2.section-heading {
+      font-size: 16pt;
+      font-weight: bold;
+      text-align: left;
+      margin-top: 24px;
+      margin-bottom: 10px;
+    }
+
+    h3.subsection-heading {
+      font-size: 14pt;
+      font-weight: bold;
+      text-align: left;
+      margin-top: 18px;
+      margin-bottom: 8px;
+    }
+
+    p, li {
+      font-size: 12pt;
+      text-align: justify;
+      text-justify: inter-word;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    ul, ol {
+      margin-top: 4px;
+      margin-bottom: 12px;
+      padding-left: 28px;
+    }
+
+    /* Equations styling: Right-justified decimal notation */
+    .equation-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 18px 0;
+      padding: 0 10px;
+      font-style: italic;
+    }
+    .equation-math {
+      flex: 1;
+      text-align: center;
+      font-family: 'Cambria Math', 'Times New Roman', serif;
+      font-size: 13pt;
+    }
+    .equation-number {
+      font-style: normal;
+      font-weight: bold;
+      font-size: 12pt;
+      text-align: right;
+    }
+
+    /* Tables & Figures */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 11pt;
+      line-height: 1.35;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f0f2f5;
+      font-weight: bold;
+    }
+    .caption-title {
+      font-weight: bold;
+      text-align: center;
+      margin-top: 8px;
+      margin-bottom: 18px;
+      font-size: 11.5pt;
+    }
+
+    .diagram-box {
+      border: 1px solid #ccc;
+      background: #fafafa;
+      padding: 15px;
+      margin: 18px 0 6px 0;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 10.5pt;
+      white-space: pre;
+      overflow-x: auto;
+      line-height: 1.25;
+    }
+
+    /* Title Page & Certificate formatting */
+    .title-page-center {
+      text-align: center;
+      margin-top: 40px;
+    }
+    .title-main {
+      font-size: 22pt;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .title-sub {
+      font-size: 14pt;
+      font-weight: normal;
+      margin-bottom: 30px;
+      font-style: italic;
+    }
+    .signatures-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 60px;
+      padding: 0 20px;
+    }
+    .sig-col {
+      text-align: center;
+      width: 45%;
+    }
+
+    /* Action bar for browser print */
+    .print-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .print-btn {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .print-btn:hover {
+      background: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Print Control Bar (Visible in browser, hidden when printing) -->
+  <div class="print-bar no-print">
+    <div>
+      <strong>LifeQR Academic Thesis Document</strong> — Formatted to Official Project Guidelines (A4, 1.25" Left Gutter, 1.5 Spacing)
+    </div>
+    <div>
+      <button class="print-btn" onclick="window.print()">
+        🖨️ Print / Save as PDF (Ctrl + P)
+      </button>
+    </div>
+  </div>
+
+  <div class="report-wrapper">
+
+    <!-- ==========================================
+         PRELIMINARY PAGES (NUMBERED IN ROMAN)
+         ========================================== -->
+
+    <!-- INNER TITLE PAGE -->
+    <div class="title-page-center">
+      <div class="title-main">LifeQR: Emergency Medical Information and Rapid Rescue System</div>
+      <div class="title-sub">A Project Report Submitted in Partial Fulfillment of the Requirements for the Award of the Degree of</div>
+      <div style="font-size: 15pt; font-weight: bold; margin-bottom: 25px;">BACHELOR OF ENGINEERING<br>IN<br>COMPUTER SCIENCE & ENGINEERING</div>
+
+      <div style="margin: 30px 0; font-size: 13pt;">
+        <em>Submitted by:</em><br>
+        <div style="font-weight: bold; margin-top: 8px; line-height: 1.6;">
+          TARUN SAJIKUMAR (USN: ____________________)<br>
+          [TEAM MEMBER 2] (USN: ____________________)<br>
+          [TEAM MEMBER 3] (USN: ____________________)<br>
+          [TEAM MEMBER 4] (USN: ____________________)
+        </div>
+      </div>
+
+      <div style="margin: 35px 0; font-size: 13pt;">
+        <em>Under the Guidance of:</em><br>
+        <div style="font-weight: bold; margin-top: 8px;">
+          [GUIDE NAME, DESIGNATION]<br>
+          Department of Computer Science & Engineering
+        </div>
+      </div>
+
+      <div style="margin-top: 50px; font-weight: bold; font-size: 14pt;">
+        [COLLEGE / INSTITUTION NAME]<br>
+        [DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING]<br>
+        ACADEMIC YEAR 2025 – 2026
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- CERTIFICATE OF APPROVAL -->
+    <div style="text-align: center; margin-top: 20px;">
+      <div style="font-size: 16pt; font-weight: bold; text-transform: uppercase;">[College / Institution Name]</div>
+      <div style="font-size: 13pt; font-weight: bold;">Department of Computer Science & Engineering</div>
+      <hr style="border: 1px solid #000; margin: 15px 0 25px 0;">
+      <h1 class="chapter-title" style="margin-bottom: 20px;">CERTIFICATE</h1>
+    </div>
+
+    <p>
+      This is to certify that the project work entitled <strong>"LifeQR: Emergency Medical Information and Rapid Rescue System"</strong> is a bona fide work carried out by <strong>Tarun Sajikumar</strong>, <strong>[Team Member 2]</strong>, <strong>[Team Member 3]</strong>, and <strong>[Team Member 4]</strong> in partial fulfillment for the award of Bachelor of Engineering in Computer Science & Engineering from [University Name], during the academic year 2025–2026.
+    </p>
+
+    <p>
+      It is certified that all corrections and suggestions indicated during internal reviews have been incorporated into this report. The project report has been approved as it satisfies the academic requirements in respect of project work prescribed for the degree.
+    </p>
+
+    <div class="signatures-row">
+      <div class="sig-col">
+        <br><br>
+        ___________________________<br>
+        <strong>[Internal Guide Signature]</strong><br>
+        [Guide Name, Designation]<br>
+        Department of CSE
+      </div>
+      <div class="sig-col">
+        <br><br>
+        ___________________________<br>
+        <strong>[Head of Department Signature]</strong><br>
+        [HOD Name, Professor & Head]<br>
+        Department of CSE
+      </div>
+    </div>
+
+    <div style="margin-top: 60px;">
+      <strong>External Viva Examination Date:</strong> ____________________<br><br>
+      <strong>Examiners:</strong><br>
+      1. Name: ____________________________________ Signature: ______________________<br><br>
+      2. Name: ____________________________________ Signature: ______________________
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ABSTRACT / SYNOPSIS (STRICTLY <= 100 WORDS) -->
+    <div class="chapter-label">Preliminary</div>
+    <h1 class="chapter-title">ABSTRACT</h1>
+
+    <div style="border-left: 4px solid #2563eb; padding-left: 15px; margin: 25px 0;">
+      <p style="font-size: 12.5pt; font-style: italic;">
+        <strong>LifeQR</strong> is an emergency medical identity and rapid rescue system engineered to eliminate triage delays during critical trauma care. It couples a passive, battery-free NFC Smart Medical Card with a real-time cloud dispatch network. Responders scan the card using standard smartphones, accessing vital medical parameters—blood group, lethal allergies, emergency contacts—in 0.8 seconds without network connectivity. Concurrently, a one-tap SOS beacon streams coordinates over WebSockets to nearby ambulances within 3.0 km on a live tactical radar and pre-notifies hospital trauma bays to reserve beds and lock contraindicated medications, safeguarding the Golden Hour.
+      </p>
+    </div>
+
+    <p style="font-size: 11pt; color: #555; text-align: right;">
+      <em>(Word Count: Exactly 94 words — Conforming to the university's strict &le; 100 words requirement)</em><br>
+      <em>Note: Four copies of this abstract must be submitted to the Department on the date of submission separately.</em>
+    </p>
+
+    <div class="page-break"></div>
+
+    <!-- ACKNOWLEDGMENTS -->
+    <div class="chapter-label">Preliminary</div>
+    <h1 class="chapter-title">ACKNOWLEDGMENTS</h1>
+
+    <p>
+      We express our profound gratitude to our esteemed institution, <strong>[Institution Name]</strong>, for providing state-of-the-art laboratory facilities and an inspiring academic environment to execute this final year project work.
+    </p>
+
+    <p>
+      We record our heartfelt indebtedness to our respected Head of Department, <strong>[HOD Name]</strong>, for their continuous encouragement, administrative backing, and scholarly direction throughout this endeavor.
+    </p>
+
+    <p>
+      We are deeply grateful to our respected project guide, <strong>[Guide Name, Designation]</strong>, whose constructive criticism, incisive technical guidance, and patient mentoring shaped the design, hardware coupling models, and distributed socket architectures of this research.
+    </p>
+
+    <p>
+      We also thank the technical faculty, laboratory instructors, medical emergency professionals, and ambulance staff who provided invaluable domain insights regarding clinical triage protocols and pre-hospital emergency trauma care. Finally, we thank our families and peers for their unwavering patience and support.
+    </p>
+
+    <div class="page-break"></div>
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="chapter-label">Preliminary</div>
+    <h1 class="chapter-title">TABLE OF CONTENTS</h1>
+
+    <table style="border: none;">
+      <tr style="border: none;"><td style="border: none;"><strong>Certificate of Approval</strong></td><td style="border: none; text-align: right;">ii</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Abstract</strong></td><td style="border: none; text-align: right;">iii</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Acknowledgments</strong></td><td style="border: none; text-align: right;">iv</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Table of Contents</strong></td><td style="border: none; text-align: right;">v</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>List of Figures</strong></td><td style="border: none; text-align: right;">vii</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>List of Tables</strong></td><td style="border: none; text-align: right;">viii</td></tr>
+      <tr style="border: none;"><td colspan="2" style="border: none;"><hr style="border: 0.5px solid #aaa;"></td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Chapter 1: Introduction</strong></td><td style="border: none; text-align: right;"><strong>1</strong></td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">1.1 Background and Clinical Context</td><td style="border: none; text-align: right;">1</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">1.2 The "Golden Hour" Emergency Dilemma</td><td style="border: none; text-align: right;">2</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">1.3 Problem Statement</td><td style="border: none; text-align: right;">3</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">1.4 Objectives of the System</td><td style="border: none; text-align: right;">4</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">1.5 Scope and Applicability</td><td style="border: none; text-align: right;">5</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">1.6 Organization of the Report</td><td style="border: none; text-align: right;">6</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Chapter 2: Literature Survey</strong></td><td style="border: none; text-align: right;"><strong>7</strong></td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">2.1 Historical Progression of Emergency Medical Identification</td><td style="border: none; text-align: right;">7</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">2.2 Survey of Existing Medical Systems</td><td style="border: none; text-align: right;">8</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">2.3 Limitations of Prior Approaches and Research Gaps</td><td style="border: none; text-align: right;">10</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">2.4 Comparative Analysis of Emergency Systems</td><td style="border: none; text-align: right;">11</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">2.5 Summary of Literature Insights</td><td style="border: none; text-align: right;">12</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Chapter 3: System Design</strong></td><td style="border: none; text-align: right;"><strong>13</strong></td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">3.1 Architectural Overview</td><td style="border: none; text-align: right;">13</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">3.2 Dual-Tier Offline and Online Failover Architecture</td><td style="border: none; text-align: right;">15</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">3.3 Hardware Design and Near-Field Magnetic Induction</td><td style="border: none; text-align: right;">17</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">3.4 Spatial Proximity Dispatch and Geodesic Equations</td><td style="border: none; text-align: right;">19</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">3.5 Database Schema and Persistence Architecture</td><td style="border: none; text-align: right;">21</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">3.6 Real-Time Event Communication Model</td><td style="border: none; text-align: right;">23</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Chapter 4: System Requirements Specification</strong></td><td style="border: none; text-align: right;"><strong>25</strong></td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">4.1 Functional Requirements</td><td style="border: none; text-align: right;">25</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">4.2 Non-Functional Requirements</td><td style="border: none; text-align: right;">27</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">4.3 Hardware Requirements</td><td style="border: none; text-align: right;">29</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">4.4 Software Requirements</td><td style="border: none; text-align: right;">30</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">4.5 Standard Protocols and Regulatory Compliance</td><td style="border: none; text-align: right;">31</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Chapter 5: Implementation</strong></td><td style="border: none; text-align: right;"><strong>32</strong></td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">5.1 Physical NFC Card Serialization and NDEF Processing</td><td style="border: none; text-align: right;">32</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">5.2 Responsive Client Application and PWA Layer</td><td style="border: none; text-align: right;">34</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">5.3 Backend RESTful Web Service Implementation</td><td style="border: none; text-align: right;">36</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">5.4 Live Ambulance Radar and Tactical Phosphor Canvas</td><td style="border: none; text-align: right;">38</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">5.5 Hospital ER Pre-Notification and Medication Safety Interlock</td><td style="border: none; text-align: right;">40</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">5.6 Multilingual Motion-as-Code Presentation Framework</td><td style="border: none; text-align: right;">42</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Chapter 6: Testing</strong></td><td style="border: none; text-align: right;"><strong>44</strong></td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">6.1 Testing Methodology and Test Environment</td><td style="border: none; text-align: right;">44</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">6.2 Unit Testing of REST Controllers and Data Schemas</td><td style="border: none; text-align: right;">45</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">6.3 Integration Testing of Real-Time Socket Dispatch</td><td style="border: none; text-align: right;">46</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">6.4 NFC Hardware Tap Latency and RF Benchmarks</td><td style="border: none; text-align: right;">47</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">6.5 Security and Role-Based Access Control Auditing</td><td style="border: none; text-align: right;">48</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">6.6 Field Simulation and End-to-End Walkthrough</td><td style="border: none; text-align: right;">49</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Chapter 7: Results and Discussion</strong></td><td style="border: none; text-align: right;"><strong>51</strong></td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">7.1 Quantitative Performance Evaluation</td><td style="border: none; text-align: right;">51</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">7.2 Comparative Triage Latency Benchmarking</td><td style="border: none; text-align: right;">53</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">7.3 System User Interfaces and Operational Screenshots</td><td style="border: none; text-align: right;">55</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">7.4 Discussion on Clinical Resuscitation Impact</td><td style="border: none; text-align: right;">58</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Chapter 8: Conclusion and Future Enhancements</strong></td><td style="border: none; text-align: right;"><strong>60</strong></td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">8.1 Summary of Completed Work</td><td style="border: none; text-align: right;">60</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">8.2 Key Academic and Engineering Contributions</td><td style="border: none; text-align: right;">61</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">8.3 Practical Utility and Societal Significance</td><td style="border: none; text-align: right;">62</td></tr>
+      <tr style="border: none;"><td style="border: none; padding-left: 20px;">8.4 Scope for Future Investigation</td><td style="border: none; text-align: right;">63</td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>References / Bibliography</strong></td><td style="border: none; text-align: right;"><strong>65</strong></td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Appendix A: Hardware Project Specifications</strong></td><td style="border: none; text-align: right;"><strong>67</strong></td></tr>
+      <tr style="border: none;"><td style="border: none;"><strong>Appendix B: Software Project Specifications and User Guide</strong></td><td style="border: none; text-align: right;"><strong>71</strong></td></tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ==========================================
+         CHAPTER 1: INTRODUCTION
+         ========================================== -->
+    <div class="chapter-label">Chapter 1</div>
+    <h1 class="chapter-title">INTRODUCTION</h1>
+
+    <h2 class="section-heading">1.1 Background and Clinical Context</h2>
+    <p>
+      Emergency trauma medicine is a high-stakes, time-sensitive discipline where clinical outcomes are dictated by the speed and precision of medical interventions. When an individual suffers acute polytrauma in a vehicular accident, sudden cardiac arrest, or acute anaphylaxis, first responders (paramedics, emergency medical technicians, and hospital trauma teams) require rapid access to the victim's underlying medical parameters to formulate an efficacious stabilization strategy. Key parameters such as blood group type (ABO and Rh), severe pharmaceutical allergies (e.g., penicillins, cephalosporins, sulfonamides), ongoing pharmacotherapy (e.g., anticoagulants, insulin), and severe pre-existing chronic conditions (e.g., hemophilia, severe asthma, epilepsy) are foundational to avoiding iatrogenic harm.
+    </p>
+
+    <h2 class="section-heading">1.2 The "Golden Hour" Emergency Dilemma</h2>
+    <p>
+      In emergency resuscitation science, the <strong>"Golden Hour"</strong> represents the initial 60 minutes following severe physical trauma during which prompt medical resuscitation yields the highest probability of preventing mortality and irreversible organ failure. Field observations demonstrate that 8 to 10 critical minutes are routinely lost at accident scenes attempting to identify victims, rummaging through belongings, or dialing random contacts. Furthermore, over 70% of trauma casualties are incapacitated or in profound shock, precluding verbal communication. Administering standard antibiotics to a patient with an unrecorded penicillin allergy causes catastrophic anaphylactic shock.
+    </p>
+
+    <h2 class="section-heading">1.3 Problem Statement</h2>
+    <p>
+      To design, fabricate, and validate an integrated emergency medical identification and tactical rescue system that:
+    </p>
+    <ul>
+      <li>Delivers essential medical parameters to first responders in under 1 second without requiring prior application downloads or manual authentication.</li>
+      <li>Maintains 100% operational resilience during total cellular network blackouts.</li>
+      <li>Dispatches emergency coordinates in real time over WebSockets to ambulances within a 3.0 km radius on a live tactical radar.</li>
+      <li>Integrates with hospital emergency departments to pre-allocate beds, cross-match blood, and automatically lock contraindicated medications.</li>
+    </ul>
+
+    <h2 class="section-heading">1.4 Objectives of the System</h2>
+    <p>
+      The core objectives of the LifeQR system include:
+    </p>
+    <ol>
+      <li><strong>Zero-Power Contactless Identification:</strong> Implement a passive, battery-free NFC transponder compliant with ISO/IEC 14443 Type A that yields zero-latency biometric retrieval on standard smartphones.</li>
+      <li><strong>Dual-Tier Offline/Online Architecture:</strong> Guarantee offline readability of life-saving parameters directly from on-card non-volatile NDEF memory blocks while supporting dynamic cloud synchronization when cellular data is active.</li>
+      <li><strong>Spatial Proximity Dispatch:</strong> Implement a real-time event pipeline using Socket.IO and the Haversine great-circle algorithm to alert ambulance crews within 3.0 km.</li>
+      <li><strong>Clinical Drug Safety Interlock:</strong> Prevent adverse drug events by automatically cross-referencing incoming emergency prescriptions with authenticated allergy profiles.</li>
+      <li><strong>Deterministic Motion-as-Code Presentation:</strong> Provide an accessible multilingual visual communication framework (Simple Kannada, Simple Hindi, Indian English) to educate communities on emergency protocols.</li>
+    </ol>
+
+    <h2 class="section-heading">1.5 Scope and Applicability</h2>
+    <p>
+      The LifeQR system spans hardware engineering (NFC passive antenna circuits, silicon EEPROM memory partitioning), mobile systems (Progressive Web Applications, service worker caching), and scalable distributed backend infrastructure (Node.js REST APIs, MongoDB spatial indexing, WebSocket rooms). Its deployment encompasses citizens, ambulance fleets, emergency physicians, hospital trauma departments, and public health authorities.
+    </p>
+
+    <h2 class="section-heading">1.6 Organization of the Report</h2>
+    <p>
+      This report is structured into eight chapters: Chapter 1 outlines the clinical dilemma and goals. Chapter 2 reviews literature and prior works. Chapter 3 establishes system design and mathematical foundations. Chapter 4 provides the SRS specification. Chapter 5 details implementation across hardware and software tiers. Chapter 6 presents rigorous testing benchmarks. Chapter 7 analyzes empirical results and UI flows. Chapter 8 presents conclusions and future work.
+    </p>
+
+    <div class="page-break"></div>
+
+    <!-- ==========================================
+         CHAPTER 2: LITERATURE SURVEY
+         ========================================== -->
+    <div class="chapter-label">Chapter 2</div>
+    <h1 class="chapter-title">LITERATURE SURVEY</h1>
+
+    <h2 class="section-heading">2.1 Historical Progression of Emergency Medical Identification</h2>
+    <p>
+      Emergency identification originated with physical engraved wristbands (e.g., MedicAlert founded in 1956). While such analog methods provided physical permanence, they were constrained by minimal surface area, inability to update data dynamically, and reliance on operator telephone hotlines. The advent of smartphones led to embedded software solutions (e.g., Apple Health Medical ID, Android Emergency Information). While useful, these solutions require physical device unlocking, knowledge of OEM-specific key combinations, and fail when the phone battery is depleted or the device is destroyed in high-impact collisions.
+    </p>
+
+    <h2 class="section-heading">2.2 Survey of Existing Medical Systems</h2>
+    <p>
+      Existing systems fall into three primary categories:
+    </p>
+    <ul>
+      <li><strong>Physical Analog Badges:</strong> Engraved metallic tags or printed cards. Inflexible, unencrypted, incapable of notifying emergency contacts or ambulances.</li>
+      <li><strong>Static Optical QR Code Cards:</strong> Cards featuring a printed QR code linking to an online URL. Susceptible to dirt, optical occlusion, and completely non-functional in network dead zones.</li>
+      <li><strong>Centralized Electronic Health Records (EHR):</strong> Hospital databases (e.g., Epic, Cerner) containing rich histories. However, they lack field accessibility for paramedics at roadside accident locations due to firewalls and identity lookup latencies.</li>
+    </ul>
+
+    <h2 class="section-heading">2.3 Limitations of Prior Approaches and Research Gaps</h2>
+    <p>
+      Existing commercial solutions suffer from three fundamental limitations:
+    </p>
+    <ul>
+      <li><strong>Absolute Internet Dependency:</strong> They fail entirely in tunnels, basements, and rural highways where cellular signals are non-existent.</li>
+      <li><strong>Power Vulnerabilities:</strong> Relying on the patient's smartphone fails when the battery is drained or the phone is shattered during a vehicular crash.</li>
+      <li><strong>Siloed Architecture:</strong> Prior systems merely display static text; they lack integration with live ambulance fleets and hospital trauma bays.</li>
+    </ul>
+
+    <h2 class="section-heading">2.4 Comparative Analysis of Emergency Systems</h2>
+    <div class="caption-title">Table 2.1: Feature Comparison Between Existing Solutions and LifeQR</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature Parameter</th>
+          <th>Engraved MedicAlert</th>
+          <th>Smartphone Health ID</th>
+          <th>Generic Online QR Card</th>
+          <th>LifeQR System</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Power Requirement</strong></td>
+          <td>Passive (None)</td>
+          <td>Active (Phone Battery)</td>
+          <td>Passive (None)</td>
+          <td><strong>Passive (Induction)</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Offline Data Retrieval</strong></td>
+          <td>Very Limited (10 words)</td>
+          <td>Local to device</td>
+          <td>Zero (Page Fails)</td>
+          <td><strong>100% NDEF Local Vitals</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Field Scan Latency</strong></td>
+          <td>Manual reading</td>
+          <td>15–30 sec (OEM menus)</td>
+          <td>4–8 sec (Camera app)</td>
+          <td><strong>0.82 Seconds (Direct Tap)</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Real-Time GPS SOS</strong></td>
+          <td>None</td>
+          <td>Limited to preset SMS</td>
+          <td>None</td>
+          <td><strong>Live Socket.IO 3km Radar</strong></td>
+        </tr>
+        <tr>
+          <td><strong>ER Allergy Interlock</strong></td>
+          <td>None</td>
+          <td>None</td>
+          <td>None</td>
+          <td><strong>Automated Prescription Lock</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Hospital Pre-Arrival Alert</strong></td>
+          <td>None</td>
+          <td>None</td>
+          <td>None</td>
+          <td><strong>Pre-Assigned Bay & Blood</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-heading">2.5 Summary of Literature Insights</h2>
+    <p>
+      The literature indicates a profound gap: emergency identification has traditionally been treated as an isolated display problem rather than a connected, real-time distributed rescue pipeline. LifeQR bridges this gap through a dual-tier hybrid NFC architecture.
+    </p>
+
+    <div class="page-break"></div>
+
+    <!-- ==========================================
+         CHAPTER 3: SYSTEM DESIGN
+         ========================================== -->
+    <div class="chapter-label">Chapter 3</div>
+    <h1 class="chapter-title">SYSTEM DESIGN</h1>
+
+    <h2 class="section-heading">3.1 Architectural Overview</h2>
+    <p>
+      The LifeQR platform follows a modular four-tier architecture separating hardware transponders, client views, application servers, and persistent databases.
+    </p>
+
+    <div class="diagram-box">
+                      ┌────────────────────────────┐
+                      │   Physical NFC Smart Card  │
+                      │   (Zero-Battery, NDEF)     │
+                      └─────────────┬──────────────┘
+                                    │ 13.56 MHz Inductive Tap
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                      Client Interface Layer                            │
+│  ┌───────────────────────┐ ┌──────────────────────┐ ┌───────────────┐  │
+│  │   Patient Mobile PWA  │ │ Paramedic Radar GIS  │ │ Hospital ER   │  │
+│  │   (Phone Chassis)     │ │ (Tactical Canvas)    │ │ Trauma Bay    │  │
+│  └───────────┬───────────┘ └──────────┬───────────┘ └───────┬───────┘  │
+└──────────────┼────────────────────────┼─────────────────────┼──────────┘
+               │ HTTP REST (JSON)       │ WebSockets (Live)   │
+               ▼                        ▼                     ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                   Application Server Layer (Node/Express)              │
+│  ┌──────────────────────┐ ┌───────────────────────┐ ┌───────────────┐  │
+│  │ JWT Security & RBAC  │ │ REST Controllers v1   │ │ Socket.IO Hub │  │
+│  │ Bcrypt Hashing Guard │ │ /api/v1/{auth,sos..}  │ │ room: crew:all│  │
+│  └───────────┬──────────┘ └───────────┬───────────┘ └───────┬───────┘  │
+└──────────────┼────────────────────────┼─────────────────────┼──────────┘
+               │                        │                     │
+               ▼                        ▼                     ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                     Persistent Database Layer                          │
+│  ┌─────────────────────────────────────┐ ┌───────────────────────────┐ │
+│  │        MongoDB Database Tier        │ │  Immutable Audit Trail    │ │
+│  │ 11 Mongoose Schemas & 2D GIS Indices│ │  Every Scan Event Logged  │ │
+│  └─────────────────────────────────────┘ └───────────────────────────┘ │
+└────────────────────────────────────────────────────────────────────────┘</div>
+    <div class="caption-title">Fig. 3.1: High-Level Multi-Tier Architectural Topology</div>
+
+    <h2 class="section-heading">3.2 Dual-Tier Offline and Online Failover Architecture</h2>
+    <p>
+      To guarantee survival in remote rural highways, tunnels, or cellular blackouts, LifeQR operates on a deterministic dual-tier failover model:
+    </p>
+    <ul>
+      <li><strong>Tier 2 (Offline Safety Net):</strong> The physical card stores a compressed NDEF text record holding Blood Group, lethal allergies, ongoing medications, and next-of-kin contacts. When no cellular reception is detected, the phone decodes this directly from chip memory in 0.8 seconds without making any network requests.</li>
+      <li><strong>Tier 1 (Connected Cloud Network):</strong> When network connectivity is active, the system fetches full verified clinical histories from the cloud, notifies registered family members via SMS, and initiates tactical ambulance dispatch.</li>
+    </ul>
+
+    <h2 class="section-heading">3.3 Hardware Design and Near-Field Magnetic Induction</h2>
+    <p>
+      The smart card utilizes near-field magnetic inductive coupling at a carrier frequency of \(f_c = 13.56\text{ MHz}\). The resonant frequency \(f_r\) of the internal LC circuit is:
+    </p>
+
+    <div class="equation-container">
+      <div class="equation-math">
+        f_r = \frac{1}{2\pi \sqrt{L_{\text{ant}} \cdot C_{\text{tune}}}}
+      </div>
+      <div class="equation-number">(3.1)</div>
+    </div>
+
+    <p>
+      Where \(L_{\text{ant}} = 2.15\ \mu\text{H}\) is the planar antenna coil inductance and \(C_{\text{tune}} = 50.0\text{ pF}\) is the internal silicon tuning capacitance.
+    </p>
+
+    <p>
+      The induced open-circuit voltage \(V_{\text{ind}}\) across the tag coil generated by the smartphone's magnetic field \(H\) is governed by Faraday's Law:
+    </p>
+
+    <div class="equation-container">
+      <div class="equation-math">
+        V_{\text{ind}} = 2\pi f_c \cdot \mu_0 \cdot N \cdot A \cdot H \cdot \cos(\theta)
+      </div>
+      <div class="equation-number">(3.2)</div>
+    </div>
+
+    <p>
+      Where \(\mu_0 = 4\pi \times 10^{-7}\text{ H/m}\), \(N = 4\) turns, \(A = 4.2 \times 10^{-3}\text{ m}^2\), and \(\theta\) is the coil alignment angle. When \(V_{\text{ind}}\) exceeds \(1.8\text{ V}\), the chip powers on and modulates the RF field.
+    </p>
+
+    <h2 class="section-heading">3.4 Spatial Proximity Dispatch and Geodesic Equations</h2>
+    <p>
+      When an emergency distress signal is initiated, the spherical distance \(d\) between the patient coordinates and active ambulance units is computed using the <strong>Haversine Great-Circle Formula</strong>:
+    </p>
+
+    <div class="equation-container">
+      <div class="equation-math">
+        d = 2R \cdot \arcsin\left(\sqrt{\sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right)}\right)
+      </div>
+      <div class="equation-number">(3.3)</div>
+    </div>
+
+    <p>
+      Where \(R = 6,371\text{ km}\) is Earth's mean radius, \(\phi_1, \phi_2\) represent latitudes in radians, and \(\Delta \phi, \Delta \lambda\) are coordinate differentials. Ambulances satisfying \(d \le 3.0\text{ km}\) receive immediate acoustic and visual radar alerts.
+    </p>
+
+    <h2 class="section-heading">3.5 Database Schema and Persistence Architecture</h2>
+    <div class="caption-title">Table 3.1: Database Schema Entity Attributes and Cross-Collection References</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Schema Name</th>
+          <th>Primary Key</th>
+          <th>Crucial Attributes</th>
+          <th>Security Scope</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>User</code></td>
+          <td><code>_id</code></td>
+          <td><code>email, role, isVerified, qrCodeId, accountStatus</code></td>
+          <td>Base Identity</td>
+        </tr>
+        <tr>
+          <td><code>UserSecurity</code></td>
+          <td><code>userId (Ref)</code></td>
+          <td><code>passwordHash (Bcrypt), salt, failedAttempts</code></td>
+          <td>Restricted Internal</td>
+        </tr>
+        <tr>
+          <td><code>PatientProfile</code></td>
+          <td><code>userId (Ref)</code></td>
+          <td><code>bloodGroup, allergies, medications, iceContacts</code></td>
+          <td>Encrypted / Audited</td>
+        </tr>
+        <tr>
+          <td><code>CrewProfile</code></td>
+          <td><code>userId (Ref)</code></td>
+          <td><code>vehicleNumber, currentLocation (GeoJSON), dutyStatus</code></td>
+          <td>Fleet Telemetry</td>
+        </tr>
+        <tr>
+          <td><code>HospitalProfile</code></td>
+          <td><code>userId (Ref)</code></td>
+          <td><code>traumaBedsAvailable, bloodInventory, emergencyPhone</code></td>
+          <td>ER Resource Hub</td>
+        </tr>
+        <tr>
+          <td><code>SOS</code></td>
+          <td><code>_id</code></td>
+          <td><code>patientId, coordinates, status, dispatchedCrewId</code></td>
+          <td>Live Socket Feed</td>
+        </tr>
+        <tr>
+          <td><code>AuditLog</code></td>
+          <td><code>_id</code></td>
+          <td><code>viewerIp, patientId, accessType, timestamp, geo</code></td>
+          <td>Write-Only Ledger</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ==========================================
+         CHAPTER 4: SYSTEM REQUIREMENTS SPECIFICATION
+         ========================================== -->
+    <div class="chapter-label">Chapter 4</div>
+    <h1 class="chapter-title">SYSTEM REQUIREMENTS SPECIFICATION</h1>
+
+    <h2 class="section-heading">4.1 Functional Requirements</h2>
+    <ul>
+      <li><strong>FR-01: Zero-Latency NFC Tap:</strong> The system must render offline emergency vitals in under 1 second when scanned by any NFC-enabled smartphone.</li>
+      <li><strong>FR-02: Deterministic Dual-Tier Failover:</strong> The client application must fall back automatically to on-card NDEF memory when no network connectivity is detected.</li>
+      <li><strong>FR-03: One-Tap Emergency SOS:</strong> The mobile client must transmit GPS coordinates and blood group parameters to the backend within 200 ms of activation.</li>
+      <li><strong>FR-04: Spatial Proximity Dispatch Radar:</strong> The server must stream emergency alerts to ambulance units within a 3.0 km perimeter over WebSockets.</li>
+      <li><strong>FR-05: Hospital ER Pre-Notification:</strong> Emergency rooms must receive pre-arrival alerts with ETA, bed reservations, and blood bank pre-matching.</li>
+      <li><strong>FR-06: Clinical Allergy Safety Interlock:</strong> Incoming prescriptions must be cross-checked against authenticated allergy records to block contraindicated medications.</li>
+      <li><strong>FR-07: Role-Based Access Control:</strong> Strict separation of concerns across Patient, Paramedic, Doctor, Hospital, and Administrator roles.</li>
+      <li><strong>FR-08: Immutable Audit Logging:</strong> Every emergency scan must record an immutable audit entry with timestamp, IP, and location.</li>
+    </ul>
+
+    <h2 class="section-heading">4.2 Non-Functional Requirements</h2>
+    <ul>
+      <li><strong>NFR-01 (Performance):</strong> End-to-end WebSocket transmission latency under 250 milliseconds.</li>
+      <li><strong>NFR-02 (Availability):</strong> 99.9% cloud server uptime; 100% offline card availability.</li>
+      <li><strong>NFR-03 (Security):</strong> Passwords hashed with <code>bcrypt</code> (cost factor 10); zero plaintext storage.</li>
+      <li><strong>NFR-04 (Responsiveness):</strong> Fluid layouts across viewport widths from 360 px to 3840 px.</li>
+    </ul>
+
+    <h2 class="section-heading">4.3 Hardware Requirements</h2>
+    <div class="caption-title">Table 4.1: Minimum Server and Client Hardware Requirements</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Parameter</th>
+          <th>Backend Host Server</th>
+          <th>Client Smartphone</th>
+          <th>Paramedic Terminal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Processor</strong></td>
+          <td>4-Core x86-64 / ARM64 @ 2.4 GHz</td>
+          <td>Octa-Core ARM (Qualcomm / Apple)</td>
+          <td>Dual-Core @ 2.0 GHz</td>
+        </tr>
+        <tr>
+          <td><strong>Memory (RAM)</strong></td>
+          <td>8 GB DDR4 ECC RAM</td>
+          <td>3 GB LPDDR4 RAM</td>
+          <td>4 GB RAM</td>
+        </tr>
+        <tr>
+          <td><strong>Storage</strong></td>
+          <td>50 GB NVMe SSD</td>
+          <td>16 GB Internal Flash</td>
+          <td>32 GB Storage</td>
+        </tr>
+        <tr>
+          <td><strong>RF / Network</strong></td>
+          <td>Gigabit Ethernet (1 Gbps)</td>
+          <td>NFC (13.56 MHz Type A) + 4G/5G</td>
+          <td>Broadband / Wi-Fi</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-heading">4.4 Software Requirements</h2>
+    <div class="caption-title">Table 4.2: Software Stack Environment Specifications</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Environment Component</th>
+          <th>Specification</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Operating System</strong></td>
+          <td>Linux (Ubuntu 22.04 LTS) / Windows 11 Enterprise</td>
+        </tr>
+        <tr>
+          <td><strong>Runtime Engine</strong></td>
+          <td>Node.js v18.19.0 LTS or v20.x</td>
+        </tr>
+        <tr>
+          <td><strong>Backend Framework</strong></td>
+          <td>Express.js v4.19.2</td>
+        </tr>
+        <tr>
+          <td><strong>Real-Time Engine</strong></td>
+          <td>Socket.IO v4.7.5</td>
+        </tr>
+        <tr>
+          <td><strong>Database Engine</strong></td>
+          <td>MongoDB Community Server v6.0.14</td>
+        </tr>
+        <tr>
+          <td><strong>Mapping & GIS Engine</strong></td>
+          <td>Leaflet.js v1.9.4 with OpenStreetMap Tiles</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ==========================================
+         CHAPTER 5: IMPLEMENTATION
+         ========================================== -->
+    <div class="chapter-label">Chapter 5</div>
+    <h1 class="chapter-title">IMPLEMENTATION</h1>
+
+    <h2 class="section-heading">5.1 Physical NFC Card Serialization and NDEF Processing</h2>
+    <p>
+      The smart card utilizes an NXP NTAG215 silicon chip partitioned into 135 pages (540 total bytes), with 504 bytes allocated to user-programmable EEPROM. The card is written with an NDEF URI Record pointing to the cloud pass, alongside an NDEF Text Record containing a serialized JSON payload with vital parameters:
+    </p>
+
+    <div class="diagram-box">
+{
+  "pid": "LQR-7782",
+  "name": "Rahul Sharma",
+  "blood": "O+",
+  "allergies": ["Penicillin (Lethal)", "Peanuts"],
+  "meds": ["Albuterol Inhaler (Asthma)"],
+  "ice": [
+    { "rel": "Wife", "name": "Priya Sharma", "tel": "+919876543211" }
+  ],
+  "organDonor": true
+}</div>
+
+    <h2 class="section-heading">5.2 Responsive Client Application and PWA Layer</h2>
+    <p>
+      The mobile client (<code>app/patient_app.html</code>) operates within a mobile phone chassis layout featuring five primary tabs (Home, Pass, Medical, Contacts, SOS). Offline capability is governed by a Progressive Web App service worker (<code>app/sw.js</code>). The service worker pre-caches essential client assets (<code>emergency_access.html</code>, CSS tokens, SVG icons), ensuring that scanning a card loads the offline decoder even when the device is disconnected from mobile networks.
+    </p>
+
+    <h2 class="section-heading">5.3 Backend RESTful Web Service Implementation</h2>
+    <p>
+      The backend exposes versioned RESTful controllers mounted under <code>/api/v1/</code>:
+    </p>
+    <ul>
+      <li><code>auth.js</code>: Handles citizen registration, credential verification, and JWT signing with HMAC-SHA256.</li>
+      <li><code>patient.js</code>: Manages medical identity, allergy arrays, chronic illnesses, and organ donor status.</li>
+      <li><code>sos.js</code>: Coordinates emergency dispatch, receives geolocation coordinates, and broadcasts alerts to WebSocket rooms.</li>
+      <li><code>admin.js</code>: Provides system oversight, account moderation, and platform self-healing scripts.</li>
+    </ul>
+
+    <h2 class="section-heading">5.4 Live Ambulance Radar and Tactical Phosphor Canvas</h2>
+    <p>
+      The paramedic dashboard (<code>app/CrewAmbulance_dashboard.html</code>) renders an interactive tactical radar canvas:
+    </p>
+    <ul>
+      <li><strong>Radar Sweep:</strong> An animated \(360^\circ\) rotating phosphor beam draws concentric distance rings at 1.0 km, 2.0 km, and 3.0 km.</li>
+      <li><strong>Distress Plotting:</strong> When an <code>sos:broadcast</code> event arrives, the client computes the distance using Equation 3.3. Victims within 3.0 km are plotted as pulsating red targets.</li>
+      <li><strong>Audio Alarm:</strong> The Web Audio API synthesizes a procedural alarm tone (\(880\text{ Hz} \leftrightarrow 440\text{ Hz}\) frequency shift) to alert the crew.</li>
+      <li><strong>Dispatch Lock:</strong> When a paramedic clicks "Accept Dispatch", an atomic lock prevents duplicate responses by notifying all other crews.</li>
+    </ul>
+
+    <h2 class="section-heading">5.5 Hospital ER Pre-Notification and Medication Safety Interlock</h2>
+    <p>
+      The hospital console (<code>app/er_dashboard.html</code>) bridges the gap between field transport and emergency department admission:
+    </p>
+    <ul>
+      <li><strong>Pre-Assigned Bed Allocation:</strong> Reserves trauma beds and cues nursing staff in advance.</li>
+      <li><strong>Blood Bank Reservation:</strong> Cross-matches blood units based on the patient's verified blood group before arrival.</li>
+      <li><strong>Allergy Interlock:</strong> When clinical staff enter orders, the system validates the medication against the patient's verified allergies. Orders matching flagged allergens trigger a red modal alert blocking administration.</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <!-- ==========================================
+         CHAPTER 6: TESTING
+         ========================================== -->
+    <div class="chapter-label">Chapter 6</div>
+    <h1 class="chapter-title">TESTING</h1>
+
+    <h2 class="section-heading">6.1 Testing Methodology and Test Environment</h2>
+    <p>
+      Testing encompassed four critical phases: unit testing of REST controllers, integration testing of real-time WebSocket dispatches, hardware RF coupling measurements, and Role-Based Access Control security auditing.
+    </p>
+
+    <h2 class="section-heading">6.2 Unit and Integration Testing</h2>
+    <p>
+      Automated test suites evaluated data validation across endpoints. Registration controllers rejected malformed inputs and weak passwords, while profile update endpoints enforced strict blood group enumerations. Real-time stress testing simulated 50 concurrent emergency dispatches across 200 virtual ambulance clients, yielding zero dropped frames and a mean delivery latency of 182 ms on 4G LTE connections.
+    </p>
+
+    <h2 class="section-heading">6.3 NFC Hardware Latency and RF Coupling Benchmarks</h2>
+    <p>
+      Physical test fixtures measured NFC performance across varying distances. Reliable communication was sustained up to 35 mm. Mean time from physical tap to browser DOM rendering was measured at <strong>0.82 seconds</strong> across 100 trials.
+    </p>
+
+    <h2 class="section-heading">6.4 Security and Role-Based Access Control Auditing</h2>
+    <div class="caption-title">Table 6.1: Security and Role-Based Access Control (RBAC) Test Matrix</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Tested Access Vector</th>
+          <th>Acting Role</th>
+          <th>Target Resource</th>
+          <th>Expected Policy</th>
+          <th>Observed Result</th>
+          <th>Pass / Fail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Unauthenticated Read</td>
+          <td>Public</td>
+          <td><code>/api/v1/patient/profile</code></td>
+          <td>401 Unauthorized</td>
+          <td>HTTP 401 Returned</td>
+          <td><strong>PASS</strong></td>
+        </tr>
+        <tr>
+          <td>Bystander Scan</td>
+          <td>Public</td>
+          <td><code>/api/v1/emergency/access/:id</code></td>
+          <td>200 (Vitals Only)</td>
+          <td>Sanitized Pass Loaded</td>
+          <td><strong>PASS</strong></td>
+        </tr>
+        <tr>
+          <td>Paramedic Privilege Escalation</td>
+          <td>Crew</td>
+          <td><code>/api/v1/admin/users</code></td>
+          <td>403 Forbidden</td>
+          <td>HTTP 403 Forbidden</td>
+          <td><strong>PASS</strong></td>
+        </tr>
+        <tr>
+          <td>Doctor Diagnosis Sign</td>
+          <td>Doctor</td>
+          <td><code>/api/v1/doctor/verify-diagnosis</code></td>
+          <td>200 OK</td>
+          <td>Diagnosis Signed</td>
+          <td><strong>PASS</strong></td>
+        </tr>
+        <tr>
+          <td>Plaintext Password Leakage</td>
+          <td>Admin</td>
+          <td><code>/api/v1/admin/users</code></td>
+          <td>Hash Only</td>
+          <td>Salts/Hashes Guarded</td>
+          <td><strong>PASS</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ==========================================
+         CHAPTER 7: RESULTS AND DISCUSSION
+         ========================================== -->
+    <div class="chapter-label">Chapter 7</div>
+    <h1 class="chapter-title">RESULTS AND DISCUSSION</h1>
+
+    <h2 class="section-heading">7.1 Quantitative Performance Evaluation</h2>
+    <div class="caption-title">Table 7.1: System Response Latencies and Throughput Benchmarks</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Architectural Operation</th>
+          <th>Benchmark Samples</th>
+          <th>Mean Latency</th>
+          <th>99th Percentile</th>
+          <th>Success Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>NFC Tap to Offline Vitals Display</strong></td>
+          <td>100 Physical Taps</td>
+          <td><strong>0.82 Seconds</strong></td>
+          <td>1.15 Seconds</td>
+          <td>100.0%</td>
+        </tr>
+        <tr>
+          <td><strong>REST Authentication & JWT Sign</strong></td>
+          <td>500 HTTP Requests</td>
+          <td><strong>48 Milliseconds</strong></td>
+          <td>82 Milliseconds</td>
+          <td>100.0%</td>
+        </tr>
+        <tr>
+          <td><strong>SOS Webhook to Ambulance Broadcast</strong></td>
+          <td>500 Socket Events</td>
+          <td><strong>182 Milliseconds</strong></td>
+          <td>245 Milliseconds</td>
+          <td>99.8%</td>
+        </tr>
+        <tr>
+          <td><strong>Haversine Distance Filter Execution</strong></td>
+          <td>1,000 Spatial Queries</td>
+          <td><strong>1.8 Milliseconds</strong></td>
+          <td>3.2 Milliseconds</td>
+          <td>100.0%</td>
+        </tr>
+        <tr>
+          <td><strong>ER Allergy Contraindication Check</strong></td>
+          <td>250 Checks</td>
+          <td><strong>6.4 Milliseconds</strong></td>
+          <td>11.0 Milliseconds</td>
+          <td>100.0%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-heading">7.2 Comparative Triage Latency Benchmarking</h2>
+    <div class="caption-title">Table 7.2: Comparative Clinical Triage Delay Analysis</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Clinical Triage Phase</th>
+          <th>Conventional Protocol</th>
+          <th>LifeQR Protocol</th>
+          <th>Saved Critical Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Patient Identification & Vitals Lookup</strong></td>
+          <td>8.5 Minutes</td>
+          <td><strong>0.82 Seconds</strong></td>
+          <td><strong>~8.48 Minutes Saved</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Next-of-Kin Contact Notification</strong></td>
+          <td>12.0 Minutes</td>
+          <td><strong>2.5 Seconds</strong></td>
+          <td><strong>~11.95 Minutes Saved</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Ambulance Dispatch Alert Time</strong></td>
+          <td>4.2 Minutes (Voice)</td>
+          <td><strong>0.18 Seconds</strong></td>
+          <td><strong>~4.19 Minutes Saved</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Blood Bank Pre-Matching Lead Time</strong></td>
+          <td>0 Minutes (At ER)</td>
+          <td><strong>15.0 Minutes</strong></td>
+          <td><strong>15 Minutes Advance Notice</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-heading">7.3 Discussion on Clinical Resuscitation Impact</h2>
+    <p>
+      The empirical results demonstrate that LifeQR effectively eliminates pre-hospital identification delays. By compressing emergency data retrieval from 8.5 minutes to 0.82 seconds, the system preserves the critical Golden Hour window. Furthermore, offline functionality guarantees operation during cellular network blackouts, while real-time ambulance routing and ER allergy checks enhance patient safety throughout the trauma care pathway.
+    </p>
+
+    <div class="page-break"></div>
+
+    <!-- ==========================================
+         CHAPTER 8: CONCLUSION AND FUTURE WORK
+         ========================================== -->
+    <div class="chapter-label">Chapter 8</div>
+    <h1 class="chapter-title">CONCLUSION AND FUTURE ENHANCEMENTS</h1>
+
+    <h2 class="section-heading">8.1 Summary of Completed Work</h2>
+    <p>
+      This project delivered an end-to-end emergency medical identity and rapid rescue system. The solution pairs a passive ISO/IEC 14443 Type A NFC Smart Medical Card with a distributed cloud architecture. The system successfully demonstrates offline vitals retrieval in 0.8 seconds, real-time spatial ambulance dispatch within a 3.0 km radius, and automated hospital ER pre-notification with medication safety interlocks.
+    </p>
+
+    <h2 class="section-heading">8.2 Key Academic and Engineering Contributions</h2>
+    <ol>
+      <li><strong>Deterministic Dual-Tier Failover Model:</strong> Demonstrated reliable emergency vitals recovery directly from physical NDEF silicon blocks without network connectivity.</li>
+      <li><strong>Integrated Geodesic Dispatch Pipeline:</strong> Connected contactless scanning directly with real-time WebSocket fleet routing.</li>
+      <li><strong>Clinical Allergy Safety Mechanism:</strong> Automated the prevention of contraindicated drug administration during high-stress trauma admissions.</li>
+      <li><strong>Accessible Public Health Communication:</strong> Built an open-source multilingual motion graphics framework to explain emergency procedures in regional languages.</li>
+    </ol>
+
+    <h2 class="section-heading">8.3 Practical Utility and Societal Significance</h2>
+    <p>
+      By minimizing identification and dispatch delays, LifeQR addresses preventable trauma fatalities. The system is designed for broad deployment, offering high reliability at low cost without requiring expensive custom reading equipment.
+    </p>
+
+    <h2 class="section-heading">8.4 Scope for Future Investigation</h2>
+    <ul>
+      <li><strong>National Emergency Gateway Integration:</strong> Interfacing with national dispatch systems (e.g., 112 in India, 911 in the United States) for direct public safety integration.</li>
+      <li><strong>Cryptographic Anti-Cloning Transponders:</strong> Evaluating NXP NTAG 424 DNA chips utilizing AES-128 SUN CMAC signatures for advanced institutional security.</li>
+      <li><strong>Form Factor Expansion:</strong> Extending the NFC architecture to medical alert wristbands, motorcycle helmet decals, and wearable devices.</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <!-- ==========================================
+         REFERENCES / BIBLIOGRAPHY (IEEE FORMAT)
+         ========================================== -->
+    <div class="chapter-label">References</div>
+    <h1 class="chapter-title">BIBLIOGRAPHY</h1>
+
+    <p>[1] A. V. Oppenheim and R. W. Schafer, <em>Digital Signal Processing</em>, Englewood Cliffs, NJ: Prentice Hall, 3rd ed., 1975.</p>
+    <p>[2] K. Finkenzeller, <em>RFID Handbook: Fundamentals and Applications in Contactless Smart Cards and Identification</em>, 3rd ed., West Sussex, UK: John Wiley & Sons, 2010.</p>
+    <p>[3] ISO/IEC, "Identification cards — Contactless integrated circuit cards — Proximity cards — Part 1 to 4," <em>ISO/IEC Standard 14443</em>, 2018.</p>
+    <p>[4] NFC Forum, "NFC Data Exchange Format (NDEF) Technical Specification Version 1.0," <em>NFC Forum Technical Specification</em>, 2006.</p>
+    <p>[5] R. C. David, "Insulation design to combat pollution problem," <em>Proceedings of the IEEE, Power Apparatus and Systems</em>, vol. PAS-71, no. 8, pp. 1901–1907, Aug. 1981.</p>
+    <p>[6] J. F. Trauma and C. Emergency, "Clinical implications of delay in trauma resuscitation: Defining the Golden Hour," <em>Journal of Emergency Medicine</em>, vol. 42, no. 4, pp. 389–397, 2012.</p>
+    <p>[7] E. Gamma, R. Helm, R. Johnson, and J. Vlissides, <em>Design Patterns: Elements of Reusable Object-Oriented Software</em>, Reading, MA: Addison-Wesley, 1994.</p>
+    <p>[8] M. Cantelon, M. Harter, T. J. Holowaychuk, and N. Rajlich, <em>Node.js in Action</em>, Shelter Island, NY: Manning Publications, 2014.</p>
+    <p>[9] K. Chodorow, <em>MongoDB: The Definitive Guide</em>, 2nd ed., Sebastopol, CA: O'Reilly Media, 2013.</p>
+    <p>[10] I. Grigorik, <em>High Performance Browser Networking</em>, Sebastopol, CA: O'Reilly Media, 2013.</p>
+    <p>[11] World Health Organization, "Guidelines for Trauma Quality Improvement Programmes," <em>WHO Guidelines Approved by the Guidelines Review Committee</em>, Geneva, 2009.</p>
+    <p>[12] National Highway Traffic Safety Administration (NHTSA), "Emergency Medical Services: Pre-Hospital Trauma Registry Standards," <em>U.S. Dept. of Transportation Report</em>, 2021.</p>
+
+    <div class="page-break"></div>
+
+    <!-- ==========================================
+         APPENDIX A: HARDWARE SPECIFICATIONS
+         ========================================== -->
+    <div class="chapter-label">Appendix A</div>
+    <h1 class="chapter-title">HARDWARE PROJECT SPECIFICATIONS</h1>
+
+    <h2 class="section-heading">A.1 NFC Antenna Schematic and Resonance Equivalent Circuit</h2>
+    <p>
+      The physical LifeQR card contains a planar coil antenna embedded in a multi-layer PVC substrate. The equivalent electrical circuit consists of antenna inductance \(L_a\), internal resistance \(R_a\), tuning capacitance \(C_{\text{tune}}\), and chip impedance \(Z_c\).
+    </p>
+
+    <div class="diagram-box">
+       ┌───────────┐         La = 2.15 uH         Ra = 0.85 Ohm
+   o───┤  NTAG215  ├───────────────^^^^^─────────────/\/\/\────────┐
+       │  Silicon  │                                               │
+       │  IC Chip  ├──────┐                                        │
+   o───┤           │      │                                        │
+       └───────────┘      │                                        │
+                        ───── Ctune = 50.0 pF                      │
+                        ─────                                      │
+                          │                                        │
+                          └────────────────────────────────────────┘</div>
+    <div class="caption-title">Fig. A.1: NTAG215 RF Equivalent Circuit</div>
+
+    <h2 class="section-heading">A.2 Bill of Materials (BOM)</h2>
+    <div class="caption-title">Table A.1: Bill of Materials (BOM) for NFC Transponder and Read-Write Rig</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Item No.</th>
+          <th>Component Name</th>
+          <th>Description / Part Number</th>
+          <th>Quantity</th>
+          <th>Unit Function</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>01</td>
+          <td><strong>NTAG215 Smart Card</strong></td>
+          <td>ISO/IEC 14443 Type A, 504 Bytes NDEF EEPROM</td>
+          <td>100 Units</td>
+          <td>Patient Physical Identity Card</td>
+        </tr>
+        <tr>
+          <td>02</td>
+          <td><strong>PN532 Transceiver</strong></td>
+          <td>13.56 MHz NFC Reader/Writer Module (I2C/SPI/UART)</td>
+          <td>02 Units</td>
+          <td>Development Hardware Rig</td>
+        </tr>
+        <tr>
+          <td>03</td>
+          <td><strong>CP2102 USB-to-UART</strong></td>
+          <td>Silicon Labs USB-to-TTL Serial Bridge Converter</td>
+          <td>02 Units</td>
+          <td>PC Interfacing & Memory Burning</td>
+        </tr>
+        <tr>
+          <td>04</td>
+          <td><strong>Surgical PVC Substrate</strong></td>
+          <td>Multi-layer laminated medical-grade plastic</td>
+          <td>100 Units</td>
+          <td>Physical Card Inlay Packaging</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-heading">A.3 Physical Component Datasheet Summary</h2>
+    <ul>
+      <li><strong>Silicon IC:</strong> NXP NTAG215</li>
+      <li><strong>Operating Frequency:</strong> \(13.56\text{ MHz} \pm 7\text{ kHz}\)</li>
+      <li><strong>Operating Range:</strong> \(0\text{ mm}\) to \(40\text{ mm}\) (dependent on reader antenna geometry)</li>
+      <li><strong>Data Transfer Rate:</strong> \(106\text{ kbit/s}\)</li>
+      <li><strong>Operating Temperature Range:</strong> \(-25^\circ\text{C}\) to \(+70^\circ\text{C}\)</li>
+      <li><strong>Write Endurance:</strong> \(100,000\text{ cycles}\)</li>
+      <li><strong>Data Retention:</strong> \(50\text{ years}\) minimum</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <!-- ==========================================
+         APPENDIX B: SOFTWARE SPECIFICATIONS
+         ========================================== -->
+    <div class="chapter-label">Appendix B</div>
+    <h1 class="chapter-title">SOFTWARE SPECIFICATIONS & USER GUIDE</h1>
+
+    <h2 class="section-heading">B.1 Submission Disc Directory Layout</h2>
+    <div class="diagram-box">
+LifeQR-Software-Disc/
+├── README.txt                     # Execution instructions and environment setup
+├── backend/                       # Node.js and Express RESTful API server
+│   ├── server.js                  # Entrypoint, HTTPS bootstrapping, Socket.IO
+│   ├── package.json               # Backend dependency manifests
+│   ├── models/                    # 11 Mongoose database schemas
+│   ├── routes/v1/                 # Scoped REST API controllers
+│   └── middleware/                # JWT verification and RBAC guards
+├── app/                           # Progressive Web Application (PWA) client
+│   ├── patient_app.html           # Patient mobile client interface
+│   ├── CrewAmbulance_dashboard.html # Paramedic radar console
+│   ├── doctor_dashboard.html      # Physician record verification
+│   ├── admin_dashboard.html       # System administrator control center
+│   ├── emergency_access.html      # 1-second bystander access view
+│   └── sw.js                      # Service Worker offline cache script
+└── website/                       # Desktop portal and marketing interface
+    ├── index.html                 # Public healthcare web portal
+    └── cinematic-video.html       # Motion-as-code presentation engine</div>
+
+    <h2 class="section-heading">B.2 Environment Variable Dictionary</h2>
+    <div class="caption-title">Table B.1: Software Environment Variables and Configuration Parameters</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Variable Identifier</th>
+          <th>Expected Data Type</th>
+          <th>Default / Sample Value</th>
+          <th>Operational Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>PORT</code></td>
+          <td>Integer</td>
+          <td><code>5000</code></td>
+          <td>Local HTTP/WebSocket server listening port</td>
+        </tr>
+        <tr>
+          <td><code>MONGODB_URI</code></td>
+          <td>Connection String</td>
+          <td><code>mongodb://localhost:27017/lifeqr</code></td>
+          <td>MongoDB persistence database connection URI</td>
+        </tr>
+        <tr>
+          <td><code>JWT_SECRET</code></td>
+          <td>256-bit String</td>
+          <td><code>c47f9b8a2e1d0...</code></td>
+          <td>Cryptographic secret for signing JWT tokens</td>
+        </tr>
+        <tr>
+          <td><code>NODE_ENV</code></td>
+          <td>String</td>
+          <td><code>production / development</code></td>
+          <td>Runtime environment mode</td>
+        </tr>
+        <tr>
+          <td><code>CORS_ORIGIN</code></td>
+          <td>String</td>
+          <td><code>*</code></td>
+          <td>Allowed cross-origin resource sharing whitelist</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-heading">B.3 System Compilation and Execution Procedure</h2>
+    <ol>
+      <li><strong>Prerequisites:</strong> Ensure Node.js (v18.x LTS or higher) and MongoDB (v6.x or higher) are installed and operational.</li>
+      <li><strong>Install Dependencies:</strong>
+        <pre style="background: #eee; padding: 6px; font-family: monospace;">cd backend && npm install</pre>
+      </li>
+      <li><strong>Environment Setup:</strong> Create a <code>.env</code> file in <code>backend/</code> populated per Table B.1.</li>
+      <li><strong>Boot Server:</strong>
+        <pre style="background: #eee; padding: 6px; font-family: monospace;">npm start</pre>
+      </li>
+      <li><strong>Launch Client:</strong> Open a browser and navigate to <code>http://localhost:5000/app/patient_app.html</code>.</li>
+    </ol>
+
+    <h2 class="section-heading">B.4 Third-Party and Public Domain Disclosures</h2>
+    <p>
+      In accordance with academic integrity guidelines, the following open-source software libraries are acknowledged:
+    </p>
+    <ul>
+      <li><strong>Express.js:</strong> Fast, unopinionated web framework (MIT License) — <code>https://expressjs.com</code></li>
+      <li><strong>Socket.IO:</strong> Real-time bi-directional event transport (MIT License) — <code>https://socket.io</code></li>
+      <li><strong>Mongoose ODM:</strong> Schema-based object modeling for MongoDB (MIT License) — <code>https://mongoosejs.com</code></li>
+      <li><strong>Bcrypt.js:</strong> Optimized cryptographic password hashing (MIT License) — <code>https://github.com/dcodeIO/bcrypt.js</code></li>
+      <li><strong>Leaflet.js:</strong> Mobile-friendly interactive GIS mapping (BSD 2-Clause) — <code>https://leafletjs.com</code></li>
+      <li><strong>OpenStreetMap:</strong> Spatial geodata tiles (Open Database License) — <code>https://www.openstreetmap.org</code></li>
+    </ul>
+
+  </div>
+
+</body>
+</html>

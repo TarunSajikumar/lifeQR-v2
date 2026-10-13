@@ -89,6 +89,8 @@ app.get(['/app', '/app/', '/app/index.html'], (req, res) => {
 
 app.use('/website', express.static(path.join(__dirname, '../website'), staticOptions));
 app.use('/app', express.static(path.join(__dirname, '../app'), staticOptions));
+app.use('/out', express.static(path.join(__dirname, '../out')));
+app.use('/presentation_and_project_details', express.static(path.join(__dirname, '../presentation_and_project_details'), staticOptions));
 app.use(express.static(path.join(__dirname, '../website'), staticOptions));
 app.use(express.static(path.join(__dirname, '../app'), staticOptions));
 app.use('/uploads/photos', (req, res) => {
