@@ -6,15 +6,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#111111">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="LifeQR.png" type="image/png">
   <title>Hospital &amp; Clinic Operations Command | LifeQR</title>
   
-  <!-- Fonts & Material Symbols -->
+  <!-- Fonts & Material Symbols (Matching patient_dashboard.html & doctor_dashboard.html) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,200..700,0..1,-50..200" rel="stylesheet">
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -28,16 +28,6 @@
   <script src="js/pwa-install.js"></script>
   <script src="js/hospital-dashboard.js"></script>
 
-  <script>
-    (function(){
-      try {
-        var m = localStorage.getItem('lifeqr_theme_manual');
-        var sys = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', m || sys);
-      } catch(e){}
-    })();
-  </script>
-
   <style>
     * {
       margin: 0;
@@ -46,622 +36,932 @@
       -webkit-tap-highlight-color: transparent;
     }
     body {
-      font-family: 'Archivo', system-ui, -apple-system, sans-serif;
-      background: #ffffff;
-      color: #111111;
-    }
-    .font-black {
-      font-family: 'Archivo Black', 'Archivo', sans-serif;
+      font-family: 'Plus Jakarta Sans', 'Archivo', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+      transition: background-color 0.25s ease, color 0.25s ease;
     }
     .font-mono {
       font-family: 'JetBrains Mono', monospace;
     }
-    .rule-b {
-      border-bottom: 2px solid #111111;
+    .font-black {
+      font-family: 'Archivo Black', 'Archivo', sans-serif;
     }
-    .rule {
-      border-top: 2px solid #111111;
+    
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
     }
-    .editorial-card {
-      background: #ffffff;
-      border: 2px solid #111111;
-      box-shadow: 6px 6px 0px #111111;
+    ::-webkit-scrollbar-track {
+      background: transparent;
     }
-    .editorial-stat-card {
-      background: #ffffff;
-      border: 2px solid #111111;
-      box-shadow: 4px 4px 0px #111111;
+    ::-webkit-scrollbar-thumb {
+      background: rgba(225, 29, 46, 0.3);
+      border-radius: 999px;
     }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(225, 29, 46, 0.6);
+    }
+
+    /* Live Blinking Indicator */
     .live-dot {
       width: 8px;
       height: 8px;
       border-radius: 999px;
       background: #E11D2E;
-      animation: blink 1.4s ease-in-out infinite;
+      animation: livePulse 1.4s ease-in-out infinite;
+      display: inline-block;
     }
-    @keyframes blink {
-      50% { opacity: 0.25; }
-    }
-    input[type="text"], input[type="number"], select, textarea {
-      border: 2px solid #111111 !important;
-      border-radius: 0 !important;
-      background: #ffffff !important;
-      color: #111111 !important;
-      font-family: 'Archivo', sans-serif !important;
-    }
-    input:focus, select:focus, textarea:focus {
-      outline: none !important;
-      border-color: #E11D2E !important;
-      box-shadow: 3px 3px 0px #111111 !important;
-    }
-    .hospital-tab-btn {
-      border: 2px solid #111111;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      text-transform: uppercase;
-      font-size: 11px;
-      transition: all 0.15s ease;
-      cursor: pointer;
-    }
-    .hospital-tab-btn.active {
-      background: #111111;
-      color: #ffffff;
-      box-shadow: 3px 3px 0px #111111;
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.25; transform: scale(0.85); }
     }
 
-    /* Dark Mode Overrides */
-    [data-theme="dark"] body {
-      background: #0a0a0a !important;
-      color: #ffffff !important;
+    /* ECG Animation */
+    @keyframes ecgMove {
+      0% { stroke-dashoffset: 240; }
+      100% { stroke-dashoffset: 0; }
     }
-    [data-theme="dark"] header {
-      background: #111111 !important;
-      border-color: #262626 !important;
+    .ecg-path {
+      stroke-dasharray: 240;
+      animation: ecgMove 2.2s linear infinite;
     }
-    [data-theme="dark"] .font-black {
-      color: #ffffff !important;
+
+    /* Smooth Floating Card Shadows */
+    .dark-card {
+      background: #14151a;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.55);
     }
-    [data-theme="dark"] .rule-b {
-      border-bottom-color: #262626 !important;
+    .light-card {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.05);
     }
-    [data-theme="dark"] .rule {
-      border-top-color: #262626 !important;
-    }
-    [data-theme="dark"] .editorial-card,
-    [data-theme="dark"] .editorial-stat-card {
-      background: #111111 !important;
-      border: 2px solid #262626 !important;
-      box-shadow: 4px 4px 0px #000000 !important;
-      color: #ffffff !important;
-    }
-    [data-theme="dark"] .editorial-card:hover {
-      box-shadow: 6px 6px 0px #000000 !important;
-    }
-    [data-theme="dark"] .btn-secondary {
-      background: #161616 !important;
-      border-color: #2e2e2e !important;
-      color: #ffffff !important;
-    }
-    [data-theme="dark"] .btn-secondary:hover {
-      background: #E11D2E !important;
-      border-color: #E11D2E !important;
-      color: #ffffff !important;
-    }
-    [data-theme="dark"] input[type="text"],
-    [data-theme="dark"] input[type="number"],
-    [data-theme="dark"] select,
-    [data-theme="dark"] textarea {
-      background: #111111 !important;
-      color: #ffffff !important;
-      border-color: #262626 !important;
-    }
-    [data-theme="dark"] .bg-\[\#f9fafb\],
-    [data-theme="dark"] .bg-gray-50,
-    [data-theme="dark"] .bg-slate-50,
-    [data-theme="dark"] .bg-white {
-      background-color: #111111 !important;
-    }
-    [data-theme="dark"] .text-\[\#111111\] {
-      color: #ffffff !important;
-    }
-    [data-theme="dark"] .text-\[\#111111\]\/70,
-    [data-theme="dark"] .text-\[\#111111\]\/60 {
-      color: #94a3b8 !important;
-    }
-    [data-theme="dark"] .border-\[\#111111\] {
-      border-color: #262626 !important;
-    }
-    [data-theme="dark"] .hospital-tab-btn {
-      border-color: #262626;
-      background: #161616;
-      color: #ffffff;
-    }
-    [data-theme="dark"] .hospital-tab-btn.active {
+
+    .btn-primary-red {
       background: #E11D2E;
-      border-color: #E11D2E;
       color: #ffffff;
-      box-shadow: 3px 3px 0px #000000;
+      font-weight: 700;
+      transition: all 0.15s ease;
     }
-    [data-theme="dark"] .bg-amber-50 {
-      background-color: #261705 !important;
-    }
-    [data-theme="dark"] .text-amber-900,
-    [data-theme="dark"] .text-amber-950 {
-      color: #fef08a !important;
-    }
-    [data-theme="dark"] .border-amber-500 {
-      border-color: #d97706 !important;
-    }
-    [data-theme="dark"] .bg-red-50 {
-      background-color: #270707 !important;
+    .btn-primary-red:hover {
+      background: #c21626;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(225, 29, 46, 0.4);
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between">
+<body class="bg-[#0b0c10] text-white">
 
-  <!-- Telemetry Bar -->
-  <div class="bg-[#111111] text-white py-2.5 px-6 sm:px-10 text-xs font-mono">
-    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap text-[11px]">
-      <div class="flex items-center gap-2.5">
-        <span class="live-dot"></span>
-        <span class="uppercase tracking-widest text-white font-bold">HOSPITAL &amp; CLINIC COMMAND ACTIVE &bull; LEVEL 1 TRAUMA CERTIFIED</span>
-      </div>
-      <div class="flex items-center gap-4">
-        <a href="er_dashboard.html" class="text-[#E11D2E] hover:text-white font-bold uppercase tracking-wider flex items-center gap-1">
-          <span>TRAUMA BAY DISPATCH LIVE</span> &rarr;
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Header Navigation -->
-  <header class="sticky top-0 z-40 px-6 sm:px-10 py-4 rule-b bg-white shadow-xs">
-    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
-      
-      <!-- Brand -->
-      <a href="landingpage.html" class="flex items-center gap-2 group">
-        <span class="font-black text-2xl tracking-tight text-[#111111]">LIFEQR</span>
-        <span class="w-2.5 h-2.5 rounded-full bg-[#E11D2E] group-hover:scale-125 transition-transform"></span>
-        <span class="ml-2 px-2 py-0.5 border border-[#111111] bg-gray-50 text-[#111111] text-[10px] font-mono font-bold uppercase tracking-wider hidden sm:inline">HOSPITAL COMMAND</span>
-      </a>
-      
-      <!-- Operations Status & Actions -->
-      <div class="flex items-center gap-3 sm:gap-4 font-mono">
-        <button onclick="openAdmitModal()" class="btn-primary px-3.5 py-1.5 text-xs uppercase font-mono font-bold tracking-wider">
-          <span class="material-symbols-outlined text-sm">person_add</span>
-          <span class="hidden sm:inline">Admit Patient</span>
-        </button>
-
-        <!-- Theme Toggle Button -->
-        <button onclick="toggleTheme()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold" title="Toggle theme (Auto-synced with device appearance)">
-          <span class="theme-toggle-icon material-symbols-outlined text-sm">dark_mode</span>
-          <span class="theme-toggle-label hidden sm:inline">Theme</span>
-        </button>
-
-        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 border-2 border-[#111111] bg-[#f9fafb] text-xs font-bold text-[#111111]">
-          <span class="live-dot"></span>
-          <span>DESK: <strong class="text-[#E11D2E]">Central Operations</strong></span>
-        </div>
-        
-        <button onclick="logout()" class="btn-secondary text-xs px-3.5 py-1.5 uppercase font-mono tracking-wider font-bold">
-          <span class="material-symbols-outlined text-sm">logout</span>
-          <span class="hidden sm:inline">Logout</span>
-        </button>
-      </div>
-
-    </div>
-  </header>
-
-  <!-- Main Content -->
-  <main class="relative z-10 flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-7xl mx-auto w-full space-y-6">
+  <!-- ========================================================================= -->
+  <!-- ⚡ DASHBOARD 1: DARK LUXURY HOSPITAL OPERATIONS SUITE (PATIENT THEME RED) -->
+  <!-- ========================================================================= -->
+  <div id="hospitalDashboard1View" class="min-h-screen bg-[#0b0c10] text-white p-3 sm:p-5 lg:p-7 pb-28 flex flex-col justify-between">
     
-    <!-- Hero / Facility Header -->
-    <div class="mb-4 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-[#111111] pb-6">
-      <div>
-        <div class="inline-flex items-center gap-2 px-3 py-1 border-2 border-[#111111] bg-[#f9fafb] text-[11px] font-mono font-bold uppercase tracking-widest text-[#E11D2E] mb-2">
-          <span class="material-symbols-outlined text-sm">local_hospital</span>
-          <span>FACILITY CODE: HOSP-CLINIC-9021</span>
-        </div>
-        <h1 class="font-black text-3xl sm:text-4xl text-[#111111] tracking-tight uppercase">Hospital &amp; Clinic Command Center</h1>
-        <p class="text-xs sm:text-sm text-[#111111]/70 font-sans font-medium mt-1">Live patient admissions, ward inventory allocation, on-duty specialist roster, and emergency blood bank reserves.</p>
-      </div>
-
-      <!-- Quick Action Group -->
-      <div class="flex items-center gap-3 font-mono text-xs">
-        <button onclick="loadHospitalMetrics()" class="btn-secondary px-4 py-2 uppercase tracking-wider font-bold flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-sm text-[#E11D2E]">sync</span>
-          <span>Refresh Live</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Analytics Stats Overview Deck -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 font-mono">
-      <div class="editorial-stat-card p-4 text-center">
-        <p class="text-[9px] text-[#111111]/60 font-bold uppercase tracking-wider">Total Inpatients</p>
-        <p class="font-black text-2xl text-[#111111] mt-1" id="statTotalInpatients">3</p>
-      </div>
-      <div class="editorial-stat-card p-4 text-center border-2 border-[#E11D2E]">
-        <p class="text-[9px] text-[#E11D2E] font-bold uppercase tracking-wider">Trauma Bays</p>
-        <p class="font-black text-2xl text-[#E11D2E] mt-1" id="statBaysAvailable">3 / 4</p>
-      </div>
-      <div class="editorial-stat-card p-4 text-center">
-        <p class="text-[9px] text-[#111111]/60 font-bold uppercase tracking-wider">ICU Capacity</p>
-        <p class="font-black text-2xl text-indigo-700 mt-1" id="statIcuAvailable">4 / 8</p>
-      </div>
-      <div class="editorial-stat-card p-4 text-center">
-        <p class="text-[9px] text-[#111111]/60 font-bold uppercase tracking-wider">OPD Inflow</p>
-        <p class="font-black text-2xl text-amber-600 mt-1" id="statOpdQueue">14</p>
-      </div>
-      <div class="editorial-stat-card p-4 text-center">
-        <p class="text-[9px] text-[#111111]/60 font-bold uppercase tracking-wider">On-Duty Doctors</p>
-        <p class="font-black text-2xl text-emerald-700 mt-1" id="statDoctorsOnDuty">6</p>
-      </div>
-      <div class="editorial-stat-card p-4 text-center">
-        <p class="text-[9px] text-[#111111]/60 font-bold uppercase tracking-wider">Blood Reserves</p>
-        <p class="font-black text-2xl text-[#111111] mt-1" id="statBloodUnits">94 Units</p>
-      </div>
-    </div>
-
-    <!-- Main Command Navigation Tabs -->
-    <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-2 font-mono text-xs">
-      <button onclick="switchHospitalTab('admissions')" id="tabBtn-admissions" class="hospital-tab-btn active px-4 py-2.5 flex items-center gap-1.5 flex-shrink-0">
-        <span class="material-symbols-outlined text-sm">badge</span>
-        <span>1. Patient Admissions</span>
-      </button>
-      <button onclick="switchHospitalTab('beds')" id="tabBtn-beds" class="hospital-tab-btn px-4 py-2.5 flex items-center gap-1.5 flex-shrink-0">
-        <span class="material-symbols-outlined text-sm">meeting_room</span>
-        <span>2. Ward &amp; Bed Matrix</span>
-      </button>
-      <button onclick="switchHospitalTab('doctors')" id="tabBtn-doctors" class="hospital-tab-btn px-4 py-2.5 flex items-center gap-1.5 flex-shrink-0">
-        <span class="material-symbols-outlined text-sm">medical_services</span>
-        <span>3. Specialist Roster</span>
-      </button>
-      <button onclick="switchHospitalTab('supplies')" id="tabBtn-supplies" class="hospital-tab-btn px-4 py-2.5 flex items-center gap-1.5 flex-shrink-0">
-        <span class="material-symbols-outlined text-sm">bloodtype</span>
-        <span>4. Blood Bank &amp; Supplies</span>
-      </button>
-      <button onclick="switchHospitalTab('queue')" id="tabBtn-queue" class="hospital-tab-btn px-4 py-2.5 flex items-center gap-1.5 flex-shrink-0">
-        <span class="material-symbols-outlined text-sm">campaign</span>
-        <span>5. OPD Token &amp; Live Lobby Board</span>
-      </button>
-    </div>
-
-    <!-- ==================== PANEL 1: ADMISSIONS ==================== -->
-    <div id="panel-admissions" class="tab-content-panel space-y-4">
-      <div class="editorial-card p-6 space-y-4">
-        
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b-2 border-[#111111]">
-          <div>
-            <h3 class="font-black text-base uppercase text-[#111111] flex items-center gap-2">
-              <span class="material-symbols-outlined text-[#E11D2E]">how_to_reg</span>
-              <span>Active Inpatient Admissions Registry</span>
-            </h3>
-            <p class="text-xs text-[#111111]/60 font-mono mt-0.5">Real-time registry of patients admitted through LifeQR optical scan or emergency dispatch</p>
+    <div class="max-w-[1720px] mx-auto w-full flex flex-col lg:flex-row gap-5 items-stretch">
+      
+      <!-- 1. LEFT FLOATING PILL SIDEBAR -->
+      <aside class="w-full lg:w-20 bg-[#121318] rounded-3xl lg:rounded-[36px] border border-white/5 py-4 lg:py-6 px-3 flex lg:flex-col items-center justify-between shadow-2xl flex-shrink-0 z-20">
+        <!-- Brand / Top Icon -->
+        <div class="flex lg:flex-col items-center gap-5">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#E11D2E] to-rose-600 flex items-center justify-center text-white shadow-[0_4px_16px_rgba(225,29,46,0.45)] cursor-pointer" onclick="toggleHospitalDrawer('beds')" title="Hospital Operations Hub">
+            <span class="material-symbols-outlined text-2xl font-bold">local_hospital</span>
           </div>
 
+          <!-- Vertical Icons -->
+          <nav class="flex lg:flex-col items-center gap-3">
+            <button class="w-12 h-12 rounded-2xl bg-[#E11D2E] text-white flex items-center justify-center shadow-[0_4px_20px_rgba(225,29,46,0.5)] transition-all transform hover:scale-105" title="Hospital Command Home">
+              <span class="material-symbols-outlined text-2xl">grid_view</span>
+            </button>
+            <button onclick="toggleHospitalDrawer('admissions')" class="w-11 h-11 rounded-2xl bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all" title="Inpatient Admissions">
+              <span class="material-symbols-outlined text-xl">bed</span>
+            </button>
+            <button onclick="toggleHospitalDrawer('beds')" class="w-11 h-11 rounded-2xl bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all" title="Trauma Bays &amp; Ward Matrix">
+              <span class="material-symbols-outlined text-xl">meeting_room</span>
+            </button>
+            <button onclick="toggleHospitalDrawer('doctors')" class="w-11 h-11 rounded-2xl bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all" title="Specialists on Duty">
+              <span class="material-symbols-outlined text-xl">badge</span>
+            </button>
+            <button onclick="toggleHospitalDrawer('supplies')" class="w-11 h-11 rounded-2xl bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all" title="Blood Bank Vault">
+              <span class="material-symbols-outlined text-xl">bloodtype</span>
+            </button>
+            <a href="doctor_dashboard.html" class="w-11 h-11 rounded-2xl bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all" title="Physician Clinical Workstation">
+              <span class="material-symbols-outlined text-xl">stethoscope</span>
+            </a>
+          </nav>
+        </div>
+
+        <!-- Bottom Icons -->
+        <div class="flex lg:flex-col items-center gap-3 mt-auto pt-4 border-t border-white/5 w-full justify-center">
+          <button onclick="openAdmitModal()" class="w-10 h-10 rounded-xl bg-white/[0.04] text-neutral-400 hover:text-white flex items-center justify-center transition-all" title="Fast Inpatient Admission">
+            <span class="material-symbols-outlined text-lg">person_add</span>
+          </button>
+          <button onclick="logout()" class="w-10 h-10 rounded-xl bg-white/[0.04] text-rose-400 hover:bg-rose-500/20 flex items-center justify-center transition-all" title="Logout">
+            <span class="material-symbols-outlined text-lg">logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- 2. CENTER MAIN DASHBOARD VIEW -->
+      <main class="flex-1 dark-card rounded-3xl lg:rounded-[36px] p-5 sm:p-7 lg:p-8 flex flex-col justify-between overflow-hidden relative">
+        
+        <!-- Header: Greeting + Search + Quick Actions -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/5">
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+                Good Morning, <span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-neutral-200 to-[#ff4d5a]">Hospital Operations Command</span> 🏥
+              </h1>
+            </div>
+            <p class="text-neutral-400 text-xs sm:text-sm mt-1">Trauma Bay Readiness, Inpatient Admissions &amp; Emergency Blood Bank Hub</p>
+          </div>
+
+          <!-- Top Search & Quick Actions -->
           <div class="flex items-center gap-3">
-            <input 
-              type="text" 
-              placeholder="Filter by name, QR ID, ward..." 
-              oninput="filterAdmissions(this.value)"
-              class="px-3.5 py-2 text-xs font-bold w-full sm:w-64"
-            >
-            <button onclick="openAdmitModal()" class="btn-primary px-4 py-2 text-xs font-mono uppercase tracking-wider font-bold whitespace-nowrap">
-              + New Intake
+            <div class="relative flex-1 sm:w-80">
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 material-symbols-outlined text-lg">search</span>
+              <input 
+                type="text" 
+                id="hospitalSearchInput" 
+                placeholder="Search patient, ward, or bed..." 
+                class="w-full bg-[#101116] border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#E11D2E] transition-all"
+                oninput="filterAdmissions(this.value)"
+              >
+            </div>
+            <button onclick="openAdmitModal()" class="px-4 py-2.5 rounded-2xl bg-[#E11D2E] text-white font-semibold text-xs hover:bg-[#c21626] transition-all flex items-center gap-1.5 shadow-[0_4px_16px_rgba(225,29,46,0.35)]">
+              <span class="material-symbols-outlined text-sm">add</span>
+              <span>Fast Admit</span>
+            </button>
+            <button onclick="toggleHospitalDrawer('beds')" class="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition-all flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">open_in_new</span>
+              <span class="hidden sm:inline">Bed Matrix</span>
             </button>
           </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse font-sans text-xs">
-            <thead>
-              <tr class="border-b-2 border-[#111111] text-[#111111] text-[10px] uppercase font-bold tracking-wider font-mono">
-                <th class="p-3">Admission ID</th>
-                <th class="p-3">Patient Details</th>
-                <th class="p-3">Blood Group</th>
-                <th class="p-3">Ward &amp; Bed</th>
-                <th class="p-3">Triage Status</th>
-                <th class="p-3">Live Telemetry</th>
-                <th class="p-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="admissionsTableBody" class="divide-y border-b border-[#111111]/20">
-              <!-- Rendered dynamically -->
-            </tbody>
-          </table>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ==================== PANEL 2: BEDS MATRIX ==================== -->
-    <div id="panel-beds" class="tab-content-panel hidden space-y-4">
-      <div class="editorial-card p-6 space-y-5">
-        
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#111111]">
-          <div>
-            <h3 class="font-black text-base uppercase text-[#111111] flex items-center gap-2">
-              <span class="material-symbols-outlined text-[#111111]">grid_view</span>
-              <span>Ward &amp; Trauma Bay Inventory Matrix</span>
-            </h3>
-            <p class="text-xs text-[#111111]/60 font-mono mt-0.5">Real-time allocation status across critical care wings</p>
-          </div>
-          <span class="px-3 py-1 bg-[#f9fafb] border-2 border-[#111111] font-mono text-xs font-bold uppercase">
-            Capacity: 30 Beds Total
-          </span>
-        </div>
-
-        <div id="bedMatrixGrid" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <!-- Rendered dynamically -->
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ==================== PANEL 3: DOCTOR ROSTER ==================== -->
-    <div id="panel-doctors" class="tab-content-panel hidden space-y-4">
-      <div class="editorial-card p-6 space-y-5">
-        
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#111111]">
-          <div>
-            <h3 class="font-black text-base uppercase text-[#111111] flex items-center gap-2">
-              <span class="material-symbols-outlined text-[#111111]">clinical_notes</span>
-              <span>Attending Medical Specialists &amp; Surgeons Roster</span>
-            </h3>
-            <p class="text-xs text-[#111111]/60 font-mono mt-0.5">Clinical availability &amp; on-duty rotation</p>
-          </div>
-          <span class="px-3 py-1 bg-emerald-50 border-2 border-[#111111] text-emerald-800 font-mono text-xs font-bold uppercase">
-            Active Shift
-          </span>
-        </div>
-
-        <div id="doctorRosterList" class="grid md:grid-cols-2 gap-4">
-          <!-- Rendered dynamically -->
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ==================== PANEL 4: BLOOD BANK & SUPPLIES ==================== -->
-    <div id="panel-supplies" class="tab-content-panel hidden space-y-4">
-      <div class="editorial-card p-6 space-y-5">
-        
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#111111]">
-          <div>
-            <h3 class="font-black text-base uppercase text-[#111111] flex items-center gap-2">
-              <span class="material-symbols-outlined text-[#E11D2E]">bloodtype</span>
-              <span>Emergency Blood Bank &amp; Resuscitation Stock</span>
-            </h3>
-            <p class="text-xs text-[#111111]/60 font-mono mt-0.5">Real-time units count with direct 1-click inventory adjustment</p>
-          </div>
-          <span class="px-3 py-1 border-2 border-[#E11D2E] bg-red-50 text-[#E11D2E] font-mono text-xs font-bold uppercase">
-            Blood Bank Vault Active
-          </span>
-        </div>
-
-        <div id="bloodBankGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-          <!-- Rendered dynamically -->
-        </div>
-
-        <!-- Critical Supplies Section -->
-        <div class="pt-4 border-t-2 border-[#111111] space-y-3 font-mono">
-          <h4 class="font-bold text-xs uppercase text-[#111111] tracking-wider">Critical Trauma Supplies Status</h4>
-          <div class="grid sm:grid-cols-4 gap-3 text-xs">
-            <div class="p-3 border-2 border-[#111111] bg-[#f9fafb]">
-              <div class="font-bold text-[#111111]">Oxygen Cylinders</div>
-              <div class="text-emerald-700 font-black text-lg mt-1">42 / 50 Full</div>
+        <!-- 4 HOSPITAL VITALS / METRICS CARDS (Patient Theme Red Colors) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 my-6">
+          
+          <!-- Metric 1: Total Inpatients -->
+          <div class="bg-[#0f1015] rounded-2xl sm:rounded-[24px] p-4 sm:p-5 border border-white/5 relative overflow-hidden group hover:border-[#E11D2E]/40 transition-all">
+            <div class="flex items-center justify-between text-neutral-400 text-xs font-medium">
+              <span>Current Inpatients</span>
+              <div class="w-6 h-6 rounded-full bg-red-500/20 text-[#E11D2E] flex items-center justify-center">
+                <span class="material-symbols-outlined text-sm">hotel</span>
+              </div>
             </div>
-            <div class="p-3 border-2 border-[#111111] bg-[#f9fafb]">
-              <div class="font-bold text-[#111111]">Epinephrine Vials</div>
-              <div class="text-emerald-700 font-black text-lg mt-1">85 Available</div>
+            <div class="mt-3 flex items-baseline gap-1.5">
+              <span class="text-2xl sm:text-3xl font-extrabold text-white" id="statTotalInpatients">24</span>
+              <span class="text-[11px] text-neutral-400 font-normal">Patients</span>
             </div>
-            <div class="p-3 border-2 border-[#111111] bg-[#f9fafb]">
-              <div class="font-bold text-[#111111]">Defibrillators (AED)</div>
-              <div class="text-emerald-700 font-black text-lg mt-1">8 / 8 Charged</div>
-            </div>
-            <div class="p-3 border-2 border-[#111111] bg-[#f9fafb]">
-              <div class="font-bold text-[#111111]">Antivenom Kits</div>
-              <div class="text-emerald-700 font-black text-lg mt-1">12 Ready</div>
+            <!-- Mini Bar Chart Graphic -->
+            <div class="mt-3 flex items-end gap-1.5 h-6">
+              <div class="flex-1 bg-white/10 rounded-xs h-3"></div>
+              <div class="flex-1 bg-white/10 rounded-xs h-4"></div>
+              <div class="flex-1 bg-white/10 rounded-xs h-5"></div>
+              <div class="flex-1 bg-[#E11D2E] rounded-xs h-6"></div>
+              <div class="flex-1 bg-white/10 rounded-xs h-4"></div>
+              <div class="flex-1 bg-white/10 rounded-xs h-3"></div>
             </div>
           </div>
+
+          <!-- Metric 2: Trauma Bays Available -->
+          <div class="bg-[#0f1015] rounded-2xl sm:rounded-[24px] p-4 sm:p-5 border border-white/5 relative overflow-hidden group hover:border-red-500/40 transition-all">
+            <div class="flex items-center justify-between text-neutral-400 text-xs font-medium">
+              <span>Trauma Bays Ready</span>
+              <div class="w-6 h-6 rounded-full bg-red-500/20 text-[#E11D2E] flex items-center justify-center">
+                <span class="material-symbols-outlined text-sm">e911_emergency</span>
+              </div>
+            </div>
+            <div class="mt-3 flex items-baseline gap-1.5">
+              <span class="text-2xl sm:text-3xl font-extrabold text-white" id="statBaysAvailable">3 / 4</span>
+              <span class="text-[11px] text-emerald-400 font-normal">Active</span>
+            </div>
+            <!-- Animated ECG Sparkline in Red -->
+            <div class="mt-3 h-6 flex items-center overflow-hidden">
+              <svg class="w-full h-6" viewBox="0 0 140 30" fill="none">
+                <path class="ecg-path" d="M0 15 H40 L45 5 L50 25 L55 10 L60 20 L65 15 H140" stroke="#E11D2E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Metric 3: ICU Bed Capacity -->
+          <div class="bg-[#0f1015] rounded-2xl sm:rounded-[24px] p-4 sm:p-5 border border-white/5 relative overflow-hidden group hover:border-rose-500/40 transition-all">
+            <div class="flex items-center justify-between text-neutral-400 text-xs font-medium">
+              <span>ICU Wing Capacity</span>
+              <div class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center">
+                <span class="material-symbols-outlined text-sm">monitor_heart</span>
+              </div>
+            </div>
+            <div class="mt-3 flex items-baseline gap-1.5">
+              <span class="text-2xl sm:text-3xl font-extrabold text-white" id="statIcuAvailable">4 / 8</span>
+              <span class="text-[11px] text-neutral-400 font-normal">Available</span>
+            </div>
+            <!-- Progress Arc -->
+            <div class="mt-3 flex items-center gap-2">
+              <div class="flex-1 bg-white/10 rounded-full h-2 overflow-hidden">
+                <div class="bg-gradient-to-r from-[#E11D2E] to-rose-400 h-full rounded-full w-[50%]"></div>
+              </div>
+              <span class="text-[10px] font-semibold text-rose-400">50% Free</span>
+            </div>
+          </div>
+
+          <!-- Metric 4: Doctors On-Duty & Blood Bank -->
+          <div class="bg-[#0f1015] rounded-2xl sm:rounded-[24px] p-4 sm:p-5 border border-white/5 relative overflow-hidden group hover:border-neutral-500 transition-all">
+            <div class="flex items-center justify-between text-neutral-400 text-xs font-medium">
+              <span>On-Duty Specialists</span>
+              <div class="w-6 h-6 rounded-full bg-white/10 text-neutral-300 flex items-center justify-center">
+                <span class="material-symbols-outlined text-sm">badge</span>
+              </div>
+            </div>
+            <div class="mt-3 flex items-baseline gap-1.5">
+              <span class="text-2xl sm:text-3xl font-extrabold text-white" id="statDoctorsOnDuty">6</span>
+              <span class="text-[11px] text-neutral-400 font-normal">Active Staff</span>
+            </div>
+            <!-- Mini Bars Graphic -->
+            <div class="mt-3 flex items-end gap-1.5 h-6">
+              <div class="flex-1 bg-white/20 rounded-xs h-3"></div>
+              <div class="flex-1 bg-white/30 rounded-xs h-5"></div>
+              <div class="flex-1 bg-[#E11D2E] rounded-xs h-6"></div>
+              <div class="flex-1 bg-white/30 rounded-xs h-4"></div>
+              <div class="flex-1 bg-white/15 rounded-xs h-2"></div>
+            </div>
+          </div>
+
         </div>
 
-      </div>
-    </div>
+        <!-- MIDDLE SECTION: Activity Tracking Chart + Emergency Trauma Spotlight Banner -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 my-2 items-stretch">
+          
+          <!-- Activity Tracking Chart (7 cols) -->
+          <div class="lg:col-span-7 bg-[#0f1015] rounded-3xl p-5 sm:p-6 border border-white/5 flex flex-col justify-between">
+            <div class="flex items-center justify-between pb-3">
+              <div>
+                <h3 class="font-bold text-sm sm:text-base text-white">Trauma Admissions &amp; ER Triage Flow</h3>
+                <p class="text-xs text-neutral-400">Real-time patient intake and hospital bed velocity</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <select class="bg-[#181920] border border-white/10 rounded-xl px-2.5 py-1 text-xs text-neutral-300 focus:outline-none">
+                  <option>Weekly</option>
+                  <option>Monthly</option>
+                  <option>Annually</option>
+                </select>
+              </div>
+            </div>
 
-    <!-- ==================== PANEL 5: OPD TOKEN & LIVE LOBBY BOARD ==================== -->
-    <div id="panel-queue" class="tab-content-panel hidden space-y-6">
-      
-      <!-- Live Token Announcement Banner ("Now Calling") -->
-      <div id="lobbyCallingBanner" class="editorial-card p-6 bg-[#111111] text-white border-2 border-[#E11D2E] shadow-[6px_6px_0px_#E11D2E] flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="flex items-center gap-4">
-          <div class="w-14 h-14 border-2 border-[#E11D2E] bg-red-950 text-[#E11D2E] flex items-center justify-center font-mono font-black text-xl flex-shrink-0 animate-pulse">
-            <span class="material-symbols-outlined text-3xl">campaign</span>
+            <!-- Spline Area Chart with Tooltip in Patient Red -->
+            <div class="relative h-44 sm:h-52 w-full mt-2 flex flex-col justify-end">
+              <svg class="w-full h-full" viewBox="0 0 500 160" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="splineGradientHospital" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#E11D2E" stop-opacity="0.38" />
+                    <stop offset="100%" stop-color="#E11D2E" stop-opacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path d="M 0,140 Q 50,110 100,120 T 200,80 T 300,105 T 370,40 T 450,90 T 500,70 L 500,160 L 0,160 Z" fill="url(#splineGradientHospital)" />
+                <path d="M 0,140 Q 50,110 100,120 T 200,80 T 300,105 T 370,40 T 450,90 T 500,70" fill="none" stroke="#E11D2E" stroke-width="3" stroke-linecap="round" />
+                <circle cx="370" cy="40" r="5" fill="#ffffff" stroke="#E11D2E" stroke-width="3" />
+              </svg>
+              <div class="absolute top-2 sm:top-4 left-[70%] -translate-x-1/2 bg-[#E11D2E] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-lg">
+                18 admits / day
+              </div>
+              <div class="flex justify-between text-[10px] text-neutral-500 font-mono pt-2 border-t border-white/5">
+                <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span>
+              </div>
+            </div>
           </div>
-          <div>
+
+          <!-- Emergency Trauma Spotlight Banner (5 cols) -->
+          <div class="lg:col-span-5 bg-gradient-to-br from-[#181920] to-[#0f1015] rounded-3xl p-5 sm:p-6 border border-white/5 flex flex-col justify-between relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-[#E11D2E]/10 blur-3xl pointer-events-none"></div>
+
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-500/20 text-red-300 border border-red-500/30 mb-2">
+                  <span class="live-dot"></span>
+                  Hospital Command Live
+                </span>
+                <h4 class="text-base sm:text-lg font-bold text-white">Trauma Reception Bay 1</h4>
+                <p class="text-xs text-neutral-400 mt-0.5">Automated LifeQR intake synchronized with EMS radar</p>
+              </div>
+              <div class="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-neutral-300">
+                <span class="material-symbols-outlined text-xl text-[#E11D2E]">local_hospital</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 my-4 py-3 border-y border-white/5">
+              <div>
+                <div class="text-[10px] text-neutral-400 uppercase font-semibold">Blood Bank Vault</div>
+                <div class="text-xl sm:text-2xl font-bold text-white mt-0.5" id="statBloodUnits">68 Units</div>
+                <span class="text-[10px] text-emerald-400">All Groups Stocked</span>
+              </div>
+              <div>
+                <div class="text-[10px] text-neutral-400 uppercase font-semibold">OPD Waiting Queue</div>
+                <div class="text-xl sm:text-2xl font-bold text-white mt-0.5" id="statOpdQueue">14</div>
+                <span class="text-[10px] text-neutral-400">Active tokens</span>
+              </div>
+            </div>
+
             <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 border border-[#E11D2E] bg-[#E11D2E] text-white font-mono text-[10px] font-black uppercase tracking-widest animate-pulse">NOW CALLING</span>
-              <span id="lobbyCallingToken" class="font-mono font-black text-lg text-white">TOKEN #1</span>
+              <button onclick="toggleHospitalDrawer('admissions')" class="flex-1 py-2 rounded-xl bg-white/10 hover:bg-[#E11D2E] text-xs font-semibold text-white transition-all text-center">
+                Review Active Admissions
+              </button>
+              <button onclick="openAdmitModal()" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 transition-all" title="Fast Admit Patient">
+                <span class="material-symbols-outlined text-lg">person_add</span>
+              </button>
             </div>
-            <h3 id="lobbyCallingPatient" class="font-black text-xl sm:text-2xl text-white uppercase tracking-tight mt-0.5">Rahul Sharma</h3>
-            <p class="font-mono text-xs text-white/70">
-              Please proceed to: <strong id="lobbyCallingRoom" class="text-white font-bold">Consultation Room 102</strong> &bull; Attending: <strong id="lobbyCallingDoctor" class="text-[#E11D2E]">Dr. Amit Sharma</strong>
-            </p>
+          </div>
+
+        </div>
+
+        <!-- BOTTOM SECTION: Ward Allocation Protocols (Patient Red Theme) -->
+        <div class="mt-6 pt-4 border-t border-white/5">
+          <div class="flex items-center justify-between mb-3.5">
+            <h4 class="font-bold text-sm sm:text-base text-white">Ward Allocation Protocols</h4>
+            <button onclick="toggleHospitalDrawer('beds')" class="text-xs text-[#E11D2E] font-semibold hover:underline">View Bed Matrix</button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <!-- Ward 1 -->
+            <div onclick="toggleHospitalDrawer('beds')" class="bg-[#0f1015] hover:bg-[#14151b] p-4 rounded-2xl border border-white/5 cursor-pointer transition-all flex items-center justify-between">
+              <div>
+                <div class="text-xs font-bold text-white">Trauma Resuscitation</div>
+                <div class="text-[11px] text-neutral-400 mt-0.5">Bays 1-4 &bull; Priority 1 Critical</div>
+                <span class="inline-block mt-2 px-2 py-0.5 rounded bg-white/5 text-[9px] text-neutral-300 font-mono">Bays Available</span>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-red-500/20 text-[#E11D2E] flex items-center justify-center font-bold text-sm">
+                BAY
+              </div>
+            </div>
+
+            <!-- Ward 2 (Active Red Card) -->
+            <div onclick="toggleHospitalDrawer('beds')" class="bg-gradient-to-r from-[#E11D2E] to-[#b91c1c] p-4 rounded-2xl cursor-pointer shadow-[0_8px_24px_rgba(225,29,46,0.4)] transition-all flex items-center justify-between transform hover:scale-[1.02]">
+              <div>
+                <div class="text-xs font-bold text-white">ICU Critical Care Wing</div>
+                <div class="text-[11px] text-white/90 mt-0.5">8 Beds &bull; High Dependency Care</div>
+                <span class="inline-block mt-2 px-2 py-0.5 rounded bg-white/20 text-[9px] text-white font-mono font-bold">50% CAPACITY</span>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center font-bold text-sm">
+                ICU
+              </div>
+            </div>
+
+            <!-- Ward 3 -->
+            <div onclick="toggleHospitalDrawer('beds')" class="bg-[#0f1015] hover:bg-[#14151b] p-4 rounded-2xl border border-white/5 cursor-pointer transition-all flex items-center justify-between">
+              <div>
+                <div class="text-xs font-bold text-white">General Medicine Ward</div>
+                <div class="text-[11px] text-neutral-400 mt-0.5">18 Beds &bull; Inpatient recovery</div>
+                <span class="inline-block mt-2 px-2 py-0.5 rounded bg-white/5 text-[9px] text-neutral-300 font-mono">GW-01 to GW-18</span>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-neutral-800 text-neutral-300 flex items-center justify-center font-bold text-sm">
+                WARD
+              </div>
+            </div>
           </div>
         </div>
-        <div class="font-mono text-xs text-right">
-          <span class="px-3 py-1.5 border border-white/30 bg-white/10 text-white uppercase font-bold tracking-wider">
-            LOBBY PUBLIC SCREEN SYNC
-          </span>
-        </div>
-      </div>
 
-      <!-- Front Desk Token Registration Card & Live Queue Table -->
-      <div class="grid lg:grid-cols-12 gap-6">
+      </main>
+
+      <!-- 3. RIGHT FLOATING COLUMN: FACILITY PROFILE + CALENDAR + SCHEDULED SURGERIES -->
+      <aside class="w-full lg:w-84 xl:w-96 dark-card rounded-3xl lg:rounded-[36px] p-5 sm:p-6 border border-white/5 shadow-2xl flex flex-col justify-between flex-shrink-0">
         
-        <!-- Front Desk Token Registration Form (5 Columns) -->
-        <div class="lg:col-span-5 space-y-4">
-          <div class="editorial-card p-6 space-y-4">
-            <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
-              <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
-                <span class="material-symbols-outlined text-[#E11D2E]">confirmation_number</span>
-                <span>Front Desk Token Generator</span>
-              </h3>
-              <span class="text-[10px] font-mono font-bold text-[#E11D2E] uppercase">INTAKE</span>
-            </div>
-
-            <!-- LifeQR Auto-fill Row -->
-            <div class="p-3 border-2 border-[#111111] bg-[#f9fafb] space-y-2 font-mono">
-              <label class="block text-[10px] font-bold uppercase text-[#111111]">Quick Auto-fill with Patient LifeQR</label>
-              <div class="flex gap-2">
-                <input type="text" id="fdQrCodeId" placeholder="e.g. RAH-D3200470" class="flex-1 px-3 py-1.5 text-xs font-bold uppercase">
-                <button type="button" onclick="lookupQrForFrontDesk()" class="btn-secondary px-3 py-1.5 text-xs font-bold uppercase">
-                  Fetch
-                </button>
+        <!-- Facility Profile Card -->
+        <div>
+          <div class="flex items-center justify-between pb-4 border-b border-white/5">
+            <div class="flex items-center gap-3">
+              <div class="relative">
+                <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=150&auto=format&fit=crop&q=80" alt="Hospital" class="w-12 h-12 rounded-2xl object-cover border border-white/10 shadow-md">
+                <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#E11D2E] border-2 border-[#121318]"></span>
+              </div>
+              <div>
+                <h3 class="font-bold text-sm text-white">Metro Trauma Command</h3>
+                <p class="text-xs text-neutral-400 font-mono">@hospital_desk</p>
               </div>
             </div>
+            <button onclick="toggleHospitalDrawer('doctors')" class="text-neutral-400 hover:text-white p-1" title="Specialists">
+              <span class="material-symbols-outlined text-lg">more_horiz</span>
+            </button>
+          </div>
 
-            <form id="frontDeskQueueForm" onsubmit="handleFrontDeskQueueSubmit(event)" class="space-y-3 font-sans text-xs">
-              <div>
-                <label class="block font-mono text-[10px] font-bold uppercase mb-1">Patient Full Name *</label>
-                <input type="text" id="fdPatientName" required class="w-full p-2 font-bold" placeholder="e.g. Sumanth Rao">
+          <!-- 3 Metric Tags -->
+          <div class="grid grid-cols-3 gap-2 py-4 border-b border-white/5 text-center">
+            <div class="p-2 rounded-xl bg-white/[0.03]">
+              <div class="text-xs font-bold text-white">4 Bays</div>
+              <div class="text-[10px] text-neutral-400">Trauma</div>
+            </div>
+            <div class="p-2 rounded-xl bg-white/[0.03]">
+              <div class="text-xs font-bold text-white">8 Units</div>
+              <div class="text-[10px] text-neutral-400">ICU Wing</div>
+            </div>
+            <div class="p-2 rounded-xl bg-white/[0.03]">
+              <div class="text-xs font-bold text-white">30 Beds</div>
+              <div class="text-[10px] text-neutral-400">Total</div>
+            </div>
+          </div>
+
+          <!-- Interactive Mini Calendar (Matching Doctor Dashboard) -->
+          <div class="py-4 border-b border-white/5">
+            <div class="flex items-center justify-between mb-3 text-xs font-semibold text-white">
+              <span>October 2026</span>
+              <div class="flex items-center gap-1 text-neutral-400">
+                <button class="hover:text-white p-0.5"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
+                <button class="hover:text-white p-0.5"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+              </div>
+            </div>
+
+            <!-- Days of Week -->
+            <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-neutral-500 font-mono mb-2">
+              <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+            </div>
+
+            <!-- Dates Matrix with Colored Badges -->
+            <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-neutral-300">
+              <span class="text-neutral-600 p-1">28</span>
+              <span class="text-neutral-600 p-1">29</span>
+              <span class="text-neutral-600 p-1">30</span>
+              <span class="p-1">1</span>
+              <span class="p-1">2</span>
+              <span class="p-1">3</span>
+              <span class="p-1">4</span>
+
+              <span class="p-1">5</span>
+              <span class="p-1">6</span>
+              <span class="p-1">7</span>
+              <span class="p-1">8</span>
+              <span class="p-1">9</span>
+              <span class="p-1">10</span>
+              <span class="p-1">11</span>
+
+              <span class="p-1">12</span>
+              <span class="p-1">13</span>
+              <span class="p-1">14</span>
+              <span class="p-1">15</span>
+              <span class="p-1">16</span>
+              <span class="p-1">17</span>
+              <span class="p-1">18</span>
+
+              <span class="p-1">19</span>
+              <span class="p-1">20</span>
+              <!-- Colored Badge 21 (Red) -->
+              <span class="p-1 w-6 h-6 mx-auto rounded-full bg-[#E11D2E] text-white flex items-center justify-center font-bold text-[10px]">21</span>
+              <!-- Colored Badge 22 (Black) -->
+              <span class="p-1 w-6 h-6 mx-auto rounded-full bg-neutral-800 text-white flex items-center justify-center font-bold text-[10px]">22</span>
+              <!-- Colored Badge 23 (Red) -->
+              <span class="p-1 w-6 h-6 mx-auto rounded-full bg-[#E11D2E] text-white flex items-center justify-center font-bold text-[10px]">23</span>
+              <span class="p-1">24</span>
+              <!-- Colored Badge 25 (Rose) -->
+              <span class="p-1 w-6 h-6 mx-auto rounded-full bg-rose-600 text-white flex items-center justify-center font-bold text-[10px]">25</span>
+
+              <span class="p-1">26</span>
+              <span class="p-1">27</span>
+              <span class="p-1">28</span>
+              <!-- Today Active -->
+              <span class="p-1 w-6 h-6 mx-auto rounded-full border-2 border-[#E11D2E] text-white flex items-center justify-center font-bold text-[10px]">29</span>
+              <span class="p-1">30</span>
+              <span class="p-1">31</span>
+              <span class="text-neutral-600 p-1">1</span>
+            </div>
+          </div>
+
+          <!-- Scheduled Procedures & Surgeries -->
+          <div class="pt-4">
+            <div class="flex items-center justify-between mb-3 text-xs">
+              <span class="font-bold text-white flex items-center gap-1.5">
+                <span class="w-1.5 h-3 bg-[#E11D2E] rounded-full inline-block"></span>
+                Scheduled Surgeries
+              </span>
+              <button onclick="toggleHospitalDrawer('admissions')" class="text-neutral-400 hover:text-white text-[11px]">View All</button>
+            </div>
+
+            <div class="space-y-2.5">
+              <!-- Item 1 -->
+              <div onclick="toggleHospitalDrawer('admissions')" class="p-2.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all flex items-center justify-between cursor-pointer group">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl bg-red-500/20 text-[#E11D2E] flex items-center justify-center font-bold text-xs flex-shrink-0">
+                    OT1
+                  </div>
+                  <div>
+                    <div class="text-xs font-semibold text-white group-hover:text-[#E11D2E] transition-colors">Emergency Laparotomy</div>
+                    <div class="text-[10px] text-neutral-400">Dr. Amit Sharma &bull; OT Bay 1</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] font-mono text-neutral-300 bg-white/5 px-2 py-0.5 rounded-md">11:00 AM</span>
+                </div>
               </div>
 
-              <div class="grid grid-cols-3 gap-2">
-                <div>
-                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Age</label>
-                  <input type="number" id="fdAge" class="w-full p-2 font-bold" placeholder="30">
+              <!-- Item 2 -->
+              <div onclick="toggleHospitalDrawer('admissions')" class="p-2.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all flex items-center justify-between cursor-pointer group">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl bg-neutral-800 text-neutral-300 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                    ICU
+                  </div>
+                  <div>
+                    <div class="text-xs font-semibold text-white group-hover:text-red-400 transition-colors">Ventilator Weaning</div>
+                    <div class="text-[10px] text-neutral-400">Dr. Jacob &bull; ICU Bed #2</div>
+                  </div>
                 </div>
-                <div>
-                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Gender</label>
-                  <select id="fdGender" class="w-full p-2 font-bold">
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Blood</label>
-                  <select id="fdBlood" class="w-full p-2 font-bold">
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                  </select>
+                <div class="text-right">
+                  <span class="text-[10px] font-mono text-neutral-300 bg-white/5 px-2 py-0.5 rounded-md">01:30 PM</span>
                 </div>
               </div>
 
-              <div>
-                <label class="block font-mono text-[10px] font-bold uppercase mb-1">Phone Number</label>
-                <input type="tel" id="fdPhone" value="+91 " class="w-full p-2 font-mono font-bold" placeholder="+91 9876543210">
-              </div>
-
-              <div>
-                <label class="block font-mono text-[10px] font-bold uppercase mb-1">Chief Complaint / Primary Issue *</label>
-                <textarea id="fdComplaint" required rows="2" class="w-full p-2 font-medium" placeholder="e.g. Severe headache, persistent cough for 3 days"></textarea>
-              </div>
-
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Assign Doctor *</label>
-                  <select id="fdDoctor" class="w-full p-2 font-bold">
-                    <option value="Dr. Amit Sharma">Dr. Amit Sharma (Trauma)</option>
-                    <option value="Dr. Rajesh Nair">Dr. Rajesh Nair (Critical Care)</option>
-                    <option value="Dr. Sneha Verma">Dr. Sneha Verma (Cardiology)</option>
-                    <option value="Dr. Ananya Roy">Dr. Ananya Roy (Pediatrics)</option>
-                  </select>
+              <!-- Item 3 -->
+              <div onclick="toggleHospitalDrawer('admissions')" class="p-2.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all flex items-center justify-between cursor-pointer group">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl bg-neutral-800 text-neutral-300 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                    GW
+                  </div>
+                  <div>
+                    <div class="text-xs font-semibold text-white group-hover:text-red-400 transition-colors">Post-Op Ortho Review</div>
+                    <div class="text-[10px] text-neutral-400">Attending Staff &bull; GW-04</div>
+                  </div>
                 </div>
-                <div>
-                  <label class="block font-mono text-[10px] font-bold uppercase mb-1">Room Number</label>
-                  <input type="text" id="fdRoom" class="w-full p-2 font-mono font-bold" value="Consultation Room 102">
+                <div class="text-right">
+                  <span class="text-[10px] font-mono text-neutral-300 bg-white/5 px-2 py-0.5 rounded-md">03:45 PM</span>
                 </div>
               </div>
-
-              <button type="submit" class="btn-primary w-full py-2.5 font-mono uppercase font-bold text-xs mt-2">
-                Issue Token &amp; Push to Doctor
-              </button>
-            </form>
-
+            </div>
           </div>
         </div>
 
-        <!-- Live Clinic Queue Table (7 Columns) -->
-        <div class="lg:col-span-7 space-y-4">
-          <div class="editorial-card p-6 space-y-4">
-            <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
-              <h3 class="font-black text-sm uppercase text-[#111111] flex items-center gap-2">
-                <span class="material-symbols-outlined text-[#111111]">view_list</span>
-                <span>Central Clinic Token Queue</span>
-              </h3>
-              <button onclick="loadClinicQueue()" class="btn-secondary px-3 py-1 font-mono text-xs font-bold uppercase">
-                Refresh
-              </button>
-            </div>
+        <!-- Quick Fast Admit Button -->
+        <button onclick="openAdmitModal()" class="w-full mt-5 py-3 rounded-2xl bg-[#E11D2E] hover:bg-[#c21626] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_6px_20px_rgba(225,29,46,0.4)] transition-all">
+          <span class="material-symbols-outlined text-sm">person_add</span>
+          <span>Fast Inpatient Admission</span>
+        </button>
 
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse font-sans text-xs">
-                <thead>
-                  <tr class="border-b-2 border-[#111111] text-[#111111] text-[10px] uppercase font-bold tracking-wider font-mono">
-                    <th class="p-3">Token</th>
-                    <th class="p-3">Patient Details</th>
-                    <th class="p-3">Blood</th>
-                    <th class="p-3">Chief Issue</th>
-                    <th class="p-3">Assigned Room</th>
-                    <th class="p-3 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody id="clinicQueueTableBody" class="divide-y border-b border-[#111111]/20">
-                  <!-- Rendered dynamically -->
-                </tbody>
-              </table>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
+      </aside>
 
     </div>
 
-  </main>
+  </div>
 
-  <!-- Fast Patient Admission Modal -->
-  <div id="admitPatientModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-    <div class="editorial-card max-w-lg w-full p-6 sm:p-8 space-y-4">
+
+  <!-- ========================================================================= -->
+  <!-- 🍃 DASHBOARD 2: CLEAN LIGHT HOSPITAL WORKSTATION (INDIAN RUPEES ₹)        -->
+  <!-- ========================================================================= -->
+  <div id="hospitalDashboard2View" class="min-h-screen bg-[#f8f9fa] text-[#111111] p-3 sm:p-6 lg:p-8 pb-28 hidden flex-col justify-between">
+    
+    <div class="max-w-[1680px] mx-auto w-full space-y-6">
       
-      <div class="flex items-center justify-between pb-3 border-b-2 border-[#111111]">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#E11D2E] text-xl">person_add</span>
-          <h3 class="font-black text-lg uppercase tracking-tight text-[#111111]">Fast Patient Admission Intake</h3>
+      <!-- Top Navigation Pill Header -->
+      <header class="bg-white rounded-full px-5 py-3 shadow-[0_4px_25px_rgba(0,0,0,0.04)] border border-neutral-200 flex items-center justify-between gap-4">
+        <!-- Logo -->
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-[#E11D2E] text-white flex items-center justify-center font-bold shadow-sm">
+            <span class="material-symbols-outlined text-xl">local_hospital</span>
+          </div>
+          <span class="font-extrabold text-lg text-[#111111] tracking-tight">LifeQR Hospital Command</span>
+          <span class="hidden sm:inline px-2 py-0.5 bg-red-50 text-[#E11D2E] text-[10px] font-mono font-bold rounded-full">FACILITY SUITE</span>
         </div>
-        <button onclick="closeAdmitModal()" class="text-[#111111] hover:text-[#E11D2E] transition font-bold"><span class="material-symbols-outlined">close</span></button>
-      </div>
 
-      <!-- LifeQR Auto-fill Row -->
-      <div class="p-3 border-2 border-[#111111] bg-[#f9fafb] space-y-2">
-        <label class="block font-mono text-[10px] font-bold uppercase text-[#111111]">Fast Auto-Fill with Patient LifeQR ID</label>
-        <div class="flex gap-2">
-          <input type="text" id="admitQrId" placeholder="e.g. RAH-D3200470" class="flex-1 px-3 py-1.5 text-xs font-mono font-bold uppercase">
-          <button type="button" onclick="lookupQrForAdmission()" class="btn-secondary px-3 py-1.5 text-xs font-mono font-bold uppercase">
-            Auto-Fill
+        <!-- Center Nav Tabs -->
+        <nav class="hidden md:flex items-center gap-1 bg-neutral-100 p-1 rounded-full text-xs font-semibold text-neutral-600">
+          <button class="px-4 py-1.5 rounded-full bg-[#111111] text-white shadow-xs">Operations</button>
+          <button onclick="toggleHospitalDrawer('admissions')" class="px-4 py-1.5 rounded-full hover:text-[#111111] transition-colors">Admissions</button>
+          <button onclick="toggleHospitalDrawer('beds')" class="px-4 py-1.5 rounded-full hover:text-[#111111] transition-colors">Beds &amp; Bays</button>
+          <button onclick="toggleHospitalDrawer('supplies')" class="px-4 py-1.5 rounded-full hover:text-[#111111] transition-colors">Blood Bank</button>
+          <a href="doctor_dashboard.html" class="px-4 py-1.5 rounded-full hover:text-[#111111] transition-colors">Doctor Suite</a>
+        </nav>
+
+        <!-- Search + Notification + Avatar -->
+        <div class="flex items-center gap-3">
+          <div class="relative hidden sm:block w-48">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 material-symbols-outlined text-base">search</span>
+            <input 
+              type="text" 
+              placeholder="Search admissions..." 
+              class="w-full bg-neutral-50 border border-neutral-200 rounded-full pl-9 pr-3 py-1.5 text-xs text-[#111111] focus:outline-none focus:border-[#E11D2E]"
+              oninput="filterAdmissions(this.value)"
+            >
+          </div>
+          <button onclick="toggleHospitalDrawer('admissions')" class="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center transition-all">
+            <span class="material-symbols-outlined text-lg">notifications</span>
+          </button>
+          <div class="flex items-center gap-2 pl-2 border-l border-neutral-200">
+            <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=100&auto=format&fit=crop&q=80" alt="Hospital" class="w-8 h-8 rounded-full object-cover">
+            <span class="text-xs font-bold text-[#111111] hidden lg:inline">Trauma Desk</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Welcome Back Subheader + Date Filter + Action Button -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-[#111111] tracking-tight">
+            Hospital Operations &bull; <span class="text-[#E11D2E]">Command Center</span>
+          </h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-neutral-200 text-xs text-neutral-600 font-medium shadow-xs">
+            <span class="material-symbols-outlined text-sm text-[#E11D2E]">calendar_today</span>
+            <span>29 Oct, 2026 - 29 Nov, 2026</span>
+          </div>
+          <button onclick="openAdmitModal()" class="px-4 py-2 rounded-full bg-[#E11D2E] hover:bg-[#c21626] text-white font-semibold text-xs flex items-center gap-1.5 shadow-md transition-all">
+            <span class="material-symbols-outlined text-sm">add</span>
+            <span>+ Fast Admit Patient</span>
           </button>
         </div>
       </div>
 
-      <form id="admissionForm" class="space-y-3 font-sans text-xs">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Patient Full Name *</label>
-            <input type="text" id="admitName" required class="w-full p-2 font-bold" placeholder="e.g. Rahul Sharma">
+      <!-- 3-COLUMN BENTO GRID IN INDIAN RUPEES (₹) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- LEFT COLUMN: Trauma Billing Card (Indian Rupees ₹) -->
+        <div class="lg:col-span-3 space-y-6">
+          <div class="light-card rounded-3xl p-5 space-y-4">
+            <div class="flex items-center justify-between text-xs text-neutral-500 font-semibold">
+              <span>Trauma Operations Value</span>
+              <button class="text-neutral-400 hover:text-neutral-600"><span class="material-symbols-outlined text-base">north_east</span></button>
+            </div>
+
+            <!-- LifeQR Crimson Medical Card -->
+            <div class="w-full h-44 rounded-2xl bg-gradient-to-tr from-[#991b1b] via-[#b91c1c] to-[#E11D2E] text-white p-5 flex flex-col justify-between shadow-xl shadow-red-950/20 relative overflow-hidden">
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold tracking-wider text-sm">LifeQR Hospital</span>
+                <span class="material-symbols-outlined text-xl opacity-90">contactless</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-red-200 font-mono uppercase tracking-wider block">Inpatient Bed Budget</span>
+                <span class="text-2xl font-black tracking-tight">₹78,989.09</span>
+              </div>
+              <div class="flex items-center justify-between text-[11px] font-mono text-red-200">
+                <span>•••• 9021</span>
+                <span>EXP 09/29</span>
+              </div>
+            </div>
+
+            <!-- Weekly Inpatient Intake -->
+            <div class="pt-2">
+              <span class="text-xs text-neutral-400 block font-medium">Weekly Trauma Intake</span>
+              <div class="flex items-baseline gap-2 mt-0.5">
+                <span class="text-xl font-bold text-[#111111]">+₹3,945</span>
+                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">+12.8%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CENTER COLUMN: Inpatient Admissions Table (6 cols) -->
+        <div class="lg:col-span-6 space-y-6">
+          
+          <!-- Inpatient Admissions Table (Real data via admissionsTableBody) -->
+          <div class="light-card rounded-3xl p-6">
+            <div class="flex items-center justify-between pb-3">
+              <div>
+                <h4 class="font-bold text-[#111111] text-sm">Inpatient Admissions Registry</h4>
+                <p class="text-[11px] text-neutral-400">Live trauma bays, ICU wings, and general medicine wards</p>
+              </div>
+              <button onclick="toggleHospitalDrawer('admissions')" class="text-neutral-400 hover:text-neutral-600"><span class="material-symbols-outlined text-base">north_east</span></button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr class="text-neutral-400 text-[10px] uppercase font-bold border-b border-neutral-100">
+                    <th class="py-2.5">Admission ID</th>
+                    <th class="py-2.5">Patient</th>
+                    <th class="py-2.5">Blood</th>
+                    <th class="py-2.5">Ward &amp; Bed</th>
+                    <th class="py-2.5">Triage</th>
+                    <th class="py-2.5">Vitals</th>
+                    <th class="py-2.5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admissionsTableBody" class="divide-y divide-neutral-100 font-medium text-neutral-700">
+                  <!-- Rendered dynamically by hospital-dashboard.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Department Value (Indian Rupees ₹) -->
+        <div class="lg:col-span-3 space-y-6">
+          
+          <!-- Balance & Wave Sparkline Card -->
+          <div class="light-card rounded-3xl p-5 space-y-3">
+            <div class="flex items-center justify-between text-xs text-neutral-500 font-semibold">
+              <span>Department Bed Telemetry</span>
+              <button class="text-neutral-400 hover:text-neutral-600"><span class="material-symbols-outlined text-base">north_east</span></button>
+            </div>
+            <div>
+              <span class="text-[11px] text-neutral-400 block font-medium">Department Value</span>
+              <div class="text-2xl font-black text-[#111111] tracking-tight">₹32,678.90</div>
+            </div>
+
+            <!-- Wave Sparkline in Patient Red -->
+            <div class="h-16 w-full">
+              <svg class="w-full h-full" viewBox="0 0 200 50" fill="none">
+                <path d="M0 25 Q 25 5, 50 25 T 100 25 T 150 25 T 200 25" stroke="#E11D2E" stroke-width="2.5" stroke-linecap="round" />
+              </svg>
+            </div>
+
+            <!-- Action Buttons: Fast Admit / Bed Matrix -->
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <button onclick="openAdmitModal()" class="py-2 rounded-xl bg-[#E11D2E] hover:bg-[#c21626] text-white font-semibold text-xs flex items-center justify-center gap-1 shadow-sm">
+                <span>Admit ↑</span>
+              </button>
+              <button onclick="toggleHospitalDrawer('beds')" class="py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-semibold text-xs flex items-center justify-center gap-1">
+                <span>Beds +</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Pharmacy & Emergency Stock Budget (Indian Rupees ₹) -->
+          <div class="light-card rounded-3xl p-5">
+            <div class="flex items-center gap-2 text-xs text-neutral-500 font-semibold mb-2">
+              <span class="material-symbols-outlined text-sm text-[#E11D2E]">account_balance_wallet</span>
+              <span>Trauma Supplies Budget</span>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span class="text-xl font-bold text-[#111111]">₹8,945.89</span>
+              <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">+12.8%</span>
+            </div>
+          </div>
+
+          <!-- On-Call Surgeons -->
+          <div class="light-card rounded-3xl p-5 space-y-2">
+            <div class="flex items-center justify-between text-xs text-neutral-500 font-semibold">
+              <span>Attending Surgeons on Duty</span>
+              <button onclick="toggleHospitalDrawer('doctors')" class="text-neutral-400 hover:text-neutral-600"><span class="material-symbols-outlined text-base">north_east</span></button>
+            </div>
+            <div class="flex items-center -space-x-2 pt-2">
+              <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=80&auto=format&fit=crop&q=80" class="w-9 h-9 rounded-full border-2 border-white object-cover">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" class="w-9 h-9 rounded-full border-2 border-white object-cover">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80" class="w-9 h-9 rounded-full border-2 border-white object-cover">
+              <div class="w-9 h-9 rounded-full bg-[#E11D2E] text-white font-bold text-xs flex items-center justify-center border-2 border-white">+3</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- 🔘 BOTTOM FLOATING INTERACTIVE VIEW SWITCHER                              -->
+  <!-- ========================================================================= -->
+  <div id="hospitalDashboardSwitcher" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 p-1.5 rounded-full bg-[#181a22]/95 backdrop-blur-xl border border-white/10 shadow-[0_12px_36px_rgba(0,0,0,0.6)] font-sans text-xs">
+    <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400 select-none">SWITCH</span>
+    
+    <!-- Button 1: Dashboard 1 -->
+    <button id="switchHospitalDash1Btn" onclick="setHospitalDashboardView('dash1')" class="flex items-center gap-1.5 px-4 py-1.5 rounded-full font-semibold transition-all bg-[#E11D2E] text-white shadow-[0_0_15px_rgba(225,29,46,0.5)]">
+      <span>⚡ Dashboard 1</span>
+    </button>
+    
+    <!-- Button 2: Dashboard 2 -->
+    <button id="switchHospitalDash2Btn" onclick="setHospitalDashboardView('dash2')" class="flex items-center gap-1.5 px-4 py-1.5 rounded-full font-semibold transition-all text-neutral-300 hover:text-white hover:bg-white/10">
+      <span>🍃 Dashboard 2</span>
+    </button>
+    
+    <!-- Button 3: Admin -->
+    <a href="admin_dashboard.html" class="flex items-center gap-1.5 px-4 py-1.5 rounded-full font-semibold text-neutral-300 hover:text-white hover:bg-white/10 transition-all">
+      <span>📊 Admin</span>
+    </a>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- 🏨 FULL OPERATIONS DRAWER (BED MATRIX, DOCTORS, BLOOD BANK, TOKENS)       -->
+  <!-- ========================================================================= -->
+  <div id="hospitalOperationsDrawer" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-end">
+    <div class="w-full max-w-5xl bg-[#121318] text-white h-full overflow-y-auto border-l border-white/10 shadow-2xl p-6 sm:p-8 flex flex-col justify-between">
+      
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-[#E11D2E] text-white flex items-center justify-center font-bold">
+            <span class="material-symbols-outlined text-xl">local_hospital</span>
           </div>
           <div>
-            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Blood Group *</label>
-            <select id="admitBlood" required class="w-full p-2 font-bold">
+            <h2 class="text-lg font-bold text-white uppercase tracking-tight" id="drawerTitle">Hospital Operations Console</h2>
+            <p class="text-xs text-neutral-400">Ward Allocations &bull; Specialist Rosters &bull; Blood Vault</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleHospitalDrawer()" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 transition-all">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Drawer Content Body -->
+      <div class="space-y-6 my-6">
+
+        <!-- Tabs inside Drawer -->
+        <div class="flex items-center gap-1 bg-[#191a22] p-1.5 rounded-2xl border border-white/5 text-xs font-semibold">
+          <button type="button" onclick="showDrawerSection('beds')" id="drawerTabBeds" class="flex-1 py-2 rounded-xl bg-[#E11D2E] text-white font-bold transition-all">
+            Bed Matrix
+          </button>
+          <button type="button" onclick="showDrawerSection('doctors')" id="drawerTabDoctors" class="flex-1 py-2 rounded-xl text-neutral-300 hover:text-white transition-all">
+            Specialists
+          </button>
+          <button type="button" onclick="showDrawerSection('supplies')" id="drawerTabSupplies" class="flex-1 py-2 rounded-xl text-neutral-300 hover:text-white transition-all">
+            Blood Bank
+          </button>
+          <button type="button" onclick="showDrawerSection('queue')" id="drawerTabQueue" class="flex-1 py-2 rounded-xl text-neutral-300 hover:text-white transition-all">
+            Lobby Board
+          </button>
+        </div>
+
+        <!-- Section 1: Bed Matrix Grid -->
+        <div id="drawerSectionBeds" class="space-y-4">
+          <div class="flex items-center justify-between pb-2 border-b border-white/5">
+            <h3 class="font-bold text-sm text-white">Ward &amp; Trauma Bay Inventory Matrix</h3>
+            <span class="text-xs font-mono text-[#E11D2E] font-bold">Capacity: 30 Beds Total</span>
+          </div>
+          <div id="bedMatrixGrid" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+            <!-- Rendered dynamically by hospital-dashboard.js -->
+          </div>
+        </div>
+
+        <!-- Section 2: Doctors Roster -->
+        <div id="drawerSectionDoctors" class="hidden space-y-4">
+          <div class="flex items-center justify-between pb-2 border-b border-white/5">
+            <h3 class="font-bold text-sm text-white">Attending Specialists &amp; Surgeons</h3>
+            <span class="text-xs font-mono text-emerald-400 font-bold">Active Shift</span>
+          </div>
+          <div id="doctorRosterList" class="grid md:grid-cols-2 gap-3 text-xs">
+            <!-- Rendered dynamically by hospital-dashboard.js -->
+          </div>
+        </div>
+
+        <!-- Section 3: Blood Bank Vault -->
+        <div id="drawerSectionSupplies" class="hidden space-y-4">
+          <div class="flex items-center justify-between pb-2 border-b border-white/5">
+            <h3 class="font-bold text-sm text-white">Emergency Blood Bank &amp; Resuscitation Stock</h3>
+            <span class="text-xs font-mono text-[#E11D2E] font-bold">Vault Active</span>
+          </div>
+          <div id="bloodBankGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-xs">
+            <!-- Rendered dynamically by hospital-dashboard.js -->
+          </div>
+        </div>
+
+        <!-- Section 4: Lobby Screen Announcement Board -->
+        <div id="drawerSectionQueue" class="hidden space-y-4">
+          <div id="lobbyCallingBanner" class="p-6 rounded-3xl bg-[#191a22] border border-[#E11D2E] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-red-500/20 text-[#E11D2E] flex items-center justify-center font-bold text-xl flex-shrink-0 animate-pulse">
+                <span class="material-symbols-outlined text-2xl">campaign</span>
+              </div>
+              <div>
+                <span class="px-2 py-0.5 rounded bg-[#E11D2E] text-white text-[10px] font-bold uppercase tracking-wider">NOW CALLING</span>
+                <span id="lobbyCallingToken" class="font-mono font-bold text-sm text-white ml-2">TOKEN #1</span>
+                <h3 id="lobbyCallingPatient" class="font-bold text-lg text-white mt-0.5">Rahul Sharma</h3>
+                <p class="text-xs text-neutral-400">
+                  Please proceed to: <strong id="lobbyCallingRoom" class="text-white">Consultation Room 102</strong> &bull; Attending: <strong id="lobbyCallingDoctor" class="text-[#E11D2E]">Dr. Amit Sharma</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Drawer Footer -->
+      <div class="pt-4 border-t border-white/10 text-center text-xs text-neutral-500 font-mono">
+        LifeQR Hospital Command &bull; Session Active
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ========================================================================= -->
+  <!-- MODALS (DISCHARGE, ADMIT, CONFIRM)                                        -->
+  <!-- ========================================================================= -->
+  
+  <!-- Fast Patient Admission Modal -->
+  <div id="admitPatientModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-[#191a22] text-white max-w-lg w-full p-6 sm:p-8 rounded-3xl border border-white/10 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h3 class="font-bold text-lg text-white">Fast Inpatient Admission</h3>
+        <button onclick="closeAdmitModal()" class="text-neutral-400 hover:text-white">&times;</button>
+      </div>
+      <form id="admitPatientForm" onsubmit="handleAdmissionSubmit(event)" class="space-y-3 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Patient Name *</label>
+            <input type="text" id="admitName" required class="w-full bg-[#0f1015] p-2 rounded-xl border border-white/10 text-white" placeholder="e.g. Rahul Sharma">
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">LifeQR Code ID</label>
+            <input type="text" id="admitQrId" class="w-full bg-[#0f1015] p-2 rounded-xl border border-white/10 text-[#E11D2E] font-mono font-bold" placeholder="RAH-D3200470">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Blood Group</label>
+            <select id="admitBlood" class="w-full bg-[#0f1015] p-2 rounded-xl border border-white/10 text-white">
               <option value="O+">O+</option>
               <option value="O-">O-</option>
               <option value="A+">A+</option>
@@ -672,186 +972,176 @@
               <option value="AB-">AB-</option>
             </select>
           </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Age</label>
-            <input type="number" id="admitAge" class="w-full p-2 font-bold" placeholder="32">
+            <label class="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Age</label>
+            <input type="number" id="admitAge" class="w-full bg-[#0f1015] p-2 rounded-xl border border-white/10 text-white" placeholder="32">
           </div>
           <div>
-            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Gender</label>
-            <select id="admitGender" class="w-full p-2 font-bold">
+            <label class="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Gender</label>
+            <select id="admitGender" class="w-full bg-[#0f1015] p-2 rounded-xl border border-white/10 text-white">
               <option value="Male">Male</option>
               <option value="Female">Female</option>
               <option value="Other">Other</option>
             </select>
           </div>
         </div>
-
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Target Ward / Bay *</label>
-            <select id="admitWard" required class="w-full p-2 font-bold">
-              <option value="Trauma Bay 1 (Resuscitation Alpha)">Trauma Bay 1 (Resuscitation)</option>
-              <option value="Trauma Bay 2 (Surgical Trauma)">Trauma Bay 2 (Surgical)</option>
-              <option value="ICU Wing Alpha">ICU Wing Alpha</option>
-              <option value="General Medical Ward 2">General Medical Ward</option>
-              <option value="Pediatric Care Ward">Pediatric Care Ward</option>
+            <label class="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Target Ward</label>
+            <select id="admitWard" class="w-full bg-[#0f1015] p-2 rounded-xl border border-white/10 text-white">
+              <option value="Trauma Bay">Emergency Trauma Bays</option>
+              <option value="ICU">Intensive Care Unit (ICU)</option>
+              <option value="General Ward" selected>General Medicine Ward</option>
             </select>
           </div>
           <div>
-            <label class="block font-mono text-[10px] font-bold uppercase mb-1">Triage Priority</label>
-            <select id="admitTriage" class="w-full p-2 font-bold text-[#E11D2E]">
+            <label class="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Triage Priority</label>
+            <select id="admitTriage" class="w-full bg-[#0f1015] p-2 rounded-xl border border-white/10 text-white">
               <option value="CRITICAL">🔴 CRITICAL</option>
-              <option value="URGENT" selected>🟠 URGENT</option>
-              <option value="SEMI_URGENT">🟢 SEMI_URGENT</option>
+              <option value="URGENT">🟠 URGENT</option>
+              <option value="STABLE" selected>🟢 STABLE</option>
             </select>
           </div>
         </div>
-
         <div>
-          <label class="block font-mono text-[10px] font-bold uppercase mb-1">Attending Physician</label>
-          <input type="text" id="admitDoctor" class="w-full p-2 font-bold" placeholder="e.g. Dr. Amit Sharma" value="Dr. Amit Sharma">
+          <label class="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Attending Physician</label>
+          <input type="text" id="admitDoctor" value="Dr. Amit Sharma" class="w-full bg-[#0f1015] p-2 rounded-xl border border-white/10 text-white">
         </div>
-
-        <div class="flex gap-2 pt-3 border-t-2 border-[#111111]">
-          <button type="button" onclick="closeAdmitModal()" class="btn-secondary flex-1 py-2.5 font-mono uppercase font-bold text-xs">
-            Cancel
-          </button>
-          <button type="submit" class="btn-primary flex-1 py-2.5 font-mono uppercase font-bold text-xs">
-            Confirm Admission
-          </button>
+        <div class="flex gap-2 pt-3 border-t border-white/10">
+          <button type="button" onclick="closeAdmitModal()" class="flex-1 py-2 rounded-xl bg-white/10 text-white">Cancel</button>
+          <button type="submit" class="flex-1 py-2 rounded-xl bg-[#E11D2E] text-white font-bold hover:bg-[#c21626]">Admit Patient</button>
         </div>
       </form>
-
     </div>
   </div>
 
-  <!-- Clinical Discharge Confirmation Modal (LifeQR Editorial Modal System) -->
-  <div id="dischargePatientModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-[70] flex items-center justify-center p-4 overflow-y-auto no-print" onclick="if (event.target === this) closeDischargeModal()">
-    <div class="editorial-card max-w-lg w-full p-6 sm:p-7 space-y-4 relative animate-in fade-in zoom-in-95 duration-150">
-      
-      <!-- Modal Header -->
-      <div class="flex items-start justify-between pb-3 border-b-2 border-[#111111] gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-[#111111] text-[#E11D2E] flex items-center justify-center border-2 border-[#111111] shrink-0 font-bold">
-            <span class="material-symbols-outlined text-2xl">meeting_room</span>
-          </div>
-          <div>
-            <h3 class="font-black text-base uppercase tracking-tight text-[#111111]">Discharge Inpatient Record</h3>
-            <p class="text-[10px] font-mono text-[#111111]/60 font-bold uppercase tracking-wider">BED CLEARANCE &bull; CLINICAL DISCHARGE PROTOCOL</p>
-          </div>
-        </div>
-        <button type="button" onclick="closeDischargeModal()" class="p-1 text-[#111111] hover:text-[#E11D2E] hover:bg-gray-100 dark:hover:bg-[#1f1f1f] transition cursor-pointer" title="Dismiss">
-          <span class="material-symbols-outlined text-xl">close</span>
-        </button>
+  <!-- Swiss Inpatient Discharge Modal -->
+  <div id="dischargePatientModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-[#191a22] text-white max-w-lg w-full p-6 sm:p-8 rounded-3xl border border-white/10 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <h3 class="font-bold text-lg text-white">Confirm Inpatient Discharge</h3>
+        <button onclick="closeDischargeModal()" class="text-neutral-400 hover:text-white">&times;</button>
       </div>
-
-      <!-- Inpatient Summary Card -->
-      <div class="border-2 border-[#111111] p-3.5 bg-[#f9fafb] space-y-2.5">
-        <div class="flex items-center justify-between border-b border-[#111111]/15 pb-2">
-          <div class="flex items-center gap-2">
-            <span id="dischargeAdmissionId" class="px-2 py-0.5 bg-[#111111] text-white font-mono text-[11px] font-bold">ADM-8901</span>
-            <span id="dischargeTriageBadge" class="px-2 py-0.5 border border-[#E11D2E] bg-red-50 text-[#E11D2E] font-mono text-[10px] font-bold uppercase">🔴 CRITICAL</span>
-          </div>
-          <div class="flex items-center gap-1.5 font-mono text-xs font-black text-[#E11D2E]">
-            <span class="text-[10px] font-normal text-[#111111]/60 uppercase">Blood Group:</span>
-            <span id="dischargeBloodGroup" class="text-sm">O+</span>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 text-xs font-mono">
-          <div>
-            <div class="text-[10px] text-[#111111]/60 font-bold uppercase mb-0.5">Patient Details</div>
-            <div id="dischargePatientName" class="font-sans font-bold text-sm text-[#111111] uppercase tracking-tight">Rahul Sharma</div>
-            <div id="dischargePatientMeta" class="text-[10px] text-[#111111]/70 font-semibold mt-0.5">RAH-D3200470 &bull; 32y &bull; Male</div>
-          </div>
-          <div>
-            <div class="text-[10px] text-[#111111]/60 font-bold uppercase mb-0.5">Allocated Ward &amp; Bed</div>
-            <div id="dischargeWard" class="font-bold text-[#111111] text-xs">Trauma Bay 1 (Resuscitation Alpha)</div>
-            <div id="dischargeBed" class="text-[10px] text-[#E11D2E] font-bold mt-0.5">Bed: TB-01 &bull; Dr: Dr. Amit Sharma</div>
-          </div>
-        </div>
+      <div class="p-3 rounded-2xl bg-[#0f1015] border border-white/5 space-y-1 text-xs">
+        <div class="text-[#E11D2E] font-bold font-mono" id="dischargeAdmissionId">ADM-001</div>
+        <div class="font-bold text-white text-sm" id="dischargePatientName">Patient Name</div>
+        <div class="text-neutral-400 text-[11px]" id="dischargePatientMeta">Meta</div>
+        <div class="text-neutral-400 text-[11px]" id="dischargeBed">Bed Assignment</div>
+        <span id="dischargeTriageBadge" class="inline-block mt-1"></span>
       </div>
-
-      <!-- Clinical Discharge Form -->
-      <form id="dischargeForm" onsubmit="confirmDischargeSubmit(event)" class="space-y-3 font-sans text-xs">
+      <div class="space-y-3 text-xs">
         <div>
-          <label class="block font-mono text-[10px] font-bold uppercase mb-1 text-[#111111]">Discharge Disposition / Clinical Status *</label>
-          <select id="dischargeDisposition" required class="w-full p-2.5 font-mono text-xs font-bold">
-            <option value="Stable & Recovered (Discharged Home)" selected>🟢 Stable &amp; Recovered (Discharged Home)</option>
-            <option value="Transferred to Step-Down Ward / Inpatient Care">🟠 Transferred to Step-Down Ward / Inpatient Care</option>
-            <option value="Transferred to External Specialist Center">🔵 Transferred to External Specialist Center</option>
-            <option value="Discharged with Medication & Outpatient Follow-up">🟣 Discharged with Medication &amp; Follow-up</option>
-            <option value="Left Against Medical Advice (LAMA)">🔴 Left Against Medical Advice (LAMA)</option>
+          <label class="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Clinical Disposition</label>
+          <select id="dischargeDisposition" class="w-full bg-[#0f1015] p-2 rounded-xl border border-white/10 text-white">
+            <option value="Stable & Recovered (Discharged Home)">Stable &amp; Recovered (Discharged Home)</option>
+            <option value="Transferred to Higher Trauma Facility">Transferred to Higher Trauma Facility</option>
+            <option value="Discharged against Medical Advice (DAMA)">Discharged against Medical Advice (DAMA)</option>
           </select>
         </div>
-
         <div>
-          <label class="block font-mono text-[10px] font-bold uppercase mb-1 text-[#111111]">Attending Clinical Notes / Discharge Summary (Optional)</label>
-          <textarea id="dischargeNotes" rows="2" class="w-full p-2.5 font-mono text-xs" placeholder="e.g. Vitals normalized, patient alert, discharge instructions and medications dispensed..."></textarea>
+          <label class="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Attending Discharge Notes</label>
+          <textarea id="dischargeNotes" rows="3" class="w-full bg-[#0f1015] p-2 rounded-xl border border-white/10 text-white" placeholder="Attending clinical summary..."></textarea>
         </div>
-
-        <!-- Warning Callout Box -->
-        <div class="border-2 border-amber-500 bg-amber-50 p-3 flex items-start gap-2.5">
-          <span class="material-symbols-outlined text-amber-700 text-lg shrink-0 mt-0.5">warning</span>
-          <p class="font-mono text-[11px] text-amber-950 leading-relaxed">
-            Confirming discharge will immediately release <span id="dischargeBedHighlight" class="font-bold underline text-amber-900">Bed TB-01</span>, increment available facility bed capacity in real-time, and log the discharge in the patient's LifeQR clinical audit timeline.
-          </p>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex gap-2.5 pt-2 border-t-2 border-[#111111]">
-          <button type="button" onclick="closeDischargeModal()" class="btn-secondary flex-1 py-2.5 font-mono uppercase font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer">
-            <span class="material-symbols-outlined text-sm">close</span>
-            <span>Cancel</span>
-          </button>
-          <button type="submit" id="dischargeConfirmBtn" class="btn-primary flex-1 py-2.5 font-mono uppercase font-bold text-xs bg-[#E11D2E] hover:bg-[#111111] text-white flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#111111] cursor-pointer">
-            <span class="material-symbols-outlined text-sm">check_circle</span>
+        <div class="flex gap-2 pt-3 border-t border-white/10">
+          <button type="button" onclick="closeDischargeModal()" class="flex-1 py-2 rounded-xl bg-white/10 text-white">Cancel</button>
+          <button type="button" id="dischargeConfirmBtn" onclick="confirmDischargeSubmit(event)" class="flex-1 py-2 rounded-xl bg-[#E11D2E] text-white font-bold hover:bg-[#c21626]">
             <span id="dischargeBtnText">Confirm Discharge</span>
           </button>
         </div>
-      </form>
-
+      </div>
     </div>
   </div>
 
-  <!-- General Confirmation Modal (Generic Hospital Operations Modal) -->
-  <div id="hospitalConfirmModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-[75] flex items-center justify-center p-4 overflow-y-auto no-print" onclick="if (event.target === this) closeHospitalConfirmModal()">
-    <div class="editorial-card max-w-md w-full p-6 space-y-4 relative animate-in fade-in zoom-in-95 duration-150">
-      <div class="flex items-start justify-between pb-3 border-b-2 border-[#111111] gap-3">
-        <div class="flex items-center gap-3">
-          <div id="hospitalConfirmIconWrap" class="w-10 h-10 bg-[#111111] text-[#E11D2E] flex items-center justify-center border-2 border-[#111111] shrink-0 font-bold">
-            <span id="hospitalConfirmIcon" class="material-symbols-outlined text-2xl">help</span>
-          </div>
-          <div>
-            <h3 id="hospitalConfirmTitle" class="font-black text-base uppercase tracking-tight text-[#111111]">Confirm Action</h3>
-            <p id="hospitalConfirmSubtitle" class="text-[10px] font-mono text-[#111111]/60 font-bold uppercase tracking-wider">HOSPITAL COMMAND CONFIRMATION</p>
-          </div>
+  <!-- Universal Hospital Confirmation Dialog Modal -->
+  <div id="hospitalConfirmModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-[#191a22] text-white max-w-md w-full p-6 rounded-3xl border border-white/10 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-red-500/20 text-[#E11D2E] flex items-center justify-center font-bold">
+          <span class="material-symbols-outlined text-xl" id="hospitalConfirmIcon">help</span>
         </div>
-        <button id="hospitalConfirmCloseBtn" type="button" class="p-1 text-[#111111] hover:text-[#E11D2E] hover:bg-gray-100 dark:hover:bg-[#1f1f1f] transition cursor-pointer" title="Dismiss">
-          <span class="material-symbols-outlined text-xl">close</span>
-        </button>
+        <div>
+          <h3 class="font-bold text-base text-white" id="hospitalConfirmTitle">Confirm Action</h3>
+          <p class="text-[10px] font-mono text-neutral-400" id="hospitalConfirmSubtitle">HOSPITAL COMMAND</p>
+        </div>
       </div>
-      <div id="hospitalConfirmMessage" class="font-mono text-xs text-[#111111] leading-relaxed">
-        Are you sure you want to proceed?
-      </div>
-      <div class="flex gap-2.5 pt-2 border-t-2 border-[#111111]">
-        <button id="hospitalConfirmCancelBtn" type="button" class="btn-secondary flex-1 py-2.5 font-mono uppercase font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer">
-          Cancel
-        </button>
-        <button id="hospitalConfirmOkBtn" type="button" class="btn-primary flex-1 py-2.5 font-mono uppercase font-bold text-xs bg-[#E11D2E] hover:bg-[#111111] text-white flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#111111] cursor-pointer">
-          Confirm
-        </button>
+      <p class="text-xs text-neutral-300" id="hospitalConfirmMessage">Are you sure?</p>
+      <div class="flex gap-2 pt-2 border-t border-white/10">
+        <button type="button" id="hospitalConfirmCancelBtn" class="flex-1 py-2 rounded-xl bg-white/10 text-white text-xs font-semibold">Cancel</button>
+        <button type="button" id="hospitalConfirmOkBtn" class="flex-1 py-2 rounded-xl bg-[#E11D2E] text-white text-xs font-bold hover:bg-[#c21626]">Confirm</button>
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="rule py-8 px-6 text-center text-xs font-mono text-[#111111]/60 no-print mt-12">
-    <p>&copy; 2025&ndash;2026 LifeQR &bull; SECURE HOSPITAL &amp; CLINIC OPERATIONAL COMMAND</p>
-  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- CLIENT LOGIC & DUAL VIEW CONTROLLER (HOSPITAL COMMAND)                    -->
+  <!-- ========================================================================= -->
+  <script>
+    // Dual View Switcher Logic (Patient Theme Red Colors)
+    function setHospitalDashboardView(viewName) {
+      localStorage.setItem('hospital_dashboard_view', viewName);
+      
+      const v1 = document.getElementById('hospitalDashboard1View');
+      const v2 = document.getElementById('hospitalDashboard2View');
+      const btn1 = document.getElementById('switchHospitalDash1Btn');
+      const btn2 = document.getElementById('switchHospitalDash2Btn');
+
+      if (viewName === 'dash2') {
+        v1.classList.add('hidden');
+        v2.classList.remove('hidden');
+        v2.classList.add('flex');
+        
+        btn2.className = 'flex items-center gap-1.5 px-4 py-1.5 rounded-full font-semibold transition-all bg-[#E11D2E] text-white shadow-[0_0_15px_rgba(225,29,46,0.5)]';
+        btn1.className = 'flex items-center gap-1.5 px-4 py-1.5 rounded-full font-semibold transition-all text-neutral-300 hover:text-white hover:bg-white/10';
+        document.body.className = 'bg-[#f8f9fa] text-[#111111]';
+      } else {
+        v2.classList.add('hidden');
+        v2.classList.remove('flex');
+        v1.classList.remove('hidden');
+        v1.classList.add('flex');
+
+        btn1.className = 'flex items-center gap-1.5 px-4 py-1.5 rounded-full font-semibold transition-all bg-[#E11D2E] text-white shadow-[0_0_15px_rgba(225,29,46,0.5)]';
+        btn2.className = 'flex items-center gap-1.5 px-4 py-1.5 rounded-full font-semibold transition-all text-neutral-300 hover:text-white hover:bg-white/10';
+        document.body.className = 'bg-[#0b0c10] text-white';
+      }
+    }
+
+    // Toggle Operations Drawer
+    function toggleHospitalDrawer(section) {
+      const drawer = document.getElementById('hospitalOperationsDrawer');
+      if (drawer) {
+        drawer.classList.toggle('hidden');
+        if (section) showDrawerSection(section);
+      }
+    }
+
+    // Switch section inside drawer
+    function showDrawerSection(sec) {
+      const sections = ['Beds', 'Doctors', 'Supplies', 'Queue'];
+      sections.forEach(s => {
+        const el = document.getElementById('drawerSection' + s);
+        const tab = document.getElementById('drawerTab' + s);
+        if (el) el.classList.add('hidden');
+        if (tab) {
+          tab.className = 'flex-1 py-2 rounded-xl text-neutral-300 hover:text-white transition-all';
+        }
+      });
+
+      const activeCapital = sec.charAt(0).toUpperCase() + sec.slice(1);
+      const activeEl = document.getElementById('drawerSection' + activeCapital);
+      const activeTab = document.getElementById('drawerTab' + activeCapital);
+      if (activeEl) activeEl.classList.remove('hidden');
+      if (activeTab) {
+        activeTab.className = 'flex-1 py-2 rounded-xl bg-[#E11D2E] text-white font-bold transition-all';
+      }
+    }
+
+    // Auto-initialize view on load
+    window.addEventListener('load', () => {
+      const savedView = localStorage.getItem('hospital_dashboard_view') || 'dash1';
+      setHospitalDashboardView(savedView);
+    });
+  </script>
 
 </body>
 </html>

@@ -32,9 +32,10 @@
 - **Backend Route**: [erHandover.js](file:///c:/Users/USER/Downloads/lifeqr-complete/backend/routes/v1/erHandover.js)
 - **Database Model**: [ERHandover.js](file:///c:/Users/USER/Downloads/lifeqr-complete/backend/models/ERHandover.js)
 
-### 6. AI Clinical Copilot & Decision Tree
-- **Backend Routes**: `aiClinical.js`, `doctorDecisionTree.js`
-- **Features**: Patient Summary, Medical Scribe, Differential Dx, Rx Safety, SOAP Generator.
+### 6. AI Clinical Copilot, Decision Tree & Dual Physician Workstation
+- **Backend Routes**: `aiClinical.js`, `doctorDecisionTree.js`, `doctorAccess.js`
+- **Features**: Patient Summary, Medical Scribe, Differential Dx, Rx Safety, SOAP Generator, Hospital Admissions.
+- **Frontend Views**: [website/doctor_dashboard.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/website/doctor_dashboard.html) (Features the Dual-Experience architecture with instant bottom switcher: Dashboard 1 Dark Luxury Vitals & Rounds, Dashboard 2 Clean Light Clinical Workstation, and Admin portal bridge; preserving all live LifeQR QR scanners, AI dictation scribes, and EHR admission models).
 - **Frontend Controller**: `doctor-dashboard.js`
 
 ### 7. Phase 1 Patient Mobile MVP Application

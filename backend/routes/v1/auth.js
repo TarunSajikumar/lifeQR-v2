@@ -16,6 +16,34 @@ const { logEvent } = require('../../services/securityLogger');
 
 const router = express.Router();
 
+// Shared OTP email HTML builder
+function buildOtpEmail(name, otp) {
+  return {
+    subject: '🔐 Your LifeQR Verification Code',
+    text: `Hello ${name},\n\nYour LifeQR verification code is: ${otp}\n\nThis code is valid for 10 minutes. Do not share it with anyone.\n\n— LifeQR Emergency Team`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; background: #f9f9f9; border-radius: 10px; overflow: hidden;">
+        <div style="background: #E11D2E; padding: 24px 32px;">
+          <h1 style="color: #fff; margin: 0; font-size: 22px; letter-spacing: 1px;">🚑 LifeQR</h1>
+          <p style="color: rgba(255,255,255,0.85); margin: 4px 0 0; font-size: 13px;">Emergency Medical Identity Platform</p>
+        </div>
+        <div style="padding: 32px;">
+          <p style="color: #111; font-size: 15px;">Hello <strong>${name}</strong>,</p>
+          <p style="color: #444; font-size: 14px;">Use the code below to verify your phone number:</p>
+          <div style="background: #111; border-radius: 8px; padding: 24px; text-align: center; margin: 24px 0;">
+            <span style="color: #E11D2E; font-size: 40px; font-weight: 900; letter-spacing: 12px; font-family: monospace;">${otp}</span>
+          </div>
+          <p style="color: #666; font-size: 13px;">⏱ This code expires in <strong>10 minutes</strong>.</p>
+          <p style="color: #666; font-size: 13px;">🔒 Never share this code with anyone. LifeQR will never ask for it.</p>
+        </div>
+        <div style="background: #f0f0f0; padding: 16px 32px; border-top: 1px solid #ddd;">
+          <p style="color: #999; font-size: 12px; margin: 0;">This is an automated message from LifeQR. If you did not request this, ignore this email.</p>
+        </div>
+      </div>
+    `
+  };
+}
+
 // Email validation helper
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -265,6 +293,18 @@ router.post('/register', async (req, res) => {
     user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
 
+    console.log(`\n🔑 [LIFEQR OTP] Registration Code: ${otp} | User: ${user.email} (${user.phone})\n`);
+
+    // Send OTP to registered email immediately after signup
+    try {
+      if (user.email) {
+        const emailContent = buildOtpEmail(user.name, otp);
+        await sendEmail({ to: user.email, ...emailContent });
+      }
+    } catch (emailErr) {
+      console.warn('Registration OTP email failed (non-fatal):', emailErr.message);
+    }
+
     // Generate JWT token
     if (!process.env.JWT_SECRET) {
       throw new Error('JWT_SECRET is not configured');
@@ -502,15 +542,13 @@ router.post('/send-otp', async (req, res) => {
     user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes valid
     await user.save();
 
-    // Optionally send via email if configured
+    console.log(`\n🔑 [LIFEQR OTP] Resent Code: ${otp} | User: ${user.email} (${user.phone})\n`);
+
+    // Send OTP via email
     try {
       if (user.email) {
-        await sendEmail({
-          to: user.email,
-          subject: 'Your LifeQR Verification OTP Code',
-          text: `Hello ${user.name},\n\nYour LifeQR verification OTP code is: ${otp}\n\nThis code is valid for 10 minutes.`,
-          html: `<p>Hello ${user.name},</p><p>Your LifeQR verification code is: <strong style="font-size: 20px; letter-spacing: 2px;">${otp}</strong></p><p>This code is valid for 10 minutes.</p>`
-        });
+        const emailContent = buildOtpEmail(user.name, otp);
+        await sendEmail({ to: user.email, ...emailContent });
       }
     } catch (emailErr) {
       console.warn('OTP email delivery skipped/failed:', emailErr.message);

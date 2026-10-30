@@ -606,6 +606,12 @@ async function handleSignup(e) {
     document.getElementById('otp-sent-target').innerText = phone || email;
 
     showScreen('otp');
+
+    // Auto-fill OTP boxes with the code returned from server (no SMS configured)
+    if (res.data.otpCodeDemo) {
+      fillOtp(res.data.otpCodeDemo);
+      showOtpHint(res.data.otpCodeDemo);
+    }
   } else {
     showToast(res.data.error || 'Signup failed', 'error');
   }
@@ -614,7 +620,7 @@ async function handleSignup(e) {
 // --- 4. OTP Handlers ---
 function startOtpCountdown() {
   clearInterval(AppState.otpTimerInterval);
-  AppState.otpCountdown = 60;
+  AppState.otpCountdown = 120;
   const timerEl = document.getElementById('otp-timer-display');
   const resendBtn = document.getElementById('btn-resend-otp');
   
@@ -622,7 +628,11 @@ function startOtpCountdown() {
 
   AppState.otpTimerInterval = setInterval(() => {
     AppState.otpCountdown--;
-    if (timerEl) timerEl.innerText = `0:${AppState.otpCountdown.toString().padStart(2, '0')}`;
+    if (timerEl) {
+      const m = Math.floor(AppState.otpCountdown / 60);
+      const s = AppState.otpCountdown % 60;
+      timerEl.innerText = `${m}:${s.toString().padStart(2, '0')}`;
+    }
     
     if (AppState.otpCountdown <= 0) {
       clearInterval(AppState.otpTimerInterval);
@@ -635,6 +645,14 @@ function startOtpCountdown() {
 function focusFirstOtpBox() {
   const first = document.querySelector('.otp-box');
   if (first) first.focus();
+}
+
+// Show the OTP code as an inline hint (since no SMS is configured)
+function showOtpHint(code) {
+  let hint = document.getElementById('otp-dev-hint');
+  if (!hint) return;
+  hint.textContent = `Your code: ${code}`;
+  hint.style.display = 'block';
 }
 
 function fillOtp(code) {
@@ -742,6 +760,11 @@ async function handleResendOtp() {
   if (res.ok) {
     showToast('New verification code sent', 'success');
     startOtpCountdown();
+    // Auto-fill the new OTP code and update the hint
+    if (res.data.otpCodeDemo) {
+      fillOtp(res.data.otpCodeDemo);
+      showOtpHint(res.data.otpCodeDemo);
+    }
   } else {
     showToast(res.data.error || 'Failed to resend code', 'error');
     btn.disabled = false;

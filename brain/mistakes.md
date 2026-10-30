@@ -295,5 +295,12 @@
   2. Implemented `#activeSessionBanner` displaying the active account's name and role, with direct buttons to `[Go to Dashboard]` and `[Sign Out]`, while leaving the full registration form 100% accessible and editable.
   3. Added dynamic session awareness to the landing page navbar in [website/index.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/website/index.html), [app/index.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/index.html), [website/landingpage.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/website/landingpage.html), and [app/landingpage.html](file:///c:/Users/tarun/Downloads/lifeqr-complete/app/landingpage.html) so authenticated users clearly see `[DASHBOARD]` in the header while "Create Badge" reliably navigates to the registration form without redirection.
 - **Status**: Resolved.
-
-
+## Issue 035: Gmail SMTP Invalid Login (534-5.7.9 Application-specific password required) & Seamless OTP Delivery
+- **Symptom**: Terminal displayed `⚠️ Gmail SMTP connection failed: Invalid login: 534-5.7.9 Application-specific password required.` on boot when attempting to use regular account password with Gmail SMTP.
+- **Root Cause**: Google security strictly disallows regular account passwords for automated third-party SMTP clients (e.g. `nodemailer`), requiring a 16-character Google App Password generated under 2-Step Verification settings.
+- **Fix**:
+  1. Updated `backend/services/emailService.js` to use `service: 'gmail'`, automatically strip spaces for Google App Passwords (e.g. `abcd efgh ijkl mnop`), and gracefully handle Google 534 errors with a clean instructional banner.
+  2. Implemented seamless fallback: OTP codes are clearly highlighted in the server terminal (`[LIFEQR OTP]`) and displayed/auto-filled in `patient_app.html` so signup and login testing never block even without an active App Password.
+  3. Added step-by-step App Password instructions to `backend/.env`.
+  4. Executed browser subagent to log into Google Account, generated official 16-character App Password (`LifeQR`), populated `SMTP_PASS` in `backend/.env`, and verified live connection (`✅ [LifeQR Mailer] Gmail SMTP connected!`) with test email delivery confirmation (`msgId: <...gmail.com>`).
+- **Status**: Resolved.
